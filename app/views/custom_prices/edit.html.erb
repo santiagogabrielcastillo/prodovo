@@ -1,0 +1,10 @@
+<div class="w-full max-w-2xl">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Edit Custom Price</h1>
+    <p class="text-gray-600">Adjust pricing for <strong><%= @client.name %></strong>.</p>
+  </div>
+
+  <div class="bg-white shadow rounded p-6">
+    <%= render "form", client: @client, custom_price: @custom_price %>
+  </div>
+</div>

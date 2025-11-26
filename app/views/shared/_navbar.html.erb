@@ -1,0 +1,26 @@
+<nav class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
+  <div class="container mx-auto px-4">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center space-x-8">
+        <%= link_to "Prodovo", root_path, class: "text-xl font-bold text-gray-900 hover:text-gray-700" %>
+        <% if user_signed_in? %>
+          <div class="flex items-center space-x-4 text-sm font-medium text-gray-600">
+            <%= link_to "Clients", clients_path, class: "hover:text-gray-900" %>
+            <%= link_to "Products", products_path, class: "hover:text-gray-900" %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <% if user_signed_in? %>
+          <span class="text-gray-700"><%= current_user.email %></span>
+          <%= link_to "Sign out", destroy_user_session_path, data: { turbo_method: :delete }, class: "px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md" %>
+        <% else %>
+          <%= link_to "Sign in", new_user_session_path, class: "px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md" %>
+          <%= link_to "Sign up", new_user_registration_path, class: "px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</nav>
+

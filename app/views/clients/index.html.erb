@@ -1,0 +1,45 @@
+<div class="w-full">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Clients</h1>
+    <%= link_to "New Client", new_client_path, class: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" %>
+  </div>
+
+  <% if @clients.any? %>
+    <div class="bg-white shadow rounded">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Balance</th>
+            <th class="px-6 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @clients.each do |client| %>
+            <% balance_value = client.balance || 0 %>
+            <% balance_class = balance_value < 0 ? "text-red-600" : "text-green-600" %>
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= client.name %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><%= client.email %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><%= client.phone %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold <%= balance_class %>">
+                $<%= number_with_precision(balance_value, precision: 2) %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <%= link_to "View", client_path(client), class: "text-blue-600 hover:text-blue-900 mr-3" %>
+                <%= link_to "Edit", edit_client_path(client), class: "text-indigo-600 hover:text-indigo-900 mr-3" %>
+                <%= link_to "Delete", client_path(client), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "text-red-600 hover:text-red-900" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="bg-white shadow rounded p-6 text-center text-gray-500">
+      No clients yet. Click "New Client" to get started.
+    </div>
+  <% end %>
+</div>

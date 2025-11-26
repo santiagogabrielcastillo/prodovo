@@ -1,0 +1,24 @@
+<div class="w-full">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900"><%= @product.name %></h1>
+      <p class="text-gray-500">SKU: <%= @product.sku %></p>
+    </div>
+    <div class="flex gap-3">
+      <%= link_to "Edit", edit_product_path(@product), class: "px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" %>
+      <%= link_to "Back to Products", products_path, class: "px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-900" %>
+    </div>
+  </div>
+
+  <div class="bg-white shadow rounded p-6 space-y-4">
+    <div>
+      <p class="text-sm font-medium text-gray-500">Base Price</p>
+      <p class="text-2xl font-semibold text-gray-900">$<%= number_with_precision(@product.base_price, precision: 2) %></p>
+    </div>
+
+    <div>
+      <p class="text-sm font-medium text-gray-500">Description</p>
+      <p class="text-gray-700 mt-1"><%= @product.description.presence || "No description provided." %></p>
+    </div>
+  </div>
+</div>
