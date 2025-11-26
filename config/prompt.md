@@ -92,3 +92,75 @@ This log must concisely list:
 * Create a Product "Widget A" with Base Price $100.
 * Go to "Acme Corp" details and manually add a Custom Price for "Widget A" at $90.
 * Verify the Custom Price appears in the Client's list.
+
+
+### Step 3: UI Overhaul - Mobile-First Sidebar & Devise Styling
+
+**Context:** The current UI is broken (raw HTML for Auth pages) and uses a top navbar. The user requires a professional, responsive Dashboard layout with a **Left Sidebar** for desktop and a **Hamburger Menu** for mobile.
+
+**Objective:** Transform the layout into a professional Admin Dashboard and style the Authentication pages to look trustworthy and clean.
+
+**Mandatory Implementation:**
+
+1.  **Devise Views Generation & Styling:**
+    * **Command:** Run `rails g devise:views` to expose the HTML files.
+    * **Action:** Style `devise/sessions/new.html.erb` (Log in) and `devise/registrations/new.html.erb` (Sign up).
+    * **Design Pattern:** Use a **Centered Card Layout**.
+        * Gray background for the full page (`bg-gray-100`).
+        * White card for the form (`bg-white shadow-md rounded-lg p-8`).
+        * Full-width blue buttons (`w-full bg-blue-600 text-white p-2 rounded`).
+        * Clean input fields with focus states (`border-gray-300 focus:ring-blue-500`).
+
+2.  **Main Layout (Sidebar Architecture):**
+    * **File:** `app/views/layouts/application.html.erb`.
+    * **Structure:** Convert the layout to a Flex container.
+        * **Mobile View (< md):** Show a top header with a "Hamburger" icon and the Logo. The content is below. The Sidebar is hidden by default and slides in (or toggles) when the menu button is clicked.
+        * **Desktop View (>= md):** Fixed Sidebar on the Left (w-64). Main content on the Right.
+    * **Tech:** Use a Stimulus controller (`sidebar_controller.js`) to handle the toggle visibility on mobile.
+
+3.  **Navigation Links (Sidebar Content):**
+    * **Action:** Move the links from the old Navbar to the new Sidebar.
+    * **Items:** Dashboard (Home), Clients, Products, Log Out.
+    * **Style:** Vertical list. Active state highlighting (e.g., darker blue background for current page).
+
+4.  **Form Standardization (Partial):**
+    * **Observation:** To ensure `clients` and `products` forms look good on mobile, ensure all inputs have `w-full`.
+    * **Action:** Review the `_form.html.erb` partials created in Step 2. Ensure inputs use full width classes (`w-full`) and labels are clear, so they don't break on small screens.
+
+**Validation:**
+* **Mobile Check:** Reduce browser window width. Sidebar should disappear, and a Menu button should appear. Clicking it reveals the menu.
+* **Auth Check:** Go to `/users/sign_in`. It should look like a professional SaaS login (Card centered on screen), not raw text.
+* **Desktop Check:** Sidebar should be persistent on the left.
+
+### Step 3.6: UI Hotfix - Input Padding & Mobile Sizing
+
+**Context:** The form inputs are currently too narrow (lack of vertical padding) and look cramped. The user requires "chunky", touch-friendly inputs appropriate for a Mobile First application.
+
+**Objective:** Force explicit padding and font sizing on all form inputs to fix the visual "tightness".
+
+**Mandatory Implementation:**
+
+1.  **Update Global UI Standards (The New Law):**
+    Update the standard class list for Inputs. You must replace the old classes in all views with this new definition:
+    * **New Input Class:** `mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 text-base`
+    * *Explanation:*
+        * `py-3`: Adds significant vertical padding (top/bottom).
+        * `px-4`: Adds horizontal breathing room.
+        * `text-base`: Sets font size to 16px (prevents iOS from zooming in on focus).
+
+2.  **Apply to Auth Views Immediately:**
+    * **File:** `app/views/devise/registrations/new.html.erb`
+    * **File:** `app/views/devise/sessions/new.html.erb`
+    * **Action:** Find every `f.email_field`, `f.password_field`, and `f.text_field` and apply the **New Input Class** defined above.
+
+3.  **Apply to Resource Partials:**
+    * **File:** `app/views/clients/_form.html.erb`
+    * **File:** `app/views/products/_form.html.erb`
+    * **Action:** Apply the same `py-3 px-4 text-base` classes to these forms as well.
+
+4.  **Verify Tailwind Build:**
+    * **Command:** Run `bin/rails tailwindcss:build` to ensure the new classes are generated in the output CSS.
+
+**Validation:**
+* The Inputs should now be significantly taller (approx 44px-48px height) with comfortable internal spacing.
+* The text inside should not feel cramped against the border.

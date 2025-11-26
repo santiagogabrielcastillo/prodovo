@@ -1,26 +1,48 @@
-<nav class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-  <div class="container mx-auto px-4">
-    <div class="flex justify-between items-center h-16">
-      <div class="flex items-center space-x-8">
-        <%= link_to "Prodovo", root_path, class: "text-xl font-bold text-gray-900 hover:text-gray-700" %>
-        <% if user_signed_in? %>
-          <div class="flex items-center space-x-4 text-sm font-medium text-gray-600">
-            <%= link_to "Clients", clients_path, class: "hover:text-gray-900" %>
-            <%= link_to "Products", products_path, class: "hover:text-gray-900" %>
-          </div>
-        <% end %>
-      </div>
+<% links = [
+  { name: "Dashboard", path: root_path },
+  { name: "Clients", path: clients_path },
+  { name: "Products", path: products_path }
+] %>
 
-      <div class="flex items-center space-x-4">
-        <% if user_signed_in? %>
-          <span class="text-gray-700"><%= current_user.email %></span>
-          <%= link_to "Sign out", destroy_user_session_path, data: { turbo_method: :delete }, class: "px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md" %>
-        <% else %>
-          <%= link_to "Sign in", new_user_session_path, class: "px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md" %>
-          <%= link_to "Sign up", new_user_registration_path, class: "px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md" %>
-        <% end %>
-      </div>
-    </div>
+<header class="md:hidden bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between sticky top-0 z-40">
+  <div class="flex items-center gap-3">
+    <button type="button" class="p-2 rounded-md border border-gray-200 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" data-action="sidebar#toggle">
+      <span class="sr-only">Toggle navigation</span>
+      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+    <span class="text-xl font-semibold text-gray-900">Prodovo</span>
   </div>
-</nav>
 
+  <span class="text-sm text-gray-500 truncate max-w-[50%]"><%= current_user.email %></span>
+</header>
+
+<div data-sidebar-target="backdrop" class="fixed inset-0 bg-gray-900/50 opacity-0 pointer-events-none transition md:hidden" data-action="click->sidebar#close"></div>
+
+<aside data-sidebar-target="panel" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform -translate-x-full transition duration-300 ease-in-out md:static md:translate-x-0 md:flex md:flex-col">
+  <div class="h-16 flex items-center justify-between px-6 border-b border-slate-700">
+    <span class="text-2xl font-semibold tracking-tight">Prodovo</span>
+    <button type="button" class="md:hidden p-2 rounded-md border border-slate-700/60 text-white/70" data-action="sidebar#close">
+      <span class="sr-only">Close navigation</span>
+      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto px-3 py-6 space-y-1">
+    <% links.each do |link| %>
+      <% active = current_page?(link[:path]) %>
+      <% base_classes = "block px-4 py-2 rounded-lg text-sm font-medium transition" %>
+      <% classes = active ? "#{base_classes} bg-white/10 text-white shadow-inner" : "#{base_classes} text-white/70 hover:bg-white/10 hover:text-white" %>
+      <%= link_to link[:name], link[:path], class: classes %>
+    <% end %>
+  </nav>
+
+  <div class="px-4 py-6 border-t border-slate-800 text-sm">
+    <p class="text-white/70 mb-3">Signed in as</p>
+    <p class="font-semibold truncate mb-4"><%= current_user.email %></p>
+    <%= link_to "Log Out", destroy_user_session_path, data: { turbo_method: :delete }, class: "inline-flex w-full items-center justify-center rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-400 transition" %>
+  </div>
+</aside>
