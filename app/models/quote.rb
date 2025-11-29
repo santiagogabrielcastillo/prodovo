@@ -6,7 +6,7 @@ class Quote < ApplicationRecord
 
   accepts_nested_attributes_for :quote_items, allow_destroy: true
 
-  enum :status, { draft: 0, sent: 1, approved: 2, rejected: 3 }
+  enum :status, { draft: 0, sent: 1, partially_paid: 2, paid: 3, cancelled: 4 }
 
   validates :client, presence: true
   validates :status, presence: true

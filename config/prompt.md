@@ -234,3 +234,56 @@ Before finishing, you must create and run the following tests:
 5. `test/models/quote_item_test.rb`
 6. `test/system/quotes_test.rb` (Integration test)
 7. **Execution Log:** Output of `bin/rails test` showing ALL GREEN.
+
+# Step 4.5: QA Fixes – Interactivity & UI Polish
+
+## Context
+Step 4 implemented the core logic, but manual QA revealed three blocking issues:
+1. **Price Lookup Bug:** Changing a product in the dropdown (both in new/edit modes) does not trigger the price update via AJAX.
+2. **UI Noise:** Number inputs show native browser "spinners" (arrows), cluttering the interface.
+3. **Layout Bug:** The "Remove Item" button is visually cut off in the card layout.
+
+## Goal
+Fix the Stimulus controller event binding for dynamic price fetching, clean up the CSS for number inputs, and adjust the Quote Item card layout.
+
+## Requirements
+
+### 1. Fix Price Lookup (Javascript & DOM)
+- **Problem:** The `change` event on the Product Select is likely not properly connected to the Stimulus action, or the Controller fails to find the `client_id` when it changes.
+- **Solution:**
+  - Update `app/views/quotes/_quote_item_fields.html.erb`: Ensure the Product `<select>` has `data-action="change->quote-form#updatePrice"`.
+  - Update `app/javascript/controllers/quote_form_controller.js`: 
+    - The `updatePrice(event)` method must:
+      1. Find the `client_id` from the **main parent form select** (Target: `clientSelect`).
+      2. If no Client is selected, alert the user or do nothing.
+      3. If Client + Product are present, fetch the price from `/quotes/price_lookup`.
+      4. Update the `unit_price` input **in the same row** as the event trigger.
+    - Ensure this works for **dynamically added items** AND **existing items** on the Edit page.
+
+### 2. Remove Input Spinners (CSS)
+- **Problem:** Native HTML number arrows are ugly and hard to click on mobile.
+- **Solution:**
+  - Update `app/assets/stylesheets/application.tailwind.css`.
+  - Add a utility class layer (e.g., `.no-spinner`) to hide `::-webkit-inner-spin-button` and `::-webkit-outer-spin-button` (and Firefox equivalents).
+  - Apply this class to all quantity and price inputs in `_quote_item_fields.html.erb`.
+
+### 3. Fix "Remove" Button Layout (View)
+- **Problem:** The button is cut off.
+- **Solution:** - In `app/views/quotes/_quote_item_fields.html.erb`, adjust the container of the bottom row.
+  - Increase padding (`p-4` to `p-5` or add `pb-4`) to the card container.
+  - Ensure the "Remove" button has its own clear flex space (e.g., `mt-4` or `flex justify-end`).
+  - Make the button red text with a trash icon (SVG) for better mobile UX, instead of a cramped text button.
+
+### 4. Regression Testing (Mandatory)
+Update or add a System Test case in `test/system/quotes_test.rb` that explicitly reproduces the bug:
+1. Visit New Quote.
+2. Select Client.
+3. Add Item.
+4. Select Product A -> Assert Price is X.
+5. **Change to Product B** -> Assert Price changes to Y. (This failed in manual QA).
+
+## Deliverables
+1. `app/assets/stylesheets/application.tailwind.css` (New CSS rules)
+2. `app/javascript/controllers/quote_form_controller.js` (Refactored `updatePrice`)
+3. `app/views/quotes/_quote_item_fields.html.erb` (Layout fixes + data-action)
+4. `test/system/quotes_test.rb` (New strict interactivity test)

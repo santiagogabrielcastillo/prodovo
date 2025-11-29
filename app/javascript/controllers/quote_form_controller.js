@@ -42,30 +42,38 @@ export default class extends Controller {
     }
   }
 
-  async fetchPrice(event) {
+  updatePrice(event) {
     const productSelect = event.target
     const productId = productSelect.value
-    const clientId = this.clientSelectTarget.value
+    
+    // Get client_id from the main form's client select
+    const clientSelect = this.clientSelectTarget
+    const clientId = clientSelect ? clientSelect.value : null
 
     if (!productId || !clientId) {
+      if (!clientId) {
+        alert("Please select a client first")
+      }
       return
     }
 
-    try {
-      const response = await fetch(`/quotes/price_lookup?client_id=${clientId}&product_id=${productId}`)
-      const data = await response.json()
-
-      if (data.price !== undefined) {
-        const itemCard = productSelect.closest(".quote-item-card")
-        const unitPriceInput = itemCard.querySelector('[data-quote-form-target="unitPriceInput"]')
-        if (unitPriceInput) {
-          unitPriceInput.value = data.price.toFixed(2)
-          this.calculateItemTotal({ target: unitPriceInput })
+    // Fetch price via AJAX
+    fetch(`/quotes/price_lookup?client_id=${clientId}&product_id=${productId}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.price !== undefined) {
+          const itemCard = productSelect.closest(".quote-item-card")
+          const unitPriceInput = itemCard.querySelector('[data-quote-form-target="unitPriceInput"]')
+          if (unitPriceInput) {
+            unitPriceInput.value = data.price.toFixed(2)
+            // Trigger calculation
+            this.calculateItemTotal({ target: unitPriceInput })
+          }
         }
-      }
-    } catch (error) {
-      console.error("Error fetching price:", error)
-    }
+      })
+      .catch(error => {
+        console.error("Error fetching price:", error)
+      })
   }
 
   calculateItemTotal(event) {
