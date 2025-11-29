@@ -12,6 +12,24 @@ es-AR:
         precision: 0
         format: "%u%n"
         negative_format: "-%u%n"
+  activerecord:
+    errors:
+      models:
+        payment:
+          attributes:
+            amount:
+              blank: "can't be blank"
+              not_a_number: "is not a number"
+              greater_than: "must be greater than 0"
+            date:
+              blank: "can't be blank"
+        quote:
+          attributes:
+            client:
+              required: "must exist"
+              blank: "can't be blank"
+            date:
+              blank: "can't be blank"
   date:
     formats:
       default: "%d/%m/%Y"

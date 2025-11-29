@@ -38,4 +38,26 @@ class Quote < ApplicationRecord
       custom_price.save!
     end
   end
+
+  def amount_paid
+    payments.sum(:amount) || 0
+  end
+
+  def amount_due
+    total_amount - amount_paid
+  end
+
+  def update_status_based_on_payments!
+    return if draft? || cancelled?
+
+    total_paid = amount_paid
+
+    if total_paid >= total_amount
+      update!(status: :paid)
+    elsif total_paid > 0 && total_paid < total_amount
+      update!(status: :partially_paid)
+    elsif total_paid == 0
+      update!(status: :sent)
+    end
+  end
 end

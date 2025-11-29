@@ -405,3 +405,74 @@ Refine the application behavior to match specific user business rules regarding 
 3. `app/models/quote_item.rb` (The "Price Learning" callback)
 4. `app/views/custom_prices/_form.html.erb` (Styles)
 5. `test/models/quote_item_test.rb` (Test that changing a quote item price updates the CustomPrice)
+
+# Step 6: Payments System & Financial Automation
+
+## Context
+The application handles Quotes and Clients correctly. Now we need to handle Collections.
+We need to record Payments against Quotes, which should trigger automatic status updates (e.g., marking a quote as Paid) and Client balance updates.
+
+## Goal
+Implement `PaymentsController`, connect the `Payment` model logic, and update the Quote View to allow recording payments and viewing payment history.
+
+## Requirements
+
+### 1. Backend Logic (`Payment` & `Quote`)
+- **Model `Payment`:**
+  - Validations: `amount` must be present and greater than 0. `date` must be present.
+  - **Callbacks (Crucial):**
+    - `after_save :update_quote_status!`
+    - `after_save :update_client_balance!`
+    - `after_destroy :update_quote_status!`, `after_destroy :update_client_balance!` (in case a payment is deleted).
+  - **Logic:** `update_client_balance!` should simply call `client.recalculate_balance!`.
+- **Model `Quote`:**
+  - Add method `update_status_based_on_payments!`:
+    - Calculate `total_paid = payments.sum(:amount)`.
+    - IF `total_paid >= total_amount` -> Status becomes `paid`.
+    - IF `total_paid > 0` AND `total_paid < total_amount` -> Status becomes `partially_paid`.
+    - IF `total_paid == 0` -> Status reverts to `sent` (unless it was draft/cancelled).
+  - Add helper methods: `amount_paid` (sum of payments) and `amount_due` (total - paid).
+
+### 2. Controller (`PaymentsController`)
+- **Routes:** Nested resource under quotes: `resources :quotes do resources :payments, only: [:new, :create] end`.
+- **Action `new`:** Initialize a new payment. Default `amount` should be `@quote.amount_due`. Default `date` is today.
+- **Action `create`:** Save payment.
+  - Success: Redirect to Quote Show with flash "Payment recorded".
+  - Failure: Re-render `new` with errors.
+
+### 3. Frontend Implementation
+- **View `payments/new.html.erb`:**
+  - Use the standard **White Card Container** (`bg-white shadow...`).
+  - **Inputs:**
+    - Date (Standard date field).
+    - Amount (Number field): **MUST use `step: 1` and `value: ...&.to_i`** and `.no-spinner` class.
+    - Note (Text area).
+- **View `quotes/show.html.erb`:**
+  - **Action Button:** Add "Record Payment" button next to "Print/Send".
+    - Condition: Visible ONLY if quote is `sent` or `partially_paid`.
+  - **Payment History Section:**
+    - Below the items table, add a section "Payments".
+    - Show a progress bar or summary: "Paid: $X / Due: $Y".
+    - List payments: Date, Amount, Note.
+
+### 4. Testing (Mandatory)
+- **Unit Tests (`test/models/payment_test.rb`):**
+  - Test that saving a full payment changes Quote status to `paid`.
+  - Test that saving a partial payment changes Quote status to `partially_paid`.
+  - Test that Client balance decreases (or goes to 0) after payment.
+- **System Test (`test/system/payments_test.rb`):**
+  - User visits a Sent Quote.
+  - Clicks "Record Payment".
+  - Enters Amount.
+  - Redirects to Quote -> Verifies Status Badge changed to Green/Amber.
+  - Verifies Payment appears in the list.
+
+## Deliverables
+1. `app/controllers/payments_controller.rb`
+2. `app/views/payments/new.html.erb`
+3. `app/views/quotes/show.html.erb` (Updated)
+4. `app/models/payment.rb` (Callbacks)
+5. `app/models/quote.rb` (Status logic)
+6. `config/routes.rb`
+7. `test/models/payment_test.rb`
+8. `test/system/payments_test.rb`

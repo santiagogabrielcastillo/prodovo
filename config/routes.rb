@@ -12,6 +12,7 @@ Rails.application.routes.draw do
       patch :mark_as_sent
       patch :cancel
     end
+    resources :payments, only: [:new, :create]
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
