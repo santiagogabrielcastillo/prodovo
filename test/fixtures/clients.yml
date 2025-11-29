@@ -1,17 +1,17 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  email: MyString
-  phone: MyString
-  tax_id: MyString
-  address: MyText
-  balance: 9.99
+  name: Acme Corp
+  email: acme@example.com
+  phone: 555-0100
+  tax_id: TAX-001
+  address: 123 Main St
+  balance: 0.0
 
 two:
-  name: MyString
-  email: MyString
-  phone: MyString
-  tax_id: MyString
-  address: MyText
-  balance: 9.99
+  name: Beta Inc
+  email: beta@example.com
+  phone: 555-0200
+  tax_id: TAX-002
+  address: 456 Oak Ave
+  balance: 0.0

@@ -1,13 +1,13 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  sku: MyString
-  base_price: 9.99
-  description: MyText
+  name: Widget A
+  sku: WID-A
+  base_price: 100.00
+  description: A high-quality widget
 
 two:
-  name: MyString
-  sku: MyString
-  base_price: 9.99
-  description: MyText
+  name: Widget B
+  sku: WID-B
+  base_price: 50.00
+  description: Another widget

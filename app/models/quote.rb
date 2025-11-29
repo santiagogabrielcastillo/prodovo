@@ -4,8 +4,21 @@ class Quote < ApplicationRecord
   has_many :quote_items, dependent: :destroy
   has_many :payments, dependent: :destroy
 
-  enum status: { draft: 0, sent: 1, approved: 2, rejected: 3 }
+  accepts_nested_attributes_for :quote_items, allow_destroy: true
 
+  enum :status, { draft: 0, sent: 1, approved: 2, rejected: 3 }
+
+  validates :client, presence: true
+  validates :status, presence: true
   validates :date, presence: true
   validates :total_amount, numericality: { greater_than_or_equal_to: 0 }
+
+  before_save :calculate_total!
+
+  def calculate_total!
+    self.total_amount = quote_items.sum do |item|
+      item.calculate_total_price! if item.total_price.nil?
+      item.total_price || 0.0
+    end
+  end
 end

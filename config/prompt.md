@@ -164,3 +164,73 @@ This log must concisely list:
 **Validation:**
 * The Inputs should now be significantly taller (approx 44px-48px height) with comfortable internal spacing.
 * The text inside should not feel cramped against the border.
+
+# Step 4: Core Business Logic – Quotes, Dynamic Items & Mobile-First Forms
+
+## Context
+We have a Rails 7 app with Tailwind CSS, Devise authentication, and basic CRUD. We need to implement the core "Quote" creation flow.
+**CRITICAL:** This step involves financial logic and complex UI interactions. We must implement strict Model Validations and Automated Tests to ensure data integrity before marking this step as complete.
+
+## Goal
+Implement `QuotesController` with dynamic `QuoteItems`, utilizing a mobile-first card layout and Stimulus for real-time price fetching/calculations.
+
+## Requirements
+
+### 1. Backend Logic & Validations
+- **Models (`Quote`, `QuoteItem`):**
+  - `Quote` must have `accepts_nested_attributes_for :quote_items, allow_destroy: true`.
+  - **Validations:**
+    - `Quote`: Must belong to a `Client`. Status is mandatory.
+    - `QuoteItem`: Must have a `Product`, `Quantity` (> 0), and `Unit Price` (>= 0).
+  - **Logic:** Add a method `Quote#calculate_total!` that sums all items and updates `total_amount`.
+- **Price Lookup Logic:**
+  - Implement a service or model method that takes `(client, product)` and returns the correct price:
+    - IF a `CustomPrice` exists for this pair -> Return Custom Price.
+    - ELSE -> Return `Product.base_price`.
+- **Controller:**
+  - `QuotesController` supporting CRUD.
+  - Endpoint (or reusable action) to handle AJAX price fetching requests.
+
+### 2. Frontend - Mobile First Form
+- **Structure:**
+  - Use `form_with model: @quote`.
+  - **NO TABLES** for items. Use a **Vertical Card Stack** layout for mobile friendliness.
+- **Stimulus Controller (`quote_form_controller.js`):**
+  - **Target:** `items-container`, `template`.
+  - **Action: Add Item:** Inserts a new fields wrapper from a `<template>`.
+  - **Action: Remove Item:** Hides the wrapper and sets `_destroy` hidden input to `1`.
+  - **Action: Price Lookup:** On `change` of Product Select -> Fetch price based on Client -> Update Unit Price input.
+  - **Action: Auto-Calc:** On `input` of Quantity or Price -> Update "Item Total" text -> Recalculate "Grand Total".
+
+### 3. Styling Standards
+- Adhere to the established **"Chunky Input"** spec:
+  - Classes: `w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 text-base`.
+- **Item Card:** Distinct background (e.g., `bg-gray-50`) or border, with clear separation between items.
+
+### 4. Verification & Testing (Mandatory)
+Before finishing, you must create and run the following tests:
+
+**A. Unit Tests (`test/models/`)**
+1.  **Price Logic:** Create a Client, Product, and CustomPrice. Verify the lookup logic returns the CustomPrice for that client and BasePrice for another.
+2.  **Math:** Create a Quote with 2 items (Qty 2 @ $10, Qty 1 @ $50). Verify `quote.total_amount` equals $70.
+3.  **Validations:** Try to save a QuoteItem with 0 quantity (should fail). Try to save a Quote without a Client (should fail).
+
+**B. System Tests (`test/system/`)**
+1.  **User Flow:**
+    - Log in.
+    - Go to "New Quote".
+    - Select Client.
+    - Click "Add Item".
+    - Select Product -> **Verify Unit Price input auto-fills**.
+    - Change Quantity -> **Verify Total updates**.
+    - Click "Save".
+    - Verify redirected to Show page and data is correct.
+
+## Deliverables
+1. `app/controllers/quotes_controller.rb`
+2. `app/views/quotes/_form.html.erb` & `_quote_item_fields.html.erb`
+3. `app/javascript/controllers/quote_form_controller.js`
+4. `test/models/quote_test.rb` (Updated with logic tests)
+5. `test/models/quote_item_test.rb`
+6. `test/system/quotes_test.rb` (Integration test)
+7. **Execution Log:** Output of `bin/rails test` showing ALL GREEN.

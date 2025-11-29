@@ -1,0 +1,50 @@
+<div class="w-full space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-3xl font-bold text-gray-900">Quotes</h1>
+    <%= link_to "New Quote", new_quote_path, class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
+  </div>
+
+  <% if @quotes.any? %>
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Client</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Created By</th>
+            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @quotes.each do |quote| %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#<%= quote.id %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= quote.client.name %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><%= quote.date.strftime("%b %d, %Y") %></td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 rounded text-xs font-medium <%= quote.draft? ? 'bg-gray-100 text-gray-800' : quote.sent? ? 'bg-blue-100 text-blue-800' : quote.approved? ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                  <%= quote.status.humanize %>
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">$<%= number_with_precision(quote.total_amount, precision: 2) %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= quote.user.email %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <%= link_to "View", quote, class: "text-indigo-600 hover:text-indigo-900 mr-3" %>
+                <%= link_to "Edit", edit_quote_path(quote), class: "text-indigo-600 hover:text-indigo-900 mr-3" %>
+                <%= link_to "Delete", quote, data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "text-red-600 hover:text-red-900" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="bg-white shadow rounded-lg p-12 text-center">
+      <p class="text-gray-500 text-lg mb-4">No quotes yet.</p>
+      <%= link_to "Create your first quote", new_quote_path, class: "inline-block px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
+    </div>
+  <% end %>
+</div>

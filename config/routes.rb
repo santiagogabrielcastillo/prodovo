@@ -4,6 +4,8 @@ Rails.application.routes.draw do
   resources :clients do
     resources :custom_prices, only: %i[new create edit update destroy]
   end
+  resources :quotes
+  get "quotes/price_lookup", to: "quotes#price_lookup", as: :quote_price_lookup
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

@@ -1,0 +1,97 @@
+<div class="w-full space-y-8">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Quote #<%= @quote.id %></h1>
+      <p class="text-gray-500">
+        <%= @quote.client.name %> • 
+        <%= @quote.date.strftime("%B %d, %Y") %> • 
+        <span class="px-2 py-1 rounded text-sm font-medium <%= @quote.draft? ? 'bg-gray-100 text-gray-800' : @quote.sent? ? 'bg-blue-100 text-blue-800' : @quote.approved? ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+          <%= @quote.status.humanize %>
+        </span>
+      </p>
+    </div>
+    <div class="flex gap-3">
+      <%= link_to "Edit", edit_quote_path(@quote), class: "px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" %>
+      <%= link_to "Back to Quotes", quotes_path, class: "px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-900" %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white shadow rounded-lg p-6 space-y-4">
+      <h2 class="text-xl font-semibold text-gray-900 mb-2">Client Information</h2>
+      <div>
+        <p class="text-sm font-medium text-gray-500">Client</p>
+        <p class="text-gray-900"><%= @quote.client.name %></p>
+      </div>
+      <div>
+        <p class="text-sm font-medium text-gray-500">Email</p>
+        <p class="text-gray-900"><%= @quote.client.email %></p>
+      </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-6 space-y-4">
+      <h2 class="text-xl font-semibold text-gray-900 mb-2">Quote Details</h2>
+      <div>
+        <p class="text-sm font-medium text-gray-500">Date</p>
+        <p class="text-gray-900"><%= @quote.date.strftime("%B %d, %Y") %></p>
+      </div>
+      <% if @quote.expiration_date %>
+        <div>
+          <p class="text-sm font-medium text-gray-500">Expiration Date</p>
+          <p class="text-gray-900"><%= @quote.expiration_date.strftime("%B %d, %Y") %></p>
+        </div>
+      <% end %>
+      <div>
+        <p class="text-sm font-medium text-gray-500">Created By</p>
+        <p class="text-gray-900"><%= @quote.user.email %></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-6">
+    <h2 class="text-xl font-semibold text-gray-900 mb-4">Items</h2>
+    <% if @quote.quote_items.any? %>
+      <div class="space-y-4">
+        <% @quote.quote_items.each do |item| %>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Product</p>
+                <p class="text-gray-900 font-semibold"><%= item.product.name %></p>
+                <p class="text-xs text-gray-500">SKU: <%= item.product.sku %></p>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500">Quantity</p>
+                <p class="text-gray-900"><%= item.quantity %></p>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500">Unit Price</p>
+                <p class="text-gray-900">$<%= number_with_precision(item.unit_price, precision: 2) %></p>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500">Total</p>
+                <p class="text-gray-900 font-semibold text-lg">$<%= number_with_precision(item.total_price, precision: 2) %></p>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-500">No items in this quote.</p>
+    <% end %>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-6">
+    <div class="flex justify-between items-center">
+      <span class="text-xl font-semibold text-gray-900">Grand Total:</span>
+      <span class="text-3xl font-bold text-indigo-600">$<%= number_with_precision(@quote.total_amount, precision: 2) %></span>
+    </div>
+  </div>
+
+  <% if @quote.notes.present? %>
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-2">Notes</h2>
+      <p class="text-gray-700 whitespace-pre-line"><%= @quote.notes %></p>
+    </div>
+  <% end %>
+</div>
