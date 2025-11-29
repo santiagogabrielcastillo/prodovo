@@ -1,6 +1,7 @@
 class QuotesController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_quote, only: %i[show edit update destroy]
+  before_action :set_quote, only: %i[show edit update destroy mark_as_sent cancel]
+  before_action :ensure_draft, only: %i[edit update destroy]
 
   def index
     @quotes = Quote.includes(:client, :user).order(created_at: :desc)
@@ -50,6 +51,28 @@ class QuotesController < ApplicationController
     redirect_to quotes_path, notice: "Quote deleted successfully."
   end
 
+  def mark_as_sent
+    if @quote.draft?
+      # Update custom prices BEFORE transitioning to sent
+      @quote.update_custom_prices!
+      @quote.update(status: :sent)
+      @quote.client.recalculate_balance!
+      redirect_to @quote, notice: "Quote has been finalized and sent."
+    else
+      redirect_to @quote, alert: "Only draft quotes can be finalized."
+    end
+  end
+
+  def cancel
+    if @quote.sent? || @quote.paid? || @quote.partially_paid?
+      @quote.update(status: :cancelled)
+      @quote.client.recalculate_balance!
+      redirect_to @quote, notice: "Quote has been cancelled."
+    else
+      redirect_to @quote, alert: "Only sent or paid quotes can be cancelled."
+    end
+  end
+
   # AJAX endpoint for price lookup
   def price_lookup
     client_id = params[:client_id]
@@ -70,6 +93,12 @@ class QuotesController < ApplicationController
 
   def set_quote
     @quote = Quote.find(params[:id])
+  end
+
+  def ensure_draft
+    unless @quote.draft?
+      redirect_to @quote, alert: "Only draft quotes can be edited or deleted."
+    end
   end
 
   def quote_params

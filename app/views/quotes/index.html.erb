@@ -25,16 +25,38 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= quote.client.name %></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><%= quote.date.strftime("%b %d, %Y") %></td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 py-1 rounded text-xs font-medium <%= quote.draft? ? 'bg-gray-100 text-gray-800' : quote.sent? ? 'bg-blue-100 text-blue-800' : quote.approved? ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                <% 
+                  status_classes = {
+                    draft: "bg-gray-100 text-gray-800",
+                    sent: "bg-blue-100 text-blue-800",
+                    partially_paid: "bg-yellow-100 text-yellow-800",
+                    paid: "bg-green-100 text-green-800",
+                    cancelled: "bg-red-100 text-red-800"
+                  }
+                  classes = status_classes[quote.status.to_sym] || status_classes[:draft]
+                %>
+                <span class="px-2 py-1 rounded text-xs font-medium <%= classes %>">
                   <%= quote.status.humanize %>
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">$<%= number_with_precision(quote.total_amount, precision: 2) %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">$<%= number_with_precision(quote.total_amount, precision: 0) %></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= quote.user.email %></td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <%= link_to "View", quote, class: "text-indigo-600 hover:text-indigo-900 mr-3" %>
-                <%= link_to "Edit", edit_quote_path(quote), class: "text-indigo-600 hover:text-indigo-900 mr-3" %>
-                <%= link_to "Delete", quote, data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "text-red-600 hover:text-red-900" %>
+                <% if quote.draft? %>
+                  <%= link_to edit_quote_path(quote), class: "text-indigo-600 hover:text-indigo-900 mr-3", title: "Edit" do %>
+                    <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                  <% end %>
+                  <%= link_to quote_path(quote), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "text-red-600 hover:text-red-900", title: "Delete" do %>
+                    <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  <% end %>
+                <% elsif quote.sent? || quote.paid? %>
+                  <%= button_to "Cancel", cancel_quote_path(quote), method: :patch, class: "text-yellow-600 hover:text-yellow-900", data: { turbo_confirm: "Are you sure you want to cancel this quote?" }, title: "Cancel Quote" %>
+                <% end %>
               </td>
             </tr>
           <% end %>

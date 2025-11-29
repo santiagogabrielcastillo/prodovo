@@ -21,4 +21,21 @@ class Quote < ApplicationRecord
       item.total_price || 0.0
     end
   end
+
+  def can_edit?
+    draft?
+  end
+
+  def update_custom_prices!
+    quote_items.each do |item|
+      next unless item.product && item.unit_price.present?
+
+      custom_price = CustomPrice.find_or_initialize_by(
+        client: client,
+        product: item.product
+      )
+      custom_price.price = item.unit_price
+      custom_price.save!
+    end
+  end
 end

@@ -25,7 +25,7 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><%= client.email %></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><%= client.phone %></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold <%= balance_class %>">
-                $<%= number_with_precision(balance_value, precision: 2) %>
+                $<%= number_with_precision(balance_value, precision: 0) %>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <%= link_to "View", client_path(client), class: "text-blue-600 hover:text-blue-900 mr-3" %>

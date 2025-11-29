@@ -11,4 +11,24 @@
   .no-spinner {
     -moz-appearance: textfield;
   }
+
+  /* Print styles */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    
+    /* Hide navigation and sidebar */
+    header,
+    aside,
+    nav {
+      display: none !important;
+    }
+    
+    /* Ensure text is black for printing */
+    body {
+      color: black !important;
+      background: white !important;
+    }
+  }
 }

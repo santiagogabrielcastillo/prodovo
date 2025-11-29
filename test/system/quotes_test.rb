@@ -175,4 +175,86 @@ class QuotesTest < ApplicationSystemTestCase
       assert_equal 100.0, unit_price_field.value.to_f, "Price should update back to Widget A's base price of 100.00"
     end
   end
+
+  test "quote lifecycle: draft to sent transition" do
+    # Create a draft quote
+    quote = Quote.create!(
+      client: @client,
+      user: @user,
+      date: Date.current,
+      status: :draft
+    )
+    quote.quote_items.create!(
+      product: @product,
+      quantity: 2,
+      unit_price: 100.00
+    )
+
+    visit quote_path(quote)
+
+    # Verify draft quote shows Edit and Finalize buttons
+    assert_text "Edit"
+    assert_text "Finalize & Send"
+    assert_text "Draft"
+
+    # Click Finalize & Send (handle confirmation dialog if present)
+    accept_confirm do
+      click_button "Finalize & Send"
+    end
+
+    # Wait for redirect and page update
+    sleep 1
+
+    # Verify status changed to Sent
+    assert_text "Sent"
+    assert_text "Quote has been finalized and sent"
+
+    # Verify Edit button is gone
+    assert_no_text "Edit"
+    assert_no_text "Finalize & Send"
+  end
+
+  test "sent quote cannot be edited" do
+    # Create a sent quote
+    quote = Quote.create!(
+      client: @client,
+      user: @user,
+      date: Date.current,
+      status: :sent
+    )
+    quote.quote_items.create!(
+      product: @product,
+      quantity: 1,
+      unit_price: 50.00
+    )
+
+    visit quote_path(quote)
+
+    # Verify sent quote does NOT show Edit or Finalize buttons
+    assert_no_text "Edit"
+    assert_no_text "Finalize & Send"
+    assert_text "Sent"
+  end
+
+  test "currency displays as integers without decimals" do
+    # Create a quote with large amount
+    quote = Quote.create!(
+      client: @client,
+      user: @user,
+      date: Date.current,
+      status: :draft
+    )
+    quote.quote_items.create!(
+      product: @product,
+      quantity: 123,
+      unit_price: 100
+    )
+    quote.calculate_total!
+
+    visit quote_path(quote)
+
+    # Verify currency displays as integer (e.g., "$12,300" not "$12,300.00")
+    assert_text "$12,300"
+    assert_no_text "$12,300.00"
+  end
 end

@@ -287,3 +287,121 @@ Update or add a System Test case in `test/system/quotes_test.rb` that explicitly
 2. `app/javascript/controllers/quote_form_controller.js` (Refactored `updatePrice`)
 3. `app/views/quotes/_quote_item_fields.html.erb` (Layout fixes + data-action)
 4. `test/system/quotes_test.rb` (New strict interactivity test)
+
+
+# Step 5: Professional Quote Document & Lifecycle
+
+## Context
+Data entry is complete. We need a "ReadOnly" document view for the Quote that looks professional, supports printing (A4), and handles the new lifecycle states.
+**User Update:** The `Quote` model uses the following enum: `{ draft: 0, sent: 1, partially_paid: 2, paid: 3, cancelled: 4 }`.
+
+## Goal
+1. Design a professional "Document View" (Invoice style) in `quotes/show.html.erb`.
+2. Implement CSS Print Styling (`@media print`) for clean PDF generation.
+3. Implement the `draft` -> `sent` transition and status visualization.
+
+## Requirements
+
+### 1. Model Updates (`Quote`)
+- Update the `status` enum to match: `{ draft: 0, sent: 1, partially_paid: 2, paid: 3, cancelled: 4 }`.
+- Add a helper method `can_edit?` that returns `true` ONLY if status is `draft`.
+
+### 2. The Document View (`quotes/show.html.erb`)
+- **Visual Design:**
+  - "Sheet" container: White background, shadow, rounded corners, centered max-width (e.g., `max-w-4xl`).
+  - **Header:**
+    - Left: "Your Company" (Placeholder).
+    - Right: Client Name, Date, Quote #ID.
+  - **Status Badge:** Use a reusable partial.
+  - **Items Table:**
+    - Desktop: Standard table with headers (Product, Qty, Unit Price, Total).
+    - Mobile: Stacked view (hidden headers, block rows) OR simple scrollable table if content allows.
+  - **Footer:** Subtotal, Grand Total (Large/Bold), Notes.
+- **Actions:**
+  - "Edit" button: **Only visible if `quote.draft?`**.
+  - "Finalize & Send" button: **Only visible if `quote.draft?`**.
+  - "Back" button: Visible always (but hidden in Print).
+
+### 3. Status Badge Partial (`_status_badge.html.erb`)
+- Map statuses to Tailwind colors:
+  - `draft`: Gray/Slate
+  - `sent`: Blue
+  - `partially_paid`: Yellow/Amber
+  - `paid`: Green
+  - `cancelled`: Red
+
+### 4. Print Styles (Tailwind `print:` modifier)
+- When printing (`window.print()`):
+  - Hide: Navbar, Sidebar, Action Buttons (`.no-print`), Flash messages.
+  - Layout: Remove max-width, remove shadows, remove background colors (save ink).
+  - Typography: Force black text.
+
+### 5. Lifecycle Logic
+- **Controller:** Add `patch :mark_as_sent` member action.
+  - Finds quote -> updates status to `sent` -> redirects to `show` with flash message.
+- **View:** Link the "Finalize & Send" button to this action.
+
+### 6. Testing & QA
+- **System Test:**
+  - Create Draft Quote.
+  - Verify "Edit" button is present.
+  - Click "Finalize & Send".
+  - Verify Status becomes "Sent" (Blue badge).
+  - Verify "Edit" button is **GONE**.
+- **Model Test:**
+  - Assert `draft` quote is editable.
+  - Assert `sent` or `paid` quote is NOT editable.
+
+## Deliverables
+1. `app/models/quote.rb` (Enum update + `can_edit?`)
+2. `app/views/quotes/show.html.erb` (The Document UI)
+3. `app/views/quotes/_status_badge.html.erb`
+4. `app/controllers/quotes_controller.rb` (`mark_as_sent` action)
+5. `config/routes.rb`
+6. `test/models/quote_test.rb` (Lifecycle logic tests)
+7. `test/system/quotes_test.rb` (Lifecycle UI tests)
+
+# Step 5.5: Logic Refinement & UX Polish
+
+## Context
+User testing revealed security gaps in the Index view, missing financial updates when sending quotes, inconsistent UI in nested resources, and a desire for "Price Learning" behavior.
+
+## Goal
+Refine the application behavior to match specific user business rules regarding Quote lifecycles, Balance updates, and Automatic Price updates.
+
+## Requirements
+
+### 1. Security & UX on `Quotes#index`
+- **View (`index.html.erb`):**
+  - Iterate through quotes.
+  - IF `quote.draft?`: Show "Edit" (Pencil) and "Delete" (Trash) buttons.
+  - IF `quote.sent?` OR `paid?`: **Do NOT** show Edit/Delete. Show "Cancel" button instead (transitions status to `cancelled`).
+- **Controller (`QuotesController`):**
+  - Ensure `destroy` and `update` actions return an error/redirect if the quote is not in `draft` status.
+  - Implement `patch :cancel` member action.
+
+### 2. Balance Logic Trigger
+- **Logic:** When a Quote transitions from `Draft` to `Sent` (in `mark_as_sent` action), trigger `quote.client.recalculate_balance!`.
+- **Verification:** Ensure the Client's balance reflects the new debt immediately after sending.
+
+### 3. "Price Learning" Logic (Automatic Custom Price)
+- **Feature:** When a `QuoteItem` is saved, if the `unit_price` differs from the Product's Base Price (or existing Custom Price), update/create the `CustomPrice` record for that Client/Product pair.
+- **Implementation:**
+  - Add logic in `QuoteItem` (likely `after_save`).
+  - Check if `unit_price` matches `product.base_price`. If NOT, find or initialize `CustomPrice(client: quote.client, product: product)`.
+  - Update the `CustomPrice` value to the new `unit_price`.
+
+### 4. UI Polish - Custom Prices & Number Inputs
+- **File: `app/views/custom_prices/_form.html.erb`:**
+  - Apply the standard "Chunky Input" classes (`w-full py-3 px-4...`) to all fields.
+- **Global Number Inputs:**
+  - Requirements: "Remove decimals" and "Remove arrows".
+  - **Action:** Add `step: "1"` to quantity and price inputs (forcing integers, per user request).
+  - **CSS:** Ensure `.no-spinner` class is applied to ALL number inputs in the app (including Custom Price form).
+
+## Deliverables
+1. `app/views/quotes/index.html.erb` (Updated buttons logic)
+2. `app/controllers/quotes_controller.rb` (Security checks + Cancel action + Balance trigger)
+3. `app/models/quote_item.rb` (The "Price Learning" callback)
+4. `app/views/custom_prices/_form.html.erb` (Styles)
+5. `test/models/quote_item_test.rb` (Test that changing a quote item price updates the CustomPrice)

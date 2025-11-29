@@ -8,6 +8,10 @@ Rails.application.routes.draw do
     collection do
       get :price_lookup
     end
+    member do
+      patch :mark_as_sent
+      patch :cancel
+    end
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

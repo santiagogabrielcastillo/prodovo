@@ -63,4 +63,5 @@ class QuoteItemTest < ActiveSupport::TestCase
     item.update(unit_price: 15.00)
     assert_equal 30.00, item.total_price
   end
+
 end
