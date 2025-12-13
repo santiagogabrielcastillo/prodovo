@@ -476,3 +476,323 @@ Implement `PaymentsController`, connect the `Payment` model logic, and update th
 6. `config/routes.rb`
 7. `test/models/payment_test.rb`
 8. `test/system/payments_test.rb`
+
+# Step 7: Client Ledger (Cuenta Corriente) & Financial Dashboard
+
+## Context
+The core financial logic is working. Now we need to visualize the "Client Ledger" (Cuenta Corriente) in `clients/show.html.erb`.
+The user specifically requested a "Debit/Credit" (Debe/Haber) layout to clearly understand how the Balance is calculated.
+
+## Goal
+Transform the Client Detail view into a Financial Dashboard that integrates Quotes and Payments into a single chronological timeline.
+
+## Requirements
+
+### 1. Backend Logic (`ClientsController#show`)
+- **Data Gathering:**
+  - Instead of just listing quotes, we need a unified list.
+  - Fetch `quotes` (only sent/partially_paid/paid/cancelled) and `payments` for the client.
+  - **Combine & Sort:** Merge them into a single array `@ledger_items`. Sort by `date` descending (newest first).
+  - *Note:* Ruby sorting is fine for this scale.
+
+### 2. Frontend - The Financial Dashboard (`clients/show.html.erb`)
+- **Top Section: KPI Cards** (Horizontal scroll on mobile, Grid on desktop).
+  - **Current Balance:** Large text. Red (Negative) if they owe money. Green/Black if 0.
+  - **Total Invoiced:** Sum of all sent quotes.
+  - **Total Collected:** Sum of all payments.
+- **Main Section: The Ledger Table ("Cuenta Corriente")**
+  - **Format:** A table with distinct columns for "Debe" (Charges) and "Haber" (Payments).
+  - **Columns:**
+    1.  **Date:** (Format: Nov 29).
+    2.  **Concept:** Link to Quote ID (e.g., "Quote #5") or "Payment".
+    3.  **Debe (Charges):** Value of the Quote (if item is a Quote). Empty if Payment.
+    4.  **Haber (Credits):** Value of the Payment (if item is a Payment). Empty if Quote.
+  - **Visuals:**
+    - Quotes in the "Debe" column should look neutral/bold.
+    - Payments in the "Haber" column should be Green text.
+- **Mobile Consideration:**
+  - On small screens, "Debe" and "Haber" columns might be too wide.
+  - **Strategy:** Use a single "Amount" column but color-code it (Red for Charge, Green for Payment) OR keep the split columns but hide the "Concept" description if needed. Let's try to keep the 4 columns but make text small (`text-sm`).
+
+### 3. UI Refinement
+- **Actions:** Ensure the "New Quote" button is prominent.
+- **Styling:** Use the standard white card containers.
+- **Integer Mode:** Remember to use `precision: 0` for all currency.
+
+### 4. Testing
+- **System Test (`test/system/clients_test.rb`):**
+  - Create Client, Quote ($1000, Sent), Payment ($500).
+  - Visit Client Show.
+  - Assert "Current Balance" is $500.
+  - Assert the Table has 2 rows.
+  - Row 1 (Payment): "Haber" column shows $500.
+  - Row 2 (Quote): "Debe" column shows $1000.
+
+## Deliverables
+1. `app/controllers/clients_controller.rb` (Logic to combine/sort)
+2. `app/views/clients/show.html.erb` (New Dashboard Layout)
+3. `test/system/clients_test.rb` (Ledger verification)
+
+# Step 7.5: UX Refactor – Payment Modal (Turbo & Stimulus)
+
+## Context
+User feedback indicates that redirecting to a separate page to record payments is poor UX.
+We need to refactor the `payments/new` view to open inside a **Modal Overlay** on top of the Quote details, keeping the user in context.
+
+## Goal
+Convert the Payment creation flow into a seamless Modal experience using Turbo Frames and Stimulus.
+
+## Requirements
+
+### 1. Frontend - The Modal Component
+- **Stimulus Controller (`app/javascript/controllers/modal_controller.js`):**
+  - Actions: `open`, `close`.
+  - Behavior:
+    - Handle close on "Escape" key.
+    - Handle close when clicking the backdrop (outside the form).
+- **Layout:**
+  - Add a `<div id="modal" ...></div>` turbo-frame placeholder in `application.html.erb` (or `quotes/show.html.erb`).
+- **Styling:**
+  - Backdrop: Semi-transparent black (`bg-gray-900/50`).
+  - Container: Centered white card (`bg-white rounded-lg shadow-xl`).
+  - Mobile: Centered or Bottom-sheet style.
+
+### 2. View Updates
+- **`quotes/show.html.erb`:**
+  - Update the "Record Payment" link.
+  - Set `data: { turbo_frame: "modal" }`.
+  - Ensure the Badge and Payment List are wrapped in IDs (e.g., `#quote_status_badge`, `#payment_history`) so they can be updated via Turbo Stream.
+- **`payments/new.html.erb`:**
+  - Wrap the entire content in `<turbo_frame_tag "modal">`.
+  - Apply the Modal styling (Backdrop + Container) directly in this view (or a shared partial).
+  - The "Cancel" button should simply close the modal (remove the frame content).
+
+### 3. Controller Logic (`PaymentsController`)
+- **Action `create`:**
+  - **On Success:** Respond with `turbo_stream`.
+    1.  **Append** the new payment to the payment list.
+    2.  **Replace** the Status Badge (to reflect Paid/Partially Paid).
+    3.  **Replace** the "Due Amount" display.
+    4.  **Close** the modal (remove the content).
+  - **On Failure:** Respond with `:unprocessable_entity` (Standard Rails) to re-render the form with errors inside the modal.
+
+### 4. Testing
+- **System Test:** Update `test/system/payments_test.rb`.
+  - The flow changes slightly (no redirect check, but check for modal appearance).
+  - Assert that after clicking "Record Payment", the modal appears.
+  - Assert that after saving, the modal disappears and the data updates on the Show page.
+
+## Deliverables
+1. `app/javascript/controllers/modal_controller.js`
+2. `app/views/layouts/application.html.erb` (Modal placeholder)
+3. `app/views/payments/new.html.erb` (Refactored as Modal)
+4. `app/controllers/payments_controller.rb` (Turbo Stream logic)
+5. `app/views/payments/create.turbo_stream.erb` (The dynamic update script)
+6. `test/system/payments_test.rb` (Updated)
+
+# Step 7.6: Logic Fix – Prevent Overpayment
+
+## Context
+Critical Bug: The system currently allows users to record payments that exceed the Quote's remaining balance, resulting in negative debt.
+We need to enforce a strict limit on payment amounts.
+
+## Goal
+Implement validation to ensure a Payment amount cannot exceed the `amount_due` of the associated Quote.
+
+## Requirements
+
+### 1. Model Logic (`app/models/payment.rb`)
+- **Custom Validation:** Add a method `validate_amount_within_balance`.
+  - **Logic:**
+    - Calculate `max_allowable = quote.amount_due`.
+    - Note: If updating an existing payment (future proofing), logic should be `quote.amount_due + amount_was`.
+    - For now (Creation only): `if amount > quote.amount_due`.
+  - **Error:** Add error to `:amount`: "cannot be greater than outstanding balance ($X)".
+
+### 2. Frontend UX (`app/views/payments/new.html.erb`)
+- **Input Constraint:**
+  - Add `max: @quote.amount_due` to the amount input field.
+  - This provides native browser feedback.
+- **Error Handling:**
+  - Ensure the Modal properly renders validation errors (The existing `render :new, status: :unprocessable_entity` combined with the Turbo Frame should handle this, displaying the error message in red text).
+
+### 3. Testing
+- **Unit Test (`test/models/payment_test.rb`):**
+  - Create a Quote for $1000.
+  - Create a Payment for $500.
+  - Attempt to create a Payment for $600.
+  - **Assert:** Payment is NOT valid. Error message is present.
+- **System Test (`test/system/payments_test.rb`):**
+  - Open Modal.
+  - Enter amount > Due Amount.
+  - Click Save.
+  - **Assert:** Modal stays open. Error message "cannot be greater than..." is displayed.
+
+## Deliverables
+1. `app/models/payment.rb` (Validation)
+2. `app/views/payments/new.html.erb` (Max attribute)
+3. `test/models/payment_test.rb` (Validation test)
+
+# Step 8: Dashboard & Full Localization (I18n)
+
+## Context
+The core system is complete (Quotes, Payments, Ledger), but the interface is a mix of English and Spanish, and the root path (`/`) is empty.
+We need to fully localize the app to **Spanish (Argentina)** and create a high-value **Executive Dashboard**.
+
+## Goal
+1.  **Localization:** Configure `es-AR` as default. Translate Models, Attributes, Date formats, and Status Enums.
+2.  **Dashboard:** Build a "Command Center" at `home#index` showing Key Performance Indicators (KPIs) and recent activity.
+
+## Requirements
+
+### 1. Localization (I18n - `es-AR`)
+- **Configuration:**
+  - Set `config.i18n.default_locale = :"es-AR"` in `config/application.rb`.
+  - Ensure `config/locales/es-AR.yml` exists.
+- **Translations (`es-AR.yml`):**
+  - **Models:** Translate names (Client -> Cliente, Quote -> Presupuesto, Payment -> Cobro/Pago).
+  - **Attributes:** Translate common fields (date -> Fecha, amount -> Monto, status -> Estado, etc.).
+  - **Enums (Crucial):** Map `Quote` statuses:
+    - `draft`: "Borrador"
+    - `sent`: "Enviado"
+    - `partially_paid`: "Pago Parcial"
+    - `paid`: "Cobrado"
+    - `cancelled`: "Cancelado"
+  - **Formats:**
+    - Date: `%d %b` (e.g., "29 nov") as default.
+    - Currency: Ensure it uses `$` and dots for thousands (aligned with the integer-only logic).
+- **Views Refactor:**
+  - Scan views (`index`, `show`, `navbar`) and replace hardcoded English strings with I18n calls or static Spanish text.
+  - Use `l(object.date)` for dates.
+  - Use `object.class.human_enum_name(:status, object.status)` for statuses.
+
+### 2. Backend Logic (`HomeController#index`)
+- **KPIs:**
+  - `@total_receivables`: Sum of all Clients' balances where balance > 0 (Money owed to us).
+  - `@monthly_sales`: Sum of `total_amount` of Quotes (status: sent/partially_paid/paid) created **this month**.
+- **Activity Feed:**
+  - `@last_quotes`: Top 5 most recent quotes (exclude drafts).
+  - `@last_payments`: Top 5 most recent payments.
+
+### 3. Frontend - The Dashboard (`home/index.html.erb`)
+- **Layout:**
+  - **Header:** "Tablero de Control".
+  - **Top Row (KPI Cards):**
+    - **"Por Cobrar":** Large Red/Orange number (e.g., `$15.200`).
+    - **"Ventas del Mes":** Large Neutral/Green number.
+  - **Main Section (2 Columns on Desktop, Stacked on Mobile):**
+    - **Left:** "Últimos Presupuestos" (Table: Client, Date, Status, Total).
+    - **Right:** "Últimos Cobros" (Table: Client, Date, Amount).
+- **Styling:**
+  - Use the standard white card styling (`bg-white shadow rounded-lg`).
+  - Maintain "Integer Mode" (no decimals).
+
+### 4. Navbar Polish
+- Rename links to Spanish: "Presupuestos", "Clientes", "Productos".
+- Ensure the "New Quote" button says "Nuevo Presupuesto".
+
+### 5. Testing
+- **System Test (`test/system/dashboard_test.rb`):**
+  - Create data: 1 Client with debt, 1 Quote from this month, 1 Payment.
+  - Visit root path.
+  - Assert "Por Cobrar" matches the debt.
+  - Assert "Ventas del Mes" matches the quote total.
+  - Assert Spanish texts are visible ("Enviado", "Nov", "Por Cobrar").
+
+## Deliverables
+1. `config/application.rb` (Locale config)
+2. `config/locales/es-AR.yml` (Complete translations)
+3. `app/controllers/home_controller.rb` (KPI logic)
+4. `app/views/home/index.html.erb` (Dashboard UI)
+5. `app/views/shared/_navbar.html.erb` (Spanish links)
+6. `test/system/dashboard_test.rb`
+
+
+# Step 9: Deep I18n (View Localization) & Backend PDF Generation
+
+## Context
+The application core is functional, but it is not production-ready.
+1.  **I18n Gap:** While models and enums are translated, view templates still contain hardcoded English strings (e.g., table headers like "NAME", buttons like "Edit", titles like "New Client").
+2.  **Document Output:** Users rely on browser printing. We need server-side PDF generation for professional, downloadable quote documents.
+
+## Goal
+1.  **Deep Localization:** Eradicate all remaining English strings from view templates by implementing comprehensive I18n lookups.
+2.  **PDF Generation:** Implement the `grover` gem to generate high-quality PDFs of Quotes using Chromium.
+
+## Requirements
+
+### 1. Deep I18n (View Localization)
+- **Strategy:** Use "Global" translations for repeating elements (buttons, common labels) and "Lazy Lookup" (scoped translations) for view-specific headers and titles.
+- **File: `config/locales/es-AR.yml` (Major Update):**
+  - Add a `global:` section for common actions: `view`, `edit`, `delete`, `back`, `save`, `cancel`, `new`, `actions`.
+  - Create scoped sections for every controller/view structure (e.g., `clients: index: headers: { name: ... }`).
+- **Views Refactor (Iterate through ALL views):**
+  - **Targets:** `app/views/{clients,products,quotes,payments,custom_prices,shared}/**/*.erb`.
+  - **Actions:** Replace hardcoded strings (e.g., `<th>NAME</th>`, `link_to 'Edit'`) with `t()` helpers (e.g., `<th><%= t('.headers.name') %></th>`, `<%= link_to t('global.actions.edit')... %>`).
+  - **Navbar & Layouts:** Ensure links and footer text are localized.
+
+### 2. PDF Generation Setup (`grover` gem)
+- **Dependencies:** Add `gem 'grover'` to Gemfile and bundle. You may need to ensure puppeteer is installed in the environment (e.g., `npm install -g puppeteer` or rely on Grover's automatic handling if available in your setup).
+- **Configuration:** Create `config/initializers/grover.rb`. Configure it to use Chromium/Puppeteer. Ensure it waits until network is idle to capture styles correctly.
+
+### 3. PDF Controller & View Logic
+- **Controller (`QuotesController#show`):**
+  - Add a `respond_to` block.
+  - Implement `format.pdf`. Use Grover to render the current `show.html.erb` view into a PDF.
+  - Important: Ensure the PDF rendering context includes the Tailwind stylesheets so it looks correct.
+  - Disposition should be `inline` (opens in browser tab) so the user can preview before downloading.
+- **UI Update (`app/views/quotes/show.html.erb`):**
+  - Add a new button "Descargar PDF" next to the existing "Imprimir/Enviar" button.
+  - It should link to `quote_path(@quote, format: :pdf)`.
+  - Add a specific icon (e.g., a download arrow) to differentiate it from the print button.
+
+### 4. Testing
+- **System Test (`test/system/i18n_test.rb`):**
+  - Create a comprehensive test that visits critical pages (Client Index, Quote Show, Product New form).
+  - Assert that key English strings ("NAME", "Actions", "Edit", "New Product") are NOT present.
+  - Assert that their Spanish counterparts ARE present.
+- **Integration Test (`test/controllers/quotes_controller_test.rb`):**
+  - Add a test that requests `GET /quotes/:id.pdf`.
+  - Assert response response code is 200.
+  - Assert `response.content_type` is `application/pdf`.
+
+## Deliverables
+1. `config/locales/es-AR.yml` (Massive update with view strings)
+2. Refactored Views (All `app/views/**/*.erb` files cleaned of English)
+3. `Gemfile` & `Gemfile.lock` (Grover added)
+4. `config/initializers/grover.rb`
+5. `app/controllers/quotes_controller.rb` (PDF format added)
+6. `app/views/quotes/show.html.erb` (Download PDF button added)
+7. `test/system/i18n_test.rb`
+8. `test/controllers/quotes_controller_test.rb` (PDF request test)
+
+# Step 9.5: CRITICAL FIX - PDF Styling & Layout Layout
+
+## Context
+User feedback indicates a critical failure in PDF generation. The output PDF lacks all styling, appearing as jumbled plain text, while the web view is correctly styled with Tailwind.
+**Diagnosis:** The Grover/Puppeteer instance is failing to load the external stylesheet URL.
+
+## Goal
+Force the PDF layout to render exactly like the web view by embedding the Tailwind CSS styles directly into the PDF HTML layout head, bypassing network loading issues for assets.
+
+## Requirements
+
+### 1. PDF Layout Fix (`app/views/layouts/pdf.html.erb`)
+- **Action:** Replace the standard `stylesheet_link_tag` with an inline `<style>` block that contains the entire contents of the compiled Tailwind CSS file.
+- **Implementation Details:**
+  - Identify the correct path to the compiled Tailwind CSS file (typically `app/assets/builds/tailwind.css` or `public/assets/application.css` depending on the build pipeline).
+  - Use Ruby to read the file content: `<style><%= File.read(Rails.root.join('app', 'assets', 'builds', 'tailwind.css')).html_safe %></style>` (Adjust path if needed).
+  - Ensure the `<body>` has the same basic structure/classes as the application layout if necessary for background colors, but keep it minimal for print.
+
+### 2. Tailwind Configuration Check (`config/tailwind.config.js`)
+- Ensure the `content` array includes the PDF layout file (`app/views/layouts/pdf.html.erb`) so Tailwind doesn't purge styles used only in the PDF wrapper.
+
+### 3. Visual Regression Testing (Manual)
+- **Action:** Restart the Rails server.
+- **Navigate:** Go to a Quote page that looks good on the web (e.g., `/quotes/3`).
+- **Click:** "Descargar PDF".
+- **Verify:** The resulting PDF opened in the browser MUST look 99% identical to the web view screenshot (structured header, aligned tables, correct fonts, styled badge, progress bar visualization).
+
+## Deliverables
+1. `app/views/layouts/pdf.html.erb` (Modified to inline CSS)
+2. `config/tailwind.config.js` (Verified)

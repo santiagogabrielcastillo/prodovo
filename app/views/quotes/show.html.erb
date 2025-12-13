@@ -1,13 +1,23 @@
 <div class="w-full max-w-4xl mx-auto">
   <!-- Action Buttons (Hidden in Print) -->
   <div class="mb-6 flex flex-col sm:flex-row gap-3 no-print">
-    <%= link_to "Back to Quotes", quotes_path, class: "px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" %>
+    <%= link_to t('global.actions.back'), quotes_path, class: "px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" %>
     <% if @quote.can_edit? %>
-      <%= link_to "Edit", edit_quote_path(@quote), class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
-      <%= button_to "Finalize & Send", mark_as_sent_quote_path(@quote), method: :patch, class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700", data: { turbo_confirm: "Are you sure you want to finalize and send this quote? It will no longer be editable." } %>
+      <%= link_to t('global.actions.edit'), edit_quote_path(@quote), class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
+      <%= button_to t('global.actions.finalize_send'), mark_as_sent_quote_path(@quote), method: :patch, class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700", data: { turbo_confirm: t('global.confirmations.finalize') } %>
+    <% end %>
+    <% if @quote.sent? || @quote.partially_paid? || @quote.paid? %>
+      <%= link_to quote_path(@quote, format: :pdf), class: "px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 flex items-center gap-2", target: "_blank" do %>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <%= t('global.actions.download_pdf') %>
+      <% end %>
     <% end %>
     <% if @quote.sent? || @quote.partially_paid? %>
-      <%= link_to "Record Payment", new_quote_payment_path(@quote), class: "px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700" %>
+      <%= link_to t('global.actions.record_payment'), new_quote_payment_path(@quote),
+          class: "px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700",
+          data: { turbo_frame: "modal" } %>
     <% end %>
   </div>
 
@@ -16,28 +26,17 @@
     <!-- Header -->
     <div class="mb-8 pb-8 border-b border-gray-200 print:border-gray-300">
       <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-6">
-        <!-- Company Info (Left) -->
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 mb-2 print:text-black">Your Company</h1>
-          <p class="text-sm text-gray-600 print:text-gray-700">123 Business Street</p>
-          <p class="text-sm text-gray-600 print:text-gray-700">City, State 12345</p>
-        </div>
-
         <!-- Quote Info (Right) -->
         <div class="text-right">
-          <h2 class="text-3xl font-bold text-gray-900 mb-4 print:text-black">QUOTE</h2>
+          <h2 class="text-3xl font-bold text-gray-900 mb-4 print:text-black">Presupuesto #<%= @quote.id %></h2>
           <div class="space-y-2 text-sm">
             <div>
-              <span class="text-gray-600 print:text-gray-700">Quote #</span>
-              <span class="font-semibold text-gray-900 print:text-black"><%= @quote.id %></span>
-            </div>
-            <div>
-              <span class="text-gray-600 print:text-gray-700">Date:</span>
+              <span class="text-gray-600 print:text-gray-700">Fecha:</span>
               <span class="font-semibold text-gray-900 print:text-black"><%= @quote.date.strftime("%B %d, %Y") %></span>
             </div>
             <% if @quote.expiration_date %>
               <div>
-                <span class="text-gray-600 print:text-gray-700">Expires:</span>
+                <span class="text-gray-600 print:text-gray-700">Vence:</span>
                 <span class="font-semibold text-gray-900 print:text-black"><%= @quote.expiration_date.strftime("%B %d, %Y") %></span>
               </div>
             <% end %>
@@ -50,7 +49,7 @@
     <div class="mb-8 pb-8 border-b border-gray-200 print:border-gray-300">
       <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
         <div>
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 print:text-gray-700">Bill To</h3>
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 print:text-gray-700">A:</h3>
           <div class="text-gray-900 print:text-black">
             <p class="font-semibold text-lg"><%= @quote.client.name %></p>
             <% if @quote.client.address.present? %>
@@ -62,7 +61,7 @@
             <% end %>
           </div>
         </div>
-        <div class="md:text-right">
+        <div class="md:text-right" id="quote_status_badge">
           <%= render "status_badge", quote: @quote %>
         </div>
       </div>
@@ -73,10 +72,10 @@
       <table class="w-full">
         <thead class="hidden md:table-header-group print:table-header-group">
           <tr class="border-b-2 border-gray-300 print:border-gray-400">
-            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700 uppercase tracking-wide print:text-black">Product</th>
-            <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700 uppercase tracking-wide print:text-black">Quantity</th>
-            <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700 uppercase tracking-wide print:text-black">Unit Price</th>
-            <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700 uppercase tracking-wide print:text-black">Total</th>
+            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700 uppercase tracking-wide print:text-black">Producto</th>
+            <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700 uppercase tracking-wide print:text-black">Cantidad</th>
+            <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700 uppercase tracking-wide print:text-black">Precio Unitario</th>
+            <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700 uppercase tracking-wide print:text-black">Precio Total</th>
           </tr>
         </thead>
         <tbody>
@@ -107,7 +106,7 @@
             <% end %>
           <% else %>
             <tr>
-              <td colspan="4" class="py-8 text-center text-gray-500">No items in this quote.</td>
+              <td colspan="4" class="py-8 text-center text-gray-500">No hay productos en este presupuesto.</td>
             </tr>
           <% end %>
         </tbody>
@@ -131,17 +130,17 @@
     <!-- Payments Section -->
     <% if @quote.sent? || @quote.partially_paid? || @quote.paid? %>
       <div class="pt-8 border-t border-gray-200 print:border-gray-300">
-        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 print:text-gray-700">Payments</h3>
-        
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 print:text-gray-700">Pagos</h3>
+
         <!-- Payment Summary -->
-        <div class="mb-6">
+        <div class="mb-6" id="payment_summary">
           <div class="flex justify-between items-center mb-2">
-            <span class="text-sm font-medium text-gray-700 print:text-black">Paid:</span>
-            <span class="text-lg font-semibold text-gray-900 print:text-black">$<%= number_with_precision(@quote.amount_paid, precision: 0) %></span>
+            <span class="text-sm font-medium text-gray-700 print:text-black">Pagado:</span>
+            <span class="text-lg font-semibold text-gray-900 print:text-black" id="amount_paid">$<%= number_with_precision(@quote.amount_paid, precision: 0) %></span>
           </div>
           <div class="flex justify-between items-center mb-2">
-            <span class="text-sm font-medium text-gray-700 print:text-black">Due:</span>
-            <span class="text-lg font-semibold text-gray-900 print:text-black">$<%= number_with_precision(@quote.amount_due, precision: 0) %></span>
+            <span class="text-sm font-medium text-gray-700 print:text-black">Pendiente:</span>
+            <span class="text-lg font-semibold text-gray-900 print:text-black" id="amount_due">$<%= number_with_precision(@quote.amount_due, precision: 0) %></span>
           </div>
           <% if @quote.total_amount > 0 %>
             <% progress_percentage = (@quote.amount_paid / @quote.total_amount * 100).round %>
@@ -149,49 +148,51 @@
               <div class="w-full bg-gray-200 rounded-full h-2.5 print:bg-gray-300">
                 <div class="bg-blue-600 h-2.5 rounded-full print:bg-gray-600" style="width: <%= [progress_percentage, 100].min %>%"></div>
               </div>
-              <p class="text-xs text-gray-500 mt-1 print:text-gray-700"><%= progress_percentage %>% paid</p>
+              <p class="text-xs text-gray-500 mt-1 print:text-gray-700"><%= progress_percentage %>% pagado</p>
             </div>
           <% end %>
         </div>
 
         <!-- Payment History -->
-        <% if @quote.payments.any? %>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 print:divide-gray-300">
-              <thead class="bg-gray-50 print:bg-transparent">
-                <tr>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide print:text-black">Date</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide print:text-black">Amount</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide print:text-black">Notes</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200 print:divide-gray-300">
-                <% @quote.payments.order(date: :desc).each do |payment| %>
+        <div id="payment_history">
+          <% if @quote.payments.any? %>
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200 print:divide-gray-300">
+                <thead class="bg-gray-50 print:bg-transparent">
                   <tr>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 print:text-black">
-                      <%= payment.date.strftime("%d/%m/%Y") %>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right print:text-black">
-                      $<%= number_with_precision(payment.amount, precision: 0) %>
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-700 print:text-black">
-                      <%= payment.notes.presence || "—" %>
-                    </td>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide print:text-black">Fecha</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide print:text-black">Cantidad</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide print:text-black">Notas</th>
                   </tr>
-                <% end %>
-              </tbody>
-            </table>
-          </div>
-        <% else %>
-          <p class="text-gray-500 text-sm print:text-gray-700">No payments recorded yet.</p>
-        <% end %>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 print:divide-gray-300" id="payment_history_body">
+                  <% @quote.payments.order(date: :desc).each do |payment| %>
+                    <tr id="payment_<%= payment.id %>">
+                      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 print:text-black">
+                        <%= payment.date.strftime("%d/%m/%Y") %>
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right print:text-black">
+                        $<%= number_with_precision(payment.amount, precision: 0) %>
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-700 print:text-black">
+                        <%= payment.notes.presence || "—" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <p class="text-gray-500 text-sm print:text-gray-700">No hay pagos registrados todavía.</p>
+          <% end %>
+        </div>
       </div>
     <% end %>
 
     <!-- Notes Section -->
     <% if @quote.notes.present? %>
       <div class="pt-8 border-t border-gray-200 print:border-gray-300">
-        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 print:text-gray-700">Notes</h3>
+        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 print:text-gray-700">Notas</h3>
         <p class="text-gray-700 whitespace-pre-line print:text-black"><%= @quote.notes %></p>
       </div>
     <% end %>

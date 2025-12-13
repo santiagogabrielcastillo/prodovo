@@ -16,5 +16,8 @@
   "type": "commonjs",
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.10"
+  },
+  "dependencies": {
+    "puppeteer": "^24.31.0"
   }
 }

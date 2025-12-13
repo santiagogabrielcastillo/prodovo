@@ -59,3 +59,6 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+# PDF generation
+gem "grover"

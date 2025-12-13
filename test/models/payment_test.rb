@@ -142,4 +142,62 @@ class PaymentTest < ActiveSupport::TestCase
     @client.reload
     assert_equal initial_balance, @client.balance, "Client balance should revert after payment deletion"
   end
+
+  test "should not allow payment amount greater than quote amount_due" do
+    # Create a quote for $1000
+    assert_equal 1000.00, @quote.total_amount
+    assert_equal 1000.00, @quote.amount_due
+
+    # Create a payment for $500
+    Payment.create!(
+      client: @client,
+      quote: @quote,
+      amount: 500.00,
+      date: Date.current
+    )
+
+    @quote.reload
+    assert_equal 500.00, @quote.amount_due
+
+    # Attempt to create a payment for $600 (exceeds remaining $500)
+    payment = Payment.new(
+      client: @client,
+      quote: @quote,
+      amount: 600.00,
+      date: Date.current
+    )
+
+    assert_not payment.valid?
+    assert_includes payment.errors[:amount], "cannot be greater than outstanding balance ($500)"
+  end
+
+  test "should allow payment amount equal to quote amount_due" do
+    # Create a quote for $1000
+    assert_equal 1000.00, @quote.amount_due
+
+    # Payment for exact amount due should be valid
+    payment = Payment.new(
+      client: @client,
+      quote: @quote,
+      amount: 1000.00,
+      date: Date.current
+    )
+
+    assert payment.valid?
+  end
+
+  test "should allow payment amount less than quote amount_due" do
+    # Create a quote for $1000
+    assert_equal 1000.00, @quote.amount_due
+
+    # Payment for less than amount due should be valid
+    payment = Payment.new(
+      client: @client,
+      quote: @quote,
+      amount: 500.00,
+      date: Date.current
+    )
+
+    assert payment.valid?
+  end
 end

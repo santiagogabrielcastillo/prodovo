@@ -1,7 +1,6 @@
 class PaymentsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_quote
-  before_action :set_payment, only: [:show]
 
   def new
     @payment = @quote.payments.build
@@ -14,7 +13,12 @@ class PaymentsController < ApplicationController
     @payment.client = @quote.client
 
     if @payment.save
-      redirect_to @quote, notice: "Payment recorded successfully."
+      # Reload quote to get updated status and amounts
+      @quote.reload
+      respond_to do |format|
+        format.turbo_stream
+        format.html { redirect_to @quote, notice: t('global.messages.payment_recorded') }
+      end
     else
       render :new, status: :unprocessable_entity
     end
@@ -24,10 +28,6 @@ class PaymentsController < ApplicationController
 
   def set_quote
     @quote = Quote.find(params[:quote_id])
-  end
-
-  def set_payment
-    @payment = Payment.find(params[:id])
   end
 
   def payment_params

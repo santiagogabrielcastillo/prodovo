@@ -7,7 +7,16 @@ class QuotesController < ApplicationController
     @quotes = Quote.includes(:client, :user).order(created_at: :desc)
   end
 
-  def show; end
+  def show
+    respond_to do |format|
+      format.html
+      format.pdf do
+        html = render_to_string(template: 'quotes/show', layout: 'pdf', formats: [:html])
+        pdf = Grover.new(html, format: 'A4', wait_until: 'networkidle0', print_background: true).to_pdf
+        send_data pdf, filename: "presupuesto_#{@quote.id}.pdf", type: 'application/pdf', disposition: 'inline'
+      end
+    end
+  end
 
   def new
     @quote = Quote.new
@@ -28,7 +37,7 @@ class QuotesController < ApplicationController
     @quote.user = current_user
 
     if @quote.save
-      redirect_to @quote, notice: "Quote created successfully."
+      redirect_to @quote, notice: "#{Quote.model_name.human} #{t('global.messages.created_successfully')}"
     else
       @clients = Client.order(:name)
       @products = Product.order(:name)
@@ -38,7 +47,7 @@ class QuotesController < ApplicationController
 
   def update
     if @quote.update(quote_params)
-      redirect_to @quote, notice: "Quote updated successfully."
+      redirect_to @quote, notice: "#{Quote.model_name.human} #{t('global.messages.updated_successfully')}"
     else
       @clients = Client.order(:name)
       @products = Product.order(:name)
@@ -48,7 +57,7 @@ class QuotesController < ApplicationController
 
   def destroy
     @quote.destroy
-    redirect_to quotes_path, notice: "Quote deleted successfully."
+    redirect_to quotes_path, notice: "#{Quote.model_name.human} #{t('global.messages.deleted_successfully')}"
   end
 
   def mark_as_sent
@@ -57,7 +66,7 @@ class QuotesController < ApplicationController
       @quote.update_custom_prices!
       @quote.update(status: :sent)
       @quote.client.recalculate_balance!
-      redirect_to @quote, notice: "Quote has been finalized and sent."
+      redirect_to @quote, notice: t('global.messages.quote_sent')
     else
       redirect_to @quote, alert: "Only draft quotes can be finalized."
     end
@@ -67,7 +76,7 @@ class QuotesController < ApplicationController
     if @quote.sent? || @quote.paid? || @quote.partially_paid?
       @quote.update(status: :cancelled)
       @quote.client.recalculate_balance!
-      redirect_to @quote, notice: "Quote has been cancelled."
+      redirect_to @quote, notice: t('global.messages.quote_cancelled')
     else
       redirect_to @quote, alert: "Only sent or paid quotes can be cancelled."
     end

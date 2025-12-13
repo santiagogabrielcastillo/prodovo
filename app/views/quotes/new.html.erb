@@ -1,7 +1,7 @@
 <div class="w-full space-y-6">
   <div class="flex items-center justify-between">
-    <h1 class="text-3xl font-bold text-gray-900">New Quote</h1>
-    <%= link_to "Back to Quotes", quotes_path, class: "px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-900" %>
+    <h1 class="text-3xl font-bold text-gray-900"><%= t('.title') %></h1>
+    <%= link_to t('global.actions.back_to_quotes'), quotes_path, class: "px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-900" %>
   </div>
 
   <%= render "form", quote: @quote %>

@@ -8,8 +8,9 @@
     cancelled: "bg-red-100 text-red-800 border-red-300"
   }
   classes = status_classes[status_value.to_sym] || status_classes[:draft]
+  status_label = I18n.t("activerecord.enums.quote.status.#{status_value}")
 %>
 <span class="px-3 py-1 rounded-full text-sm font-semibold border <%= classes %>">
-  <%= status_value.humanize %>
+  <%= status_label %>
 </span>
 

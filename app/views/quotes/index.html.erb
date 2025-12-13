@@ -1,7 +1,7 @@
 <div class="w-full space-y-6">
   <div class="flex items-center justify-between">
-    <h1 class="text-3xl font-bold text-gray-900">Quotes</h1>
-    <%= link_to "New Quote", new_quote_path, class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
+    <h1 class="text-3xl font-bold text-gray-900"><%= t('.title') %></h1>
+    <%= link_to t('.new_quote'), new_quote_path, class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
   </div>
 
   <% if @quotes.any? %>
@@ -9,13 +9,13 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Client</th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Created By</th>
-            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.id') %></th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.client') %></th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.date') %></th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.status') %></th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.total') %></th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.created_by') %></th>
+            <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.actions') %></th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -23,39 +23,27 @@
             <tr class="hover:bg-gray-50">
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#<%= quote.id %></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= quote.client.name %></td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><%= quote.date.strftime("%b %d, %Y") %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><%= l(quote.date, format: :long) %></td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <% 
-                  status_classes = {
-                    draft: "bg-gray-100 text-gray-800",
-                    sent: "bg-blue-100 text-blue-800",
-                    partially_paid: "bg-yellow-100 text-yellow-800",
-                    paid: "bg-green-100 text-green-800",
-                    cancelled: "bg-red-100 text-red-800"
-                  }
-                  classes = status_classes[quote.status.to_sym] || status_classes[:draft]
-                %>
-                <span class="px-2 py-1 rounded text-xs font-medium <%= classes %>">
-                  <%= quote.status.humanize %>
-                </span>
+                <%= render "status_badge", quote: quote %>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">$<%= number_with_precision(quote.total_amount, precision: 0) %></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= quote.user.email %></td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <%= link_to "View", quote, class: "text-indigo-600 hover:text-indigo-900 mr-3" %>
+                <%= link_to t('global.actions.view'), quote, class: "text-indigo-600 hover:text-indigo-900 mr-3" %>
                 <% if quote.draft? %>
-                  <%= link_to edit_quote_path(quote), class: "text-indigo-600 hover:text-indigo-900 mr-3", title: "Edit" do %>
+                  <%= link_to edit_quote_path(quote), class: "text-indigo-600 hover:text-indigo-900 mr-3", title: t('global.actions.edit') do %>
                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                     </svg>
                   <% end %>
-                  <%= link_to quote_path(quote), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "text-red-600 hover:text-red-900", title: "Delete" do %>
+                  <%= link_to quote_path(quote), data: { turbo_method: :delete, turbo_confirm: t('global.confirmations.delete') }, class: "text-red-600 hover:text-red-900", title: t('global.actions.delete') do %>
                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
                   <% end %>
                 <% elsif quote.sent? || quote.paid? %>
-                  <%= button_to "Cancel", cancel_quote_path(quote), method: :patch, class: "text-yellow-600 hover:text-yellow-900", data: { turbo_confirm: "Are you sure you want to cancel this quote?" }, title: "Cancel Quote" %>
+                  <%= button_to t('global.actions.cancel'), cancel_quote_path(quote), method: :patch, class: "text-yellow-600 hover:text-yellow-900", data: { turbo_confirm: t('global.confirmations.cancel_quote') }, title: t('global.actions.cancel') %>
                 <% end %>
               </td>
             </tr>
@@ -65,8 +53,8 @@
     </div>
   <% else %>
     <div class="bg-white shadow rounded-lg p-12 text-center">
-      <p class="text-gray-500 text-lg mb-4">No quotes yet.</p>
-      <%= link_to "Create your first quote", new_quote_path, class: "inline-block px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
+      <p class="text-gray-500 text-lg mb-4"><%= t('.no_quotes') %></p>
+      <%= link_to t('.create_first'), new_quote_path, class: "inline-block px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
     </div>
   <% end %>
 </div>

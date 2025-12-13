@@ -1,4 +1,203 @@
 es-AR:
+  global:
+    actions:
+      view: "Ver"
+      edit: "Editar"
+      delete: "Eliminar"
+      back: "Volver"
+      save: "Guardar"
+      cancel: "Cancelar"
+      new: "Nuevo"
+      create: "Crear"
+      update: "Actualizar"
+      actions: "Acciones"
+      close: "Cerrar"
+      download_pdf: "Descargar PDF"
+      print: "Imprimir/Enviar"
+      record_payment: "Registrar Cobro"
+      finalize_send: "Finalizar y Enviar"
+      back_to_quotes: "Volver a Presupuestos"
+    messages:
+      created_successfully: "creado exitosamente"
+      updated_successfully: "actualizado exitosamente"
+      deleted_successfully: "eliminado exitosamente"
+      payment_recorded: "Cobro registrado exitosamente"
+      quote_sent: "Presupuesto enviado exitosamente"
+      quote_cancelled: "Presupuesto cancelado exitosamente"
+    confirmations:
+      delete: "¿Estás seguro?"
+      finalize: "¿Estás seguro de que deseas finalizar y enviar este presupuesto? Ya no será editable."
+      cancel_quote: "¿Estás seguro de que deseas cancelar este presupuesto?"
+      delete_custom_price: "¿Estás seguro?"
+  clients:
+    index:
+      title: "Clientes"
+      headers:
+        name: "Nombre"
+        email: "Email"
+        phone: "Teléfono"
+        balance: "Saldo"
+      actions: "Acciones"
+      new_client: "Nuevo Cliente"
+      no_clients: "Aún no hay clientes."
+      create_first: "Crea tu primer cliente"
+    show:
+      title: "Cliente"
+      new_quote: "Nuevo Presupuesto"
+      contact_info: "Información de Contacto"
+      financials: "Finanzas"
+      current_balance: "Saldo Actual"
+      total_invoiced: "Total Facturado"
+      total_collected: "Total Cobrado"
+      balance_description: "El saldo se recalcula automáticamente una vez que se registran presupuestos y cobros."
+      custom_price_list: "Lista de Precios Personalizados"
+      add_custom_price: "Agregar Precio Personalizado"
+      no_custom_prices: "No se han definido precios personalizados para este cliente."
+      cuenta_corriente: "Cuenta Corriente (Ledger)"
+      no_ledger_entries: "Aún no hay movimientos. Crea un presupuesto para comenzar."
+      ledger_headers:
+        date: "Fecha"
+        concept: "Concepto"
+        debe: "Debe (Cargos)"
+        haber: "Haber (Créditos)"
+      ledger_concepts:
+        quote: "Presupuesto #%{id}"
+        payment: "Cobro"
+      contact_labels:
+        phone: "Teléfono"
+        tax_id: "CUIT/CUIL"
+        address: "Dirección"
+      custom_price_headers:
+        product: "Producto"
+        overridden_price: "Precio Personalizado"
+    new:
+      title: "Nuevo Cliente"
+      description: "Crear un nuevo registro de cliente."
+      create_client: "Crear Cliente"
+    edit:
+      title: "Editar Cliente"
+      description: "Actualizar los detalles del cliente."
+      update_client: "Actualizar Cliente"
+    form:
+      name: "Nombre"
+      email: "Email"
+      phone: "Teléfono"
+      tax_id: "CUIT/CUIL"
+      address: "Dirección"
+      balance: "Saldo (opcional)"
+      balance_help: "El saldo se recalcula automáticamente una vez que se configuran Presupuestos y Cobros."
+      errors_header: "Por favor corrige lo siguiente:"
+      save_client: "Guardar Cliente"
+  products:
+    index:
+      title: "Productos"
+      headers:
+        name: "Nombre"
+        sku: "SKU"
+        base_price: "Precio Base"
+      new_product: "Nuevo Producto"
+      no_products: "Aún no hay productos."
+      create_first: "Crea tu primer producto"
+    new:
+      title: "Nuevo Producto"
+      description: "Agrega un nuevo producto a tu catálogo."
+      create_product: "Crear Producto"
+    edit:
+      title: "Editar Producto"
+      update_product: "Actualizar Producto"
+    show:
+      title: "Producto"
+      sku_label: "SKU:"
+      base_price: "Precio Base"
+      description: "Descripción"
+      no_description: "Sin descripción"
+    new:
+      title: "Nuevo Producto"
+      description: "Agrega un nuevo producto a tu catálogo."
+      create_product: "Crear Producto"
+    edit:
+      title: "Editar Producto"
+      description: "Actualizar la información del producto."
+      update_product: "Actualizar Producto"
+    form:
+      name: "Nombre"
+      sku: "SKU"
+      base_price: "Precio Base"
+      description: "Descripción"
+      errors_header: "Por favor corrige lo siguiente:"
+  quotes:
+    index:
+      title: "Presupuestos"
+      headers:
+        id: "ID"
+        client: "Cliente"
+        date: "Fecha"
+        status: "Estado"
+        total: "Total"
+        created_by: "Creado Por"
+        actions: "Acciones"
+      new_quote: "Nuevo Presupuesto"
+      no_quotes: "Aún no hay presupuestos."
+      create_first: "Crea tu primer presupuesto"
+    show:
+      title: "Presupuesto"
+      back_to_quotes: "Volver a Presupuestos"
+      bill_to: "Facturar A"
+      items: "Items"
+      product: "Producto"
+      quantity: "Cantidad"
+      unit_price: "Precio Unitario"
+      total: "Total"
+      subtotal: "Subtotal"
+      payments: "Cobros"
+      paid: "Pagado"
+      due: "Debe"
+      paid_percentage: "% pagado"
+      no_payments: "Aún no se han registrado cobros."
+      notes: "Notas"
+      no_items: "No hay items en este presupuesto."
+    new:
+      title: "Nuevo Presupuesto"
+      create_quote: "Crear Presupuesto"
+    edit:
+      title: "Editar Presupuesto"
+      update_quote: "Actualizar Presupuesto"
+    form:
+      quote_details: "Detalles del Presupuesto"
+      client: "Cliente"
+      select_client: "Selecciona un cliente"
+      date: "Fecha"
+      expiration_date: "Fecha de Vencimiento"
+      status: "Estado"
+      notes: "Notas"
+      quote_items: "Items del Presupuesto"
+      add_item: "Agregar Item"
+      remove_item: "Eliminar Item"
+      grand_total: "Total General:"
+      errors_header: "Por favor corrige lo siguiente:"
+      create_quote: "Crear Presupuesto"
+      update_quote: "Actualizar Presupuesto"
+      product: "Producto"
+      select_product: "Selecciona un producto"
+      quantity: "Cantidad"
+      unit_price: "Precio Unitario"
+      item_total: "Total del Item"
+  payments:
+    new:
+      title: "Registrar Cobro"
+      subtitle: "Presupuesto #%{quote_id} - %{client_name}"
+      amount_due: "Monto adeudado: $%{amount}"
+      record_payment: "Registrar Cobro"
+  custom_prices:
+    new:
+      title: "Nuevo Precio Personalizado"
+      create_custom_price: "Crear Precio Personalizado"
+    edit:
+      title: "Editar Precio Personalizado"
+      update_custom_price: "Actualizar Precio Personalizado"
+    form:
+      product: "Producto"
+      price: "Precio"
   number:
     format:
       separator: ","
@@ -13,28 +212,76 @@ es-AR:
         format: "%u%n"
         negative_format: "-%u%n"
   activerecord:
+    models:
+      client: "Cliente"
+      quote: "Presupuesto"
+      payment: "Cobro"
+      product: "Producto"
+      custom_price: "Precio Personalizado"
+      quote_item: "Item de Presupuesto"
+    attributes:
+      client:
+        name: "Nombre"
+        email: "Email"
+        phone: "Teléfono"
+        tax_id: "CUIT/CUIL"
+        address: "Dirección"
+        balance: "Saldo"
+      quote:
+        client: "Cliente"
+        date: "Fecha"
+        expiration_date: "Fecha de Vencimiento"
+        status: "Estado"
+        total_amount: "Total"
+        notes: "Notas"
+        amount_paid: "Pagado"
+        amount_due: "Debe"
+      payment:
+        amount: "Monto"
+        date: "Fecha"
+        notes: "Notas"
+        client: "Cliente"
+        quote: "Presupuesto"
+      product:
+        name: "Nombre"
+        sku: "SKU"
+        base_price: "Precio Base"
+      quote_item:
+        product: "Producto"
+        quantity: "Cantidad"
+        unit_price: "Precio Unitario"
+        total_price: "Total"
+    enums:
+      quote:
+        status:
+          draft: "Borrador"
+          sent: "Enviado"
+          partially_paid: "Pago Parcial"
+          paid: "Cobrado"
+          cancelled: "Cancelado"
     errors:
       models:
         payment:
           attributes:
             amount:
-              blank: "can't be blank"
-              not_a_number: "is not a number"
-              greater_than: "must be greater than 0"
+              blank: "no puede estar en blanco"
+              not_a_number: "no es un número"
+              greater_than: "debe ser mayor que %{count}"
             date:
-              blank: "can't be blank"
+              blank: "no puede estar en blanco"
         quote:
           attributes:
             client:
-              required: "must exist"
-              blank: "can't be blank"
+              required: "debe existir"
+              blank: "debe existir"
             date:
-              blank: "can't be blank"
+              blank: "no puede estar en blanco"
   date:
     formats:
-      default: "%d/%m/%Y"
+      default: "%d %b"
       long: "%d de %B de %Y"
       short: "%d/%m/%y"
+      month_day: "%d %b"
     day_names:
       - domingo
       - lunes
