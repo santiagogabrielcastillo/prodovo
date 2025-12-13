@@ -8,16 +8,15 @@ class ClientsController < ApplicationController
 
   def show
     @custom_prices = @client.custom_prices.includes(:product).references(:product).order("products.name")
-    
+
     # Build ledger: combine quotes and payments, sort by date descending
-    quotes = @client.quotes.where(status: [:sent, :partially_paid, :paid, :cancelled])
+    quotes = @client.quotes.where(status: [ :sent, :partially_paid, :paid, :cancelled ])
     payments = @client.payments
-    
+
     @ledger_items = (quotes.map { |q| { type: :quote, item: q, date: q.date } } +
                      payments.map { |p| { type: :payment, item: p, date: p.date } })
-                   .sort_by { |entry| entry[:date] }
-                   .reverse
-    
+                    .sort_by { |entry| entry[:date] }
+
     # Calculate KPIs
     @total_invoiced = quotes.sum(:total_amount) || 0
     @total_collected = payments.sum(:amount) || 0
