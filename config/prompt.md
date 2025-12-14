@@ -796,3 +796,64 @@ Force the PDF layout to render exactly like the web view by embedding the Tailwi
 ## Deliverables
 1. `app/views/layouts/pdf.html.erb` (Modified to inline CSS)
 2. `config/tailwind.config.js` (Verified)
+
+## Step 10: Business Logic Adjustments (Payments & Quoting)
+- **Context**: Feedback from demo indicates strict payment validation interferes with real-world scenarios (overpayments) and the progress bar is distracting.
+- **Task**: 
+    1.  **Modify `app/models/payment.rb`**: Remove any validation that prevents the payment amount from exceeding the quote's remaining balance. Allow overpayments.
+    2.  **Update `app/models/quote.rb`**: Update the `update_status` method (or equivalent logic). The status should be set to `paid` if `total_payments >= total_price` (greater than or equal).
+    3.  **Clean UI**: Remove the percentage progress bar visual element from `app/views/quotes/index.html.erb` and `app/views/quotes/show.html.erb`.
+- **Action**:
+    - [ ] Remove amount vs balance validation in Payment model.
+    - [ ] Update Quote model status logic to support overpayments.
+    - [ ] Delete progress bar code from views.
+
+## Step 11: UX Enhancements & Formatting
+- **Context**: Users reported friction when creating quotes from a client profile (client not selected) and requested a standardized 10-digit ID format.
+- **Task**:
+    1.  **Client Pre-selection**: 
+        - Modify `QuotesController#new` to check for `params[:client_id]`. If present, initialize the new Quote with this client.
+        - Ensure `app/views/quotes/_form.html.erb` automatically selects this client in the dropdown.
+    2.  **ID Formatting**: 
+        - Create a helper method `formatted_quote_id(id)` in `app/helpers/quotes_helper.rb`. It should return the ID padded with zeros to 10 digits (e.g., `#0000000015`).
+    3.  **Apply Formatting**: 
+        - Use this helper to display the ID in `app/views/quotes/index.html.erb`, `app/views/quotes/show.html.erb`, and the PDF layout/template.
+- **Action**:
+    - [ ] Update Controller to handle `client_id` param.
+    - [ ] Create `formatted_quote_id` helper.
+    - [ ] Apply ID formatting to views and PDF.
+
+## Step 12: Search and Pagination Implementation
+- **Context**: The application lacks navigation tools for large datasets.
+- **Task**: Implement `ransack` for searching and `pagy` for pagination across main resources.
+- **Action**:
+    1.  **Dependencies**: Add `gem 'pagy'` and `gem 'ransack'` to `Gemfile`. Run `bundle install`.
+    2.  **Configuration**: 
+        - Include `Pagy::Backend` in `app/controllers/application_controller.rb`.
+        - Include `Pagy::Frontend` in `app/helpers/application_helper.rb`.
+        - Create `config/initializers/pagy.rb` if necessary (or use defaults).
+    3.  **Controllers**: Update `index` actions in `ClientsController`, `ProductsController`, `QuotesController`, and `PaymentsController`:
+        - Initialize Ransack: `@q = Model.ransack(params[:q])`
+        - Paginate results: `@pagy, @records = pagy(@q.result(distinct: true))` (Replace `@records` with the actual instance variable name like `@clients`).
+    4.  **Views**: 
+        - Add a search form at the top of each index view (using `search_form_for`).
+        - Add pagination controls (`<%== pagy_nav(@pagy) %>`) at the bottom of the tables.
+        - Ensure UI components look consistent with Tailwind CSS.
+
+## Step 13: Mobile Usability Fixes (Search & Pagination)
+- **Context**: The Ransack search forms and Pagy navigation elements implemented in Step 14 are not mobile-responsive, leading to horizontal scrolling or layout breakage on small screens.
+- **Task**: Refactor the search forms and ensure Pagy navigation is optimized for mobile display, focusing on usability and clean stacking.
+- **Action**:
+    1.  **Search Forms (`clients/index`, `products/index`, `quotes/index`)**:
+        - Modify the `search_form_for` containers to ensure they stack inputs vertically on small screens instead of displaying them inline. Use Tailwind CSS utilities like `flex-col sm:flex-row`, `w-full`, and appropriate spacing (`gap-2`, `mb-4`).
+        - Simplify search fields on mobile if necessary (e.g., only show primary search field).
+    2.  **Pagy Navigation Styling**:
+        - Review the Tailwind styling applied to Pagy (likely in `app/assets/tailwind/application.css` or equivalent) to ensure navigation links wrap or shrink appropriately on mobile.
+        - Ensure the Pagy information (`pagy_info`) is correctly formatted and doesn't conflict with buttons on small screens.
+    3.  **Refactoring for Cleanliness**: If multiple controllers use the same search form pattern (e.g., name/email), extract the common form code into a shared partial (e.g., `app/views/shared/_search_form.html.erb`) to promote DRY (Don't Repeat Yourself).
+- **Files to Review/Modify**:
+    - `app/views/clients/index.html.erb`
+    - `app/views/products/index.html.erb`
+    - `app/views/quotes/index.html.erb`
+    - Potentially create `app/views/shared/_search_form.html.erb`
+    - Review `app/assets/tailwind/application.css` for Pagy styling.

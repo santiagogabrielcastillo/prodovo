@@ -52,7 +52,7 @@
   <!-- Ledger Table (Cuenta Corriente) -->
   <div class="bg-white shadow rounded-lg p-6">
     <h2 class="text-xl font-semibold text-gray-900 mb-4"><%= t('.cuenta_corriente') %></h2>
-    
+
     <% if @ledger_items.any? %>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -109,6 +109,7 @@
     </div>
 
     <% if @custom_prices.any? %>
+    <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -130,6 +131,7 @@
           <% end %>
         </tbody>
       </table>
+    </div>
     <% else %>
       <p class="text-gray-500"><%= t('.no_custom_prices') %></p>
     <% end %>

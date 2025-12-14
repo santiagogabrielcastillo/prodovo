@@ -60,4 +60,12 @@ class Quote < ApplicationRecord
       update!(status: :sent)
     end
   end
+
+  def self.ransackable_attributes(auth_object = nil)
+    [ "client_id", "created_at", "date", "expiration_date", "id", "notes", "status", "total_amount", "updated_at", "user_id" ]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    [ "client", "user" ]
+  end
 end

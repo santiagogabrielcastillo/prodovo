@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Presupuesto #<%= @quote.id %></title>
+    <title>Presupuesto <%= formatted_quote_id(@quote.id) %></title>
     <style>
       <%= File.read(Rails.root.join('app', 'assets', 'builds', 'tailwind.css')).html_safe %>
       @media print {
@@ -14,4 +14,3 @@
     <%= yield %>
   </body>
 </html>
-

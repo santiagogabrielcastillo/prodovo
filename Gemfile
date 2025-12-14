@@ -64,3 +64,7 @@ end
 
 # PDF generation
 gem "grover"
+
+# Search and pagination
+gem "ransack"
+gem "pagy"

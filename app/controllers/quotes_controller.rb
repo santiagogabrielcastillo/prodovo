@@ -4,16 +4,17 @@ class QuotesController < ApplicationController
   before_action :ensure_draft, only: %i[edit update destroy]
 
   def index
-    @quotes = Quote.includes(:client, :user).order(created_at: :desc)
+    @q = Quote.includes(:client, :user).ransack(params[:q])
+    @pagy, @quotes = pagy(@q.result(distinct: true).order(created_at: :desc))
   end
 
   def show
     respond_to do |format|
       format.html
       format.pdf do
-        html = render_to_string(template: 'quotes/show', layout: 'pdf', formats: [:html])
-        pdf = Grover.new(html, format: 'A4', wait_until: 'networkidle0', print_background: true).to_pdf
-        send_data pdf, filename: "presupuesto_#{@quote.id}.pdf", type: 'application/pdf', disposition: 'inline'
+        html = render_to_string(template: "quotes/show", layout: "pdf", formats: [ :html ])
+        pdf = Grover.new(html, format: "A4", wait_until: "networkidle0", print_background: true).to_pdf
+        send_data pdf, filename: "presupuesto_#{@quote.id}.pdf", type: "application/pdf", disposition: "inline"
       end
     end
   end
@@ -22,6 +23,7 @@ class QuotesController < ApplicationController
     @quote = Quote.new
     @quote.date = Date.current
     @quote.user = current_user
+    @quote.client_id = params[:client_id] if params[:client_id].present?
     @quote.quote_items.build
     @clients = Client.order(:name)
     @products = Product.order(:name)
@@ -66,7 +68,7 @@ class QuotesController < ApplicationController
       @quote.update_custom_prices!
       @quote.update(status: :sent)
       @quote.client.recalculate_balance!
-      redirect_to @quote, notice: t('global.messages.quote_sent')
+      redirect_to @quote, notice: t("global.messages.quote_sent")
     else
       redirect_to @quote, alert: "Only draft quotes can be finalized."
     end
@@ -76,7 +78,7 @@ class QuotesController < ApplicationController
     if @quote.sent? || @quote.paid? || @quote.partially_paid?
       @quote.update(status: :cancelled)
       @quote.client.recalculate_balance!
-      redirect_to @quote, notice: t('global.messages.quote_cancelled')
+      redirect_to @quote, notice: t("global.messages.quote_cancelled")
     else
       redirect_to @quote, alert: "Only sent or paid quotes can be cancelled."
     end

@@ -11,4 +11,8 @@ class Product < ApplicationRecord
     custom_price = CustomPrice.find_by(client: client, product: self)
     custom_price ? custom_price.price : base_price
   end
+
+  def self.ransackable_attributes(auth_object = nil)
+    [ "base_price", "created_at", "description", "id", "name", "sku", "updated_at" ]
+  end
 end

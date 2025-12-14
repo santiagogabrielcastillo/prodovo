@@ -41,6 +41,10 @@ es-AR:
       new_client: "Nuevo Cliente"
       no_clients: "Aún no hay clientes."
       create_first: "Crea tu primer cliente"
+      search_placeholder: "Buscar por nombre..."
+      search_email_placeholder: "Buscar por email..."
+      search: "Buscar"
+      clear: "Limpiar"
     show:
       title: "Cliente"
       new_quote: "Nuevo Presupuesto"
@@ -98,6 +102,10 @@ es-AR:
       new_product: "Nuevo Producto"
       no_products: "Aún no hay productos."
       create_first: "Crea tu primer producto"
+      search_placeholder: "Buscar por nombre..."
+      search_sku_placeholder: "Buscar por SKU..."
+      search: "Buscar"
+      clear: "Limpiar"
     new:
       title: "Nuevo Producto"
       description: "Agrega un nuevo producto a tu catálogo."
@@ -139,6 +147,11 @@ es-AR:
       new_quote: "Nuevo Presupuesto"
       no_quotes: "Aún no hay presupuestos."
       create_first: "Crea tu primer presupuesto"
+      search_id_placeholder: "Buscar por ID..."
+      search_client_placeholder: "Buscar por cliente..."
+      search_status_placeholder: "Todos los estados"
+      search: "Buscar"
+      clear: "Limpiar"
     show:
       title: "Presupuesto"
       back_to_quotes: "Volver a Presupuestos"

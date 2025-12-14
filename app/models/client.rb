@@ -11,8 +11,12 @@ class Client < ApplicationRecord
     # Balance = Total Sent Quotes Amount - Total Payments Amount
     # Include: sent, partially_paid, paid
     # Exclude: draft, cancelled
-    total_sent_quotes_amount = quotes.where(status: [:sent, :partially_paid, :paid]).sum(:total_amount)
+    total_sent_quotes_amount = quotes.where(status: [ :sent, :partially_paid, :paid ]).sum(:total_amount)
     total_payments_amount = payments.sum(:amount) || 0
     update!(balance: total_sent_quotes_amount - total_payments_amount)
+  end
+
+  def self.ransackable_attributes(auth_object = nil)
+    [ "address", "balance", "created_at", "email", "id", "name", "phone", "tax_id", "updated_at" ]
   end
 end

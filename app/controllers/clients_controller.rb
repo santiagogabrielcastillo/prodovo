@@ -3,7 +3,8 @@ class ClientsController < ApplicationController
   before_action :set_client, only: %i[show edit update destroy]
 
   def index
-    @clients = Client.order(:name)
+    @q = Client.ransack(params[:q])
+    @pagy, @clients = pagy(@q.result(distinct: true).order(:name))
   end
 
   def show
