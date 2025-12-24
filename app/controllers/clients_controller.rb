@@ -32,7 +32,7 @@ class ClientsController < ApplicationController
   def create
     @client = Client.new(client_params)
     if @client.save
-      redirect_to @client, notice: "Client created successfully."
+      redirect_to @client, notice: "#{Client.model_name.human} #{t('global.messages.created_successfully')}"
     else
       render :new, status: :unprocessable_entity
     end
@@ -40,15 +40,18 @@ class ClientsController < ApplicationController
 
   def update
     if @client.update(client_params)
-      redirect_to @client, notice: "Client updated successfully."
+      redirect_to @client, notice: "#{Client.model_name.human} #{t('global.messages.updated_successfully')}"
     else
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
-    @client.destroy
-    redirect_to clients_path, notice: "Client deleted successfully."
+    if @client.destroy
+      redirect_to clients_path, notice: "#{Client.model_name.human} #{t('global.messages.deleted_successfully')}"
+    else
+      redirect_to clients_path, alert: @client.errors.full_messages.join(", ")
+    end
   end
 
   private

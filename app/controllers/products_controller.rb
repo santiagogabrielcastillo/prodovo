@@ -18,7 +18,7 @@ class ProductsController < ApplicationController
   def create
     @product = Product.new(product_params)
     if @product.save
-      redirect_to @product, notice: "Product created successfully."
+      redirect_to @product, notice: "#{Product.model_name.human} #{t('global.messages.created_successfully')}"
     else
       render :new, status: :unprocessable_entity
     end
@@ -26,15 +26,18 @@ class ProductsController < ApplicationController
 
   def update
     if @product.update(product_params)
-      redirect_to @product, notice: "Product updated successfully."
+      redirect_to @product, notice: "#{Product.model_name.human} #{t('global.messages.updated_successfully')}"
     else
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
-    @product.destroy
-    redirect_to products_path, notice: "Product deleted successfully."
+    if @product.destroy
+      redirect_to products_path, notice: "#{Product.model_name.human} #{t('global.messages.deleted_successfully')}"
+    else
+      redirect_to products_path, alert: @product.errors.full_messages.join(", ")
+    end
   end
 
   private

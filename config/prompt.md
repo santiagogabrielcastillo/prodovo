@@ -857,3 +857,37 @@ Force the PDF layout to render exactly like the web view by embedding the Tailwi
     - `app/views/quotes/index.html.erb`
     - Potentially create `app/views/shared/_search_form.html.erb`
     - Review `app/assets/tailwind/application.css` for Pagy styling.
+
+# STEP 14: UI/UX Polishing - Devise Views, Flash Messages & Internationalization
+
+## Context & Objective
+We have successfully deployed the first version to production. Now we need to ensure the Auth UI (Devise) is consistent with our Tailwind CSS design and that all system notifications (Flash Messages) are properly styled and localized in Spanish (Argentina).
+
+## Tasks
+
+### 1. Flash Messages Component
+- Create a shared partial `app/views/shared/_flash.html.erb`.
+- Style `notice` (success) and `alert` (error) using Tailwind CSS. 
+- Ensure they are rendered in the main `application.html.erb` layout.
+- Add a Stimulus controller `app/javascript/controllers/flash_controller.js` to make them dismissible and auto-hide after 5 seconds.
+
+### 2. Devise UI/UX Overhaul
+- The current Devise views are using default unstyled HTML. 
+- Redesign `app/views/devise/sessions/new.html.erb` and `app/views/devise/registrations/new.html.erb` using Tailwind. 
+- Use a centered card layout that matches the "Prodovo" aesthetic.
+- Ensure all labels, placeholders, and buttons are professional and consistent.
+
+### 3. Localized Translations (i18n)
+- Update `config/locales/es-AR.yml` with the complete set of Devise translations.
+- Eliminate any "Spanglish": ensure "Invalid email or password", "Signed in successfully", etc., are all in Spanish (Argentina).
+- Check `config/initializers/devise.rb` to ensure the default locale is being respected.
+
+### 4. Quality Control & Logic Check
+- **Critical Review:** Verify that flash messages don't overlap with the Navbar or important UI elements.
+- Check that error messages in the registration form (validation errors) are also styled and localized.
+- Ensure that after a successful login/logout, the user is redirected to the correct path with a clear, localized notification.
+
+## Technical Constraints
+- Use Tailwind CSS utility classes.
+- Follow the existing Stimulus patterns for JS interactions.
+- Update `config/steps_logs/step_13_completion_report.md` with a summary of the UI and i18n improvements once finished.

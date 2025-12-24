@@ -28,7 +28,7 @@ class PaymentTest < ActiveSupport::TestCase
   test "should require amount greater than 0" do
     payment = Payment.new(client: @client, quote: @quote, amount: 0, date: Date.current)
     assert_not payment.valid?
-    assert_includes payment.errors[:amount], "must be greater than 0"
+    assert_includes payment.errors[:amount], "debe ser mayor que 0"
   end
 
   test "should require date" do
@@ -143,7 +143,7 @@ class PaymentTest < ActiveSupport::TestCase
     assert_equal initial_balance, @client.balance, "Client balance should revert after payment deletion"
   end
 
-  test "should not allow payment amount greater than quote amount_due" do
+  test "should allow payment amount greater than quote amount_due" do
     # Create a quote for $1000
     assert_equal 1000.00, @quote.total_amount
     assert_equal 1000.00, @quote.amount_due
@@ -159,7 +159,7 @@ class PaymentTest < ActiveSupport::TestCase
     @quote.reload
     assert_equal 500.00, @quote.amount_due
 
-    # Attempt to create a payment for $600 (exceeds remaining $500)
+    # Overpayments are now allowed (Step 10 removed validation)
     payment = Payment.new(
       client: @client,
       quote: @quote,
@@ -167,8 +167,7 @@ class PaymentTest < ActiveSupport::TestCase
       date: Date.current
     )
 
-    assert_not payment.valid?
-    assert_includes payment.errors[:amount], "cannot be greater than outstanding balance ($500)"
+    assert payment.valid?, "Overpayments should be allowed"
   end
 
   test "should allow payment amount equal to quote amount_due" do

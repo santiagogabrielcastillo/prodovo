@@ -58,8 +58,11 @@ class QuotesController < ApplicationController
   end
 
   def destroy
-    @quote.destroy
-    redirect_to quotes_path, notice: "#{Quote.model_name.human} #{t('global.messages.deleted_successfully')}"
+    if @quote.destroy
+      redirect_to quotes_path, notice: "#{Quote.model_name.human} #{t('global.messages.deleted_successfully')}"
+    else
+      redirect_to quotes_path, alert: @quote.errors.full_messages.join(", ")
+    end
   end
 
   def mark_as_sent
@@ -70,7 +73,7 @@ class QuotesController < ApplicationController
       @quote.client.recalculate_balance!
       redirect_to @quote, notice: t("global.messages.quote_sent")
     else
-      redirect_to @quote, alert: "Only draft quotes can be finalized."
+      redirect_to @quote, alert: t("global.messages.only_draft_can_be_finalized")
     end
   end
 
@@ -80,7 +83,7 @@ class QuotesController < ApplicationController
       @quote.client.recalculate_balance!
       redirect_to @quote, notice: t("global.messages.quote_cancelled")
     else
-      redirect_to @quote, alert: "Only sent or paid quotes can be cancelled."
+      redirect_to @quote, alert: t("global.messages.only_sent_or_paid_can_be_cancelled")
     end
   end
 
@@ -108,7 +111,7 @@ class QuotesController < ApplicationController
 
   def ensure_draft
     unless @quote.draft?
-      redirect_to @quote, alert: "Only draft quotes can be edited or deleted."
+      redirect_to @quote, alert: t("global.messages.only_draft_can_be_edited")
     end
   end
 

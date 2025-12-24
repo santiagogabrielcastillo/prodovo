@@ -12,6 +12,7 @@ class Quote < ApplicationRecord
   validates :status, presence: true
   validates :date, presence: true
   validates :total_amount, numericality: { greater_than_or_equal_to: 0 }
+  validate :cannot_delete_if_has_payments, on: :destroy
 
   before_save :calculate_total!
 
@@ -67,5 +68,14 @@ class Quote < ApplicationRecord
 
   def self.ransackable_associations(auth_object = nil)
     [ "client", "user" ]
+  end
+
+  private
+
+  def cannot_delete_if_has_payments
+    if payments.exists?
+      errors.add(:base, I18n.t('activerecord.errors.models.quote.attributes.base.cannot_delete_with_payments'))
+      throw :abort
+    end
   end
 end

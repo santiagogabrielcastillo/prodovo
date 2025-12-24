@@ -24,6 +24,12 @@ es-AR:
       payment_recorded: "Cobro registrado exitosamente"
       quote_sent: "Presupuesto enviado exitosamente"
       quote_cancelled: "Presupuesto cancelado exitosamente"
+      custom_price_added: "Precio personalizado agregado exitosamente"
+      custom_price_updated: "Precio personalizado actualizado exitosamente"
+      custom_price_removed: "Precio personalizado eliminado exitosamente"
+      only_draft_can_be_finalized: "Solo los presupuestos en borrador pueden ser finalizados"
+      only_sent_or_paid_can_be_cancelled: "Solo los presupuestos enviados o pagados pueden ser cancelados"
+      only_draft_can_be_edited: "Solo los presupuestos en borrador pueden ser editados o eliminados"
     confirmations:
       delete: "¿Estás seguro?"
       finalize: "¿Estás seguro de que deseas finalizar y enviar este presupuesto? Ya no será editable."
@@ -264,6 +270,12 @@ es-AR:
         quantity: "Cantidad"
         unit_price: "Precio Unitario"
         total_price: "Total"
+    errors:
+      messages:
+        required: "debe existir"
+        blank: "no puede estar en blanco"
+        greater_than: "debe ser mayor que %{count}"
+        greater_than_or_equal_to: "debe ser mayor o igual a %{count}"
     enums:
       quote:
         status:
@@ -289,6 +301,25 @@ es-AR:
               blank: "debe existir"
             date:
               blank: "no puede estar en blanco"
+            base:
+              cannot_delete_with_payments: "No se puede eliminar un presupuesto que tiene cobros asociados"
+        product:
+          attributes:
+            base:
+              cannot_delete_with_quotes: "No se puede eliminar un producto que está asociado a presupuestos enviados o pagados"
+        client:
+          attributes:
+            base:
+              cannot_delete_with_records: "No se puede eliminar un cliente que tiene presupuestos enviados o pagados, o cobros registrados"
+        quote_item:
+          attributes:
+            product:
+              required: "debe existir"
+              blank: "no puede estar en blanco"
+            quantity:
+              greater_than: "debe ser mayor que %{count}"
+            unit_price:
+              greater_than_or_equal_to: "debe ser mayor o igual a %{count}"
   date:
     formats:
       default: "%d %b"
@@ -343,4 +374,122 @@ es-AR:
       - :day
       - :month
       - :year
+  devise:
+    failure:
+      already_authenticated: "Ya estás autenticado."
+      unauthenticated: "Debes iniciar sesión o registrarte para continuar."
+      unconfirmed: "Debes confirmar tu cuenta antes de continuar."
+      locked: "Tu cuenta está bloqueada."
+      invalid: "Email o contraseña inválidos."
+      invalid_token: "Token de autenticación inválido."
+      timeout: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+      inactive: "Tu cuenta aún no está activa."
+      user:
+        already_authenticated: "Ya estás autenticado."
+        unauthenticated: "Debes iniciar sesión o registrarte para continuar."
+        unconfirmed: "Debes confirmar tu cuenta antes de continuar."
+        locked: "Tu cuenta está bloqueada."
+        invalid: "Email o contraseña inválidos."
+        invalid_token: "Token de autenticación inválido."
+        timeout: "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        inactive: "Tu cuenta aún no está activa."
+    sessions:
+      signed_in: "Sesión iniciada exitosamente."
+      signed_out: "Sesión cerrada exitosamente."
+      already_signed_out: "Ya has cerrado sesión."
+      user:
+        signed_in: "Sesión iniciada exitosamente."
+        signed_out: "Sesión cerrada exitosamente."
+        already_signed_out: "Ya has cerrado sesión."
+      new:
+        sign_in: "Iniciar sesión"
+        remember_me: "Recordarme"
+        forgot_password: "¿Olvidaste tu contraseña?"
+    registrations:
+      signed_up: "¡Bienvenido! Te has registrado exitosamente."
+      signed_up_but_unconfirmed: "Un mensaje con un enlace de confirmación ha sido enviado a tu dirección de email. Por favor, abre el enlace para activar tu cuenta."
+      signed_up_but_locked: "Te has registrado exitosamente. Sin embargo, no puedes iniciar sesión porque tu cuenta está bloqueada."
+      signed_up_but_inactive: "Te has registrado exitosamente. Sin embargo, no puedes iniciar sesión porque tu cuenta aún no está activa."
+      update_needs_confirmation: "Actualizaste tu cuenta exitosamente, pero necesitamos verificar tu nuevo email. Por favor, revisa tu correo y haz clic en el enlace de confirmación para finalizar la actualización de tu email."
+      updated: "Tu cuenta ha sido actualizada exitosamente."
+      destroyed: "Adiós. Tu cuenta ha sido cancelada. Esperamos verte pronto."
+      user:
+        signed_up: "¡Bienvenido! Te has registrado exitosamente."
+        signed_up_but_unconfirmed: "Un mensaje con un enlace de confirmación ha sido enviado a tu dirección de email. Por favor, abre el enlace para activar tu cuenta."
+        signed_up_but_locked: "Te has registrado exitosamente. Sin embargo, no puedes iniciar sesión porque tu cuenta está bloqueada."
+        signed_up_but_inactive: "Te has registrado exitosamente. Sin embargo, no puedes iniciar sesión porque tu cuenta aún no está activa."
+        update_needs_confirmation: "Actualizaste tu cuenta exitosamente, pero necesitamos verificar tu nuevo email. Por favor, revisa tu correo y haz clic en el enlace de confirmación para finalizar la actualización de tu email."
+        updated: "Tu cuenta ha sido actualizada exitosamente."
+        destroyed: "Adiós. Tu cuenta ha sido cancelada. Esperamos verte pronto."
+    passwords:
+      send_instructions: "Recibirás un email con instrucciones sobre cómo restablecer tu contraseña en unos minutos."
+      updated: "Tu contraseña ha sido cambiada exitosamente. Ahora estás autenticado."
+      updated_not_active: "Tu contraseña ha sido cambiada exitosamente."
+      send_paranoid_instructions: "Si tu dirección de email existe en nuestra base de datos, recibirás un enlace de recuperación de contraseña en tu correo."
+      no_token: "No puedes acceder a esta página sin venir desde un email de restablecimiento de contraseña. Si vienes desde un email, asegúrate de usar la URL completa."
+      user:
+        send_instructions: "Recibirás un email con instrucciones sobre cómo restablecer tu contraseña en unos minutos."
+        updated: "Tu contraseña ha sido cambiada exitosamente. Ahora estás autenticado."
+        updated_not_active: "Tu contraseña ha sido cambiada exitosamente."
+        send_paranoid_instructions: "Si tu dirección de email existe en nuestra base de datos, recibirás un enlace de recuperación de contraseña en tu correo."
+        no_token: "No puedes acceder a esta página sin venir desde un email de restablecimiento de contraseña. Si vienes desde un email, asegúrate de usar la URL completa."
+    confirmations:
+      send_instructions: "Recibirás un email con instrucciones sobre cómo confirmar tu cuenta en unos minutos."
+      confirmed: "Tu cuenta ha sido confirmada exitosamente."
+      confirmed_but_unconfirmed: "Tu cuenta ha sido confirmada exitosamente. Sin embargo, necesitamos verificar tu email. Por favor, revisa tu correo y haz clic en el enlace de confirmación para finalizar la verificación de tu email."
+      send_paranoid_instructions: "Si tu dirección de email existe en nuestra base de datos, recibirás un email de confirmación en tu correo."
+      user:
+        send_instructions: "Recibirás un email con instrucciones sobre cómo confirmar tu cuenta en unos minutos."
+        confirmed: "Tu cuenta ha sido confirmada exitosamente."
+        confirmed_but_unconfirmed: "Tu cuenta ha sido confirmada exitosamente. Sin embargo, necesitamos verificar tu email. Por favor, revisa tu correo y haz clic en el enlace de confirmación para finalizar la verificación de tu email."
+        send_paranoid_instructions: "Si tu dirección de email existe en nuestra base de datos, recibirás un email de confirmación en tu correo."
+    unlocks:
+      send_instructions: "Recibirás un email con instrucciones sobre cómo desbloquear tu cuenta en unos minutos."
+      unlocked: "Tu cuenta ha sido desbloqueada exitosamente. Por favor, inicia sesión para continuar."
+      send_paranoid_instructions: "Si tu cuenta existe, recibirás un email con instrucciones sobre cómo desbloquearla en unos minutos."
+      user:
+        send_instructions: "Recibirás un email con instrucciones sobre cómo desbloquear tu cuenta en unos minutos."
+        unlocked: "Tu cuenta ha sido desbloqueada exitosamente. Por favor, inicia sesión para continuar."
+        send_paranoid_instructions: "Si tu cuenta existe, recibirás un email con instrucciones sobre cómo desbloquearla en unos minutos."
+    mailer:
+      confirmation_instructions:
+        subject: "Instrucciones de confirmación"
+      reset_password_instructions:
+        subject: "Instrucciones para restablecer contraseña"
+      unlock_instructions:
+        subject: "Instrucciones para desbloquear cuenta"
+      email_changed:
+        subject: "Email cambiado"
+      password_change:
+        subject: "Contraseña cambiada"
+    shared:
+      links:
+        sign_in: "Iniciar sesión"
+        sign_up: "Registrarse"
+        forgot_password: "¿Olvidaste tu contraseña?"
+        sign_in_with_omniauth: "Iniciar sesión con %{provider}"
+        didn_t_receive_confirmation_instructions: "¿No recibiste las instrucciones de confirmación?"
+        didn_t_receive_unlock_instructions: "¿No recibiste las instrucciones de desbloqueo?"
+    registrations:
+      edit:
+        title: "Editar cuenta"
+        change_password: "Cambiar contraseña"
+        leave_blank: "Déjalo en blanco si no quieres cambiarlo"
+        cancel_account: "Cancelar mi cuenta"
+        are_you_sure: "¿Estás seguro? No podrás revertir esto."
+        update: "Actualizar"
+        back: "Atrás"
+    passwords:
+      new:
+        forgot_password: "¿Olvidaste tu contraseña?"
+        send_reset_instructions: "Enviar instrucciones"
+      edit:
+        change_password: "Cambiar mi contraseña"
+        update_password: "Cambiar mi contraseña"
+    confirmations:
+      new:
+        resend_confirmation: "Reenviar instrucciones de confirmación"
+    unlocks:
+      new:
+        resend_unlock: "Reenviar instrucciones de desbloqueo"
 

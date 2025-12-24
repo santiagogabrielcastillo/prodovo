@@ -10,19 +10,19 @@ class QuoteItemTest < ActiveSupport::TestCase
     item = QuoteItem.new(quote: @quote, quantity: 1, unit_price: 10.00)
     item.product = nil
     assert_not item.valid?
-    assert_includes item.errors[:product], "must exist"
+    assert item.errors[:product].any?
   end
 
   test "should require quantity greater than 0" do
     item = QuoteItem.new(quote: @quote, product: @product, quantity: 0, unit_price: 10.00)
     assert_not item.valid?
-    assert_includes item.errors[:quantity], "must be greater than 0"
+    assert item.errors[:quantity].any?
   end
 
   test "should require unit_price greater than or equal to 0" do
     item = QuoteItem.new(quote: @quote, product: @product, quantity: 1, unit_price: -1)
     assert_not item.valid?
-    assert_includes item.errors[:unit_price], "must be greater than or equal to 0"
+    assert item.errors[:unit_price].any?
   end
 
   test "should calculate total_price automatically" do

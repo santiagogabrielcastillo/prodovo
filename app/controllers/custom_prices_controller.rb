@@ -13,7 +13,7 @@ class CustomPricesController < ApplicationController
   def create
     @custom_price = @client.custom_prices.new(custom_price_params)
     if @custom_price.save
-      redirect_to @client, notice: "Custom price added successfully."
+      redirect_to @client, notice: t("global.messages.custom_price_added")
     else
       load_products
       render :new, status: :unprocessable_entity
@@ -22,7 +22,7 @@ class CustomPricesController < ApplicationController
 
   def update
     if @custom_price.update(custom_price_params)
-      redirect_to @client, notice: "Custom price updated successfully."
+      redirect_to @client, notice: t("global.messages.custom_price_updated")
     else
       load_products
       render :edit, status: :unprocessable_entity
@@ -31,7 +31,7 @@ class CustomPricesController < ApplicationController
 
   def destroy
     @custom_price.destroy
-    redirect_to @client, notice: "Custom price removed successfully."
+    redirect_to @client, notice: t("global.messages.custom_price_removed")
   end
 
   private

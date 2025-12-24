@@ -25,28 +25,30 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should get index" do
-    get quotes_url
+    get quotes_path
     assert_response :success
   end
 
   test "should get show" do
-    get quote_url(@quote)
+    get quote_path(@quote)
     assert_response :success
   end
 
   test "should get new" do
-    get new_quote_url
+    get new_quote_path
     assert_response :success
   end
 
   test "should get edit" do
-    get edit_quote_url(@quote)
+    # Only draft quotes can be edited
+    @quote.update!(status: :draft)
+    get edit_quote_path(@quote)
     assert_response :success
   end
 
   test "should create quote" do
     assert_difference("Quote.count") do
-      post quotes_url, params: {
+      post quotes_path, params: {
         quote: {
           client_id: @client.id,
           date: Date.current,
@@ -66,7 +68,9 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update quote" do
-    patch quote_url(@quote), params: {
+    # Only draft quotes can be updated
+    @quote.update!(status: :draft)
+    patch quote_path(@quote), params: {
       quote: {
         notes: "Updated notes"
       }
@@ -75,8 +79,10 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy quote" do
+    # Only draft quotes without payments can be destroyed
+    @quote.update!(status: :draft)
     assert_difference("Quote.count", -1) do
-      delete quote_url(@quote)
+      delete quote_path(@quote)
     end
 
     assert_redirected_to quotes_path
@@ -85,7 +91,7 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
   test "should generate PDF for quote" do
     skip "Puppeteer not installed. Run: npm install puppeteer" unless system("which puppeteer > /dev/null 2>&1") || File.exist?("node_modules/puppeteer")
     
-    get quote_url(@quote, format: :pdf)
+    get quote_path(@quote, format: :pdf)
     
     assert_response :success
     assert_equal "application/pdf", response.content_type

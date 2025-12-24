@@ -5,6 +5,7 @@ class Client < ApplicationRecord
 
   validates :name, presence: true
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validate :cannot_delete_if_has_financial_records, on: :destroy
 
   def recalculate_balance!
     # Standard receivables logic: Positive balance = Money Owed to Me
@@ -16,7 +17,21 @@ class Client < ApplicationRecord
     update!(balance: total_sent_quotes_amount - total_payments_amount)
   end
 
+  def has_financial_records?
+    # Check for non-draft quotes or any payments
+    quotes.where.not(status: :draft).exists? || payments.exists?
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     [ "address", "balance", "created_at", "email", "id", "name", "phone", "tax_id", "updated_at" ]
+  end
+
+  private
+
+  def cannot_delete_if_has_financial_records
+    if has_financial_records?
+      errors.add(:base, I18n.t('activerecord.errors.models.client.attributes.base.cannot_delete_with_records'))
+      throw :abort
+    end
   end
 end

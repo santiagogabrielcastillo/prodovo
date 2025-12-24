@@ -5,6 +5,7 @@ class Product < ApplicationRecord
   validates :name, presence: true
   validates :sku, presence: true
   validates :base_price, presence: true, numericality: { greater_than: 0 }
+  validate :cannot_delete_if_has_quotes, on: :destroy
 
   # Returns the price for a given client (CustomPrice if exists, otherwise base_price)
   def price_for_client(client)
@@ -12,7 +13,20 @@ class Product < ApplicationRecord
     custom_price ? custom_price.price : base_price
   end
 
+  def has_quotes?
+    quote_items.joins(:quote).where.not(quotes: { status: :draft }).exists?
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     [ "base_price", "created_at", "description", "id", "name", "sku", "updated_at" ]
+  end
+
+  private
+
+  def cannot_delete_if_has_quotes
+    if has_quotes?
+      errors.add(:base, I18n.t('activerecord.errors.models.product.attributes.base.cannot_delete_with_quotes'))
+      throw :abort
+    end
   end
 end
