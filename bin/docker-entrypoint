@@ -5,10 +5,5 @@ if [ -z "${LD_PRELOAD+x}" ] && [ -f /usr/lib/*/libjemalloc.so.2 ]; then
   export LD_PRELOAD="$(echo /usr/lib/*/libjemalloc.so.2)"
 fi
 
-# MODIFICADO: Detecta si el comando contiene "server" en cualquier parte.
-if [[ "$*" == *"server"* ]]; then
-  echo "🚀 Running database migrations..."
-  ./bin/rails db:prepare
-fi
-
+# Execute the command passed to the container
 exec "${@}"

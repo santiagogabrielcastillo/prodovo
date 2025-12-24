@@ -65,7 +65,7 @@ COPY --from=build /rails /rails
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    mkdir -p db log storage tmp && \
+    mkdir -p db log storage tmp/pids && \
     chown -R rails:rails db log storage tmp
 USER 1000:1000
 
@@ -74,4 +74,4 @@ ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-CMD ["/bin/sh", "-c", "bin/rails db:migrate && bin/rails server -b 0.0.0.0"]
+CMD ["/bin/sh", "-c", "bin/rails db:prepare && bundle exec puma"]
