@@ -6,7 +6,7 @@
     },
     "deploy": {
       "numReplicas": 1,
-      "startCommand": "bin/rails db:migrate && bundle exec puma -C config/puma.rb",
+      "startCommand": "bin/rails db:prepare && bundle exec puma -C config/puma.rb",
       "sleepApplication": false,
       "restartPolicyType": "ON_FAILURE",
       "restartPolicyMaxRetries": 10

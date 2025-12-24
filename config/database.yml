@@ -80,6 +80,5 @@ test:
 #
 production:
   <<: *default
-  database: prodovo_production
-  username: prodovo
-  password: <%= ENV["PRODOVO_DATABASE_PASSWORD"] %>
+  # Railway provides DATABASE_URL automatically, Rails will use it
+  # No need to specify database, username, or password when DATABASE_URL is present
