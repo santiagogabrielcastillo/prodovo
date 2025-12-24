@@ -9,9 +9,9 @@ threads min_threads_count, max_threads_count
 worker_timeout 3600 if ENV.fetch("RAILS_ENV", "development") == "development"
 
 # === ESTA ES LA PARTE CRÍTICA PARA RAILWAY ===
-# Le decimos a Puma que escuche en 0.0.0.0 y en el puerto que Railway nos da.
-# Por seguridad en Docker, a veces es necesario ser explícito:
-bind "tcp://0.0.0.0:#{ENV.fetch("PORT") { "3000" }}"
+# Railway requires binding to :: (IPv6) which also accepts IPv4 connections
+# This ensures the app listens on all interfaces on the PORT env var
+bind "tcp://[::]:#{ENV.fetch("PORT") { "3000" }}"
 # =============================================
 
 # Environment
