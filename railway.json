@@ -6,7 +6,7 @@
     },
     "deploy": {
       "numReplicas": 1,
-      "startCommand": "bin/rails db:prepare && bundle exec puma",
+      "startCommand": "/bin/sh -c 'bin/rails db:prepare && bundle exec puma'",
       "sleepApplication": false,
       "restartPolicyType": "ON_FAILURE",
       "restartPolicyMaxRetries": 10
