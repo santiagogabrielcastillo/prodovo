@@ -11,7 +11,7 @@ FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 # Rails app lives here
 WORKDIR /rails
 
-# Install base packages + CHROMIUM para Grover/PDFs
+# Install base packages + CHROMIUM + NODE.JS para Grover/PDFs
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     curl \
@@ -21,6 +21,8 @@ RUN apt-get update -qq && \
     chromium \
     fonts-liberation \
     fonts-roboto \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install --no-install-recommends -y nodejs \
     && rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Set production environment
@@ -44,6 +46,11 @@ RUN gem install bundler:2.7.1
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
+
+# Install Node.js dependencies (puppeteer for Grover)
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev && \
+    rm -rf ~/.npm /tmp/*
 
 # Copy application code
 COPY . .
