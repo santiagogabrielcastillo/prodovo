@@ -14,9 +14,23 @@ class ClientsController < ApplicationController
     quotes = @client.quotes.where(status: [ :sent, :partially_paid, :paid, :cancelled ])
     payments = @client.payments
 
-    @ledger_items = (quotes.map { |q| { type: :quote, item: q, date: q.date } } +
-                     payments.map { |p| { type: :payment, item: p, date: p.date } })
-                    .sort_by { |entry| entry[:date] }
+    all_ledger_items = (quotes.map { |q| { type: :quote, item: q, date: q.date } } +
+                        payments.map { |p| { type: :payment, item: p, date: p.date } })
+                       .sort_by { |entry| -entry[:date].to_time.to_i }
+
+    # Manual pagination for the ledger items
+    page = (params[:ledger_page] || 1).to_i
+    per_page = 10
+    total_items = all_ledger_items.length
+    total_pages = (total_items.to_f / per_page).ceil
+
+    @ledger_items = all_ledger_items.slice((page - 1) * per_page, per_page) || []
+    @ledger_pagination = {
+      current_page: page,
+      total_pages: total_pages,
+      total_items: total_items,
+      per_page: per_page
+    }
 
     # Calculate KPIs
     @total_invoiced = quotes.sum(:total_amount) || 0

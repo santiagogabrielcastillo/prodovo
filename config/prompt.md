@@ -858,7 +858,7 @@ Force the PDF layout to render exactly like the web view by embedding the Tailwi
     - Potentially create `app/views/shared/_search_form.html.erb`
     - Review `app/assets/tailwind/application.css` for Pagy styling.
 
-# STEP 14: UI/UX Polishing - Devise Views, Flash Messages & Internationalization
+# Step 14: UI/UX Polishing - Devise Views, Flash Messages & Internationalization
 
 ## Context & Objective
 We have successfully deployed the first version to production. Now we need to ensure the Auth UI (Devise) is consistent with our Tailwind CSS design and that all system notifications (Flash Messages) are properly styled and localized in Spanish (Argentina).
@@ -891,3 +891,38 @@ We have successfully deployed the first version to production. Now we need to en
 - Use Tailwind CSS utility classes.
 - Follow the existing Stimulus patterns for JS interactions.
 - Update `config/steps_logs/step_13_completion_report.md` with a summary of the UI and i18n improvements once finished.
+
+# Step 15: Pagination (Pagy + Turbo), Mobile Responsiveness & Localization
+
+Let's refine the user experience and view scalability through pagination and correct localization.
+
+## Main Tasks
+
+### 1. Date Localization (Argentine Format)
+- **Review**: Analyze all views where dates are rendered (`created_at`, `updated_at`, quote dates, etc.).
+- **Implementation**: Ensure the `l` (localize) helper or `strftime` is **always** used with the Argentine format (`DD/MM/YYYY` or `DD/MM/YYYY HH:MM` as appropriate).
+- **Configuration**: Verify or configure `config/locales/es-AR.yml` to define these default formats (`date.formats.default`, `time.formats.default`), so `l date` works automatically.
+
+### 2. Global Pagination (Pagy + Turbo)
+- **Installation**: If not configured, install and configure the `pagy` gem.
+    - Enable the backend in `ApplicationController`.
+    - Enable the frontend in `ApplicationHelper`.
+    - Create/Verify `config/initializers/pagy.rb`.
+- **Indexes**: Implement pagination on **all** main lists (`Clients#index`, `Products#index`, `Quotes#index`, `Payments#index`, etc.).
+- **Turbo**: Pagination must work with **Turbo Streams** to avoid full page reloads.
+    - Wrap lists in a `turbo_frame_tag` (e.g., `id="clients_list"`).
+    - Ensure Pagy pagination links point to this frame or that the controller responds with `turbo_stream` if necessary (usually `data-turbo-frame` on links is sufficient).
+
+### 3. Ledger Pagination (Clients#show)
+- **Context**: The `clients#show` view displays the Current Account (movements/ledger). This list will grow indefinitely.
+- **Implementation**:
+    - Paginate the collection of movements/payments/quotes within `ClientsController#show`.
+    - In the view, ensure the table or list of movements is inside its own `turbo_frame_tag` so that paginating only updates that section and not the entire client profile.
+
+### 4. Mobile UI/UX
+- **Responsiveness**: Review Pagy navigation controls. Ensure they look good on mobile screens.
+- If necessary, use Tailwind styles or Pagy components (`pagy_nav` vs `pagy_nav_js`) that adapt or simplify on small screens.
+
+## Deliverables
+- Updated code (Controllers, Views, Locales).
+- Completion report in `config/steps_logs/step_15_completion_report.md`.

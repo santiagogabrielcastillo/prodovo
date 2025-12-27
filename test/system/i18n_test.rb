@@ -3,25 +3,21 @@ require "application_system_test_case"
 class I18nTest < ApplicationSystemTestCase
   setup do
     @user = User.create!(
-      email: "test@example.com",
+      email: "test_i18n@example.com",
       password: "password123",
       password_confirmation: "password123"
     )
     @client = Client.create!(
-      name: "Test Client",
-      email: "test@client.com"
+      name: "I18n Client #{SecureRandom.hex(4)}",
+      email: "i18n_client_#{SecureRandom.hex(4)}@example.com"
     )
     @product = Product.create!(
-      name: "Test Product",
-      sku: "TEST-001",
+      name: "I18n Product #{SecureRandom.hex(4)}",
+      sku: "I18N-#{SecureRandom.hex(4)}",
       base_price: 1000.00
     )
 
-    visit new_user_session_path
-    fill_in "user_email", with: @user.email
-    fill_in "user_password", with: "password123"
-    click_button "Sign in"
-    assert_text "Welcome back", wait: 5
+    sign_in_user(@user)
   end
 
   test "client index page is fully localized" do
@@ -87,4 +83,3 @@ class I18nTest < ApplicationSystemTestCase
     assert_no_text "Base Price"
   end
 end
-

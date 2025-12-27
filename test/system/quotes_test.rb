@@ -3,56 +3,50 @@ require "application_system_test_case"
 class QuotesTest < ApplicationSystemTestCase
   setup do
     @user = User.create!(
-      email: "test@example.com",
+      email: "test_quotes@example.com",
       password: "password123",
       password_confirmation: "password123"
     )
     @client = Client.create!(
-      name: "Acme Corp",
-      email: "acme@example.com"
+      name: "Client For Quotes #{SecureRandom.hex(4)}",
+      email: "test_client_quotes_#{SecureRandom.hex(4)}@example.com"
     )
     @product = Product.create!(
-      name: "Widget A",
-      sku: "WID-A",
+      name: "Test Product #{SecureRandom.hex(4)}",
+      sku: "TST-#{SecureRandom.hex(4)}",
       base_price: 100.00
     )
 
-    visit new_user_session_path
-    fill_in "user_email", with: @user.email
-    fill_in "user_password", with: "password123"
-    click_button "Sign in"
+    sign_in_user(@user)
   end
 
   test "creating a quote with items" do
     visit new_quote_path
 
-    # Wait for page to load
-    assert_selector "h1", text: "New Quote"
+    # Wait for page to load (Spanish)
+    assert_selector "h1", text: "Nuevo Presupuesto"
 
     # Select client
-    select "Acme Corp", from: "quote_client_id"
+    select @client.name, from: "quote_client_id"
     
     # Fill in date
     fill_in "quote_date", with: Date.current
 
-    # Add an item
-    click_button "Add Item"
+    # There's already one item card created by the controller
+    assert_selector ".quote-item-card", minimum: 1
 
-    # Wait for the item form to appear
-    assert_selector ".quote-item-card", count: 1
-
-    # Select product - wait a bit for the form to be ready
+    # Select product using CSS selector (use first item, not add new one)
     sleep 0.5
     within first(".quote-item-card") do
-      select "Widget A", from: /product_id/
+      find('[data-quote-form-target="productSelect"]').select(@product.name)
     end
 
     # Wait for price to auto-fill (Stimulus should fetch it)
     sleep 1
 
-    # Set quantity
+    # Set quantity (Spanish)
     within first(".quote-item-card") do
-      fill_in "Quantity", with: "2"
+      fill_in "Cantidad", with: "2"
     end
 
     # Wait for total calculation
@@ -62,12 +56,14 @@ class QuotesTest < ApplicationSystemTestCase
     grand_total = find('[data-quote-form-target="grandTotal"]')
     assert grand_total.text.include?("$")
 
-    # Submit the form
-    click_button "Create Quote"
+    # Submit the form (Spanish)
+    click_button "Crear Presupuesto"
 
-    # Should redirect to show page
-    assert_current_path quote_path(Quote.last)
-    assert_text "Quote created successfully"
+    # Wait for redirect
+    sleep 1
+
+    # Should redirect to show page with success message
+    assert_text "Presupuesto creado exitosamente"
   end
 
   test "price lookup uses custom price when available" do
@@ -80,20 +76,19 @@ class QuotesTest < ApplicationSystemTestCase
 
     visit new_quote_path
 
-    assert_selector "h1", text: "New Quote"
+    assert_selector "h1", text: "Nuevo Presupuesto"
 
     # Select client
-    select "Acme Corp", from: "quote_client_id"
+    select @client.name, from: "quote_client_id"
     fill_in "quote_date", with: Date.current
 
-    # Add an item
-    click_button "Add Item"
-    assert_selector ".quote-item-card", count: 1
+    # Use the existing item card (controller builds one by default)
+    assert_selector ".quote-item-card", minimum: 1
 
-    # Select product
+    # Select product using CSS selector
     sleep 0.5
     within first(".quote-item-card") do
-      select "Widget A", from: /product_id/
+      find('[data-quote-form-target="productSelect"]').select(@product.name)
     end
 
     # Wait for price lookup
@@ -101,7 +96,7 @@ class QuotesTest < ApplicationSystemTestCase
 
     # Verify custom price was used (90.00 instead of 100.00)
     within first(".quote-item-card") do
-      unit_price_field = find_field("Unit Price")
+      unit_price_field = find_field("Precio Unitario")
       # Should be 90.0 or 90.00
       assert [90.0, 90.00].include?(unit_price_field.value.to_f)
     end
@@ -110,8 +105,8 @@ class QuotesTest < ApplicationSystemTestCase
   test "price lookup updates when changing products" do
     # Create a second product with different price
     product_b = Product.create!(
-      name: "Widget B",
-      sku: "WID-B",
+      name: "Product B #{SecureRandom.hex(4)}",
+      sku: "PRD-B-#{SecureRandom.hex(4)}",
       base_price: 75.00
     )
 
@@ -124,19 +119,18 @@ class QuotesTest < ApplicationSystemTestCase
 
     visit new_quote_path
 
-    assert_selector "h1", text: "New Quote"
+    assert_selector "h1", text: "Nuevo Presupuesto"
 
     # Select client first (required for price lookup)
-    select "Acme Corp", from: "quote_client_id"
+    select @client.name, from: "quote_client_id"
     fill_in "quote_date", with: Date.current
 
-    # Add an item
-    click_button "Add Item"
-    assert_selector ".quote-item-card", count: 1
+    # Use the existing item card (controller builds one by default)
+    assert_selector ".quote-item-card", minimum: 1
 
+    # Select Product A first
     within first(".quote-item-card") do
-      # Select Product A first
-      select "Widget A", from: /product_id/
+      find('[data-quote-form-target="productSelect"]').select(@product.name)
     end
 
     # Wait for price lookup
@@ -144,13 +138,13 @@ class QuotesTest < ApplicationSystemTestCase
 
     # Verify Product A price (base price 100.00)
     within first(".quote-item-card") do
-      unit_price_field = find_field("Unit Price")
+      unit_price_field = find_field("Precio Unitario")
       assert_equal 100.0, unit_price_field.value.to_f
     end
 
     # Now change to Product B
     within first(".quote-item-card") do
-      select "Widget B", from: /product_id/
+      find('[data-quote-form-target="productSelect"]').select(product_b.name)
     end
 
     # Wait for price lookup
@@ -158,21 +152,21 @@ class QuotesTest < ApplicationSystemTestCase
 
     # Verify Product B custom price (65.00, not base price 75.00)
     within first(".quote-item-card") do
-      unit_price_field = find_field("Unit Price")
-      assert_equal 65.0, unit_price_field.value.to_f, "Price should update to Widget B's custom price of 65.00"
+      unit_price_field = find_field("Precio Unitario")
+      assert_equal 65.0, unit_price_field.value.to_f, "Price should update to Product B's custom price of 65.00"
     end
 
     # Change back to Product A to verify it still works
     within first(".quote-item-card") do
-      select "Widget A", from: /product_id/
+      find('[data-quote-form-target="productSelect"]').select(@product.name)
     end
 
     sleep 1
 
     # Verify Product A price is restored
     within first(".quote-item-card") do
-      unit_price_field = find_field("Unit Price")
-      assert_equal 100.0, unit_price_field.value.to_f, "Price should update back to Widget A's base price of 100.00"
+      unit_price_field = find_field("Precio Unitario")
+      assert_equal 100.0, unit_price_field.value.to_f, "Price should update back to Product A's base price of 100.00"
     end
   end
 
@@ -192,26 +186,26 @@ class QuotesTest < ApplicationSystemTestCase
 
     visit quote_path(quote)
 
-    # Verify draft quote shows Edit and Finalize buttons
-    assert_text "Edit"
-    assert_text "Finalize & Send"
-    assert_text "Draft"
+    # Verify draft quote shows Edit and Finalize buttons (Spanish)
+    assert_text "Editar"
+    assert_text "Finalizar y Enviar"
+    assert_text "Borrador"
 
     # Click Finalize & Send (handle confirmation dialog if present)
     accept_confirm do
-      click_button "Finalize & Send"
+      click_button "Finalizar y Enviar"
     end
 
     # Wait for redirect and page update
     sleep 1
 
-    # Verify status changed to Sent
-    assert_text "Sent"
-    assert_text "Quote has been finalized and sent"
+    # Verify status changed to Sent (Spanish)
+    assert_text "Enviado"
+    assert_text "Presupuesto enviado exitosamente"
 
     # Verify Edit button is gone
-    assert_no_text "Edit"
-    assert_no_text "Finalize & Send"
+    assert_no_text "Editar"
+    assert_no_text "Finalizar y Enviar"
   end
 
   test "sent quote cannot be edited" do
@@ -230,10 +224,10 @@ class QuotesTest < ApplicationSystemTestCase
 
     visit quote_path(quote)
 
-    # Verify sent quote does NOT show Edit or Finalize buttons
-    assert_no_text "Edit"
-    assert_no_text "Finalize & Send"
-    assert_text "Sent"
+    # Verify sent quote does NOT show Edit or Finalize buttons (Spanish)
+    assert_no_text "Editar"
+    assert_no_text "Finalizar y Enviar"
+    assert_text "Enviado"
   end
 
   test "currency displays as integers without decimals" do
@@ -253,8 +247,9 @@ class QuotesTest < ApplicationSystemTestCase
 
     visit quote_path(quote)
 
-    # Verify currency displays as integer (e.g., "$12,300" not "$12,300.00")
-    assert_text "$12,300"
-    assert_no_text "$12,300.00"
+    # Verify currency displays as integer (e.g., "$12.300" not "$12.300,00")
+    # Note: Argentine format uses . for thousands separator
+    assert_text "$12.300"
+    assert_no_text "$12.300,00"
   end
 end

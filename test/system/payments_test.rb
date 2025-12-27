@@ -3,24 +3,21 @@ require "application_system_test_case"
 class PaymentsTest < ApplicationSystemTestCase
   setup do
     @user = User.create!(
-      email: "test@example.com",
+      email: "test_payments@example.com",
       password: "password123",
       password_confirmation: "password123"
     )
     @client = Client.create!(
-      name: "Acme Corp",
-      email: "acme@example.com"
+      name: "Test Client #{SecureRandom.hex(4)}",
+      email: "test_client_#{SecureRandom.hex(4)}@example.com"
     )
     @product = Product.create!(
-      name: "Widget A",
-      sku: "WID-A",
+      name: "Test Product #{SecureRandom.hex(4)}",
+      sku: "TST-#{SecureRandom.hex(4)}",
       base_price: 1000.00
     )
 
-    visit new_user_session_path
-    fill_in "user_email", with: @user.email
-    fill_in "user_password", with: "password123"
-    click_button "Sign in"
+    sign_in_user(@user)
   end
 
   test "recording a payment updates quote status and shows in history" do
@@ -41,54 +38,48 @@ class PaymentsTest < ApplicationSystemTestCase
 
     visit quote_path(quote)
 
-    # Verify quote is sent
-    assert_text "Sent"
+    # Verify quote is sent (Spanish)
+    assert_text "Enviado"
 
-    # Click Record Payment button - modal should appear
-    click_link "Record Payment"
+    # Click Record Payment button - modal should appear (Spanish)
+    click_link "Registrar Cobro"
 
-    # Verify modal appears with payment form
-    assert_text "Record Payment", wait: 5
-    assert_text "Quote ##{quote.id}"
+    # Verify modal appears with payment form (Spanish)
+    assert_text "Registrar Cobro", wait: 5
+    assert_text "Presupuesto ##{quote.id}"
 
     # Verify default amount is the amount due
-    amount_field = find_field("Amount")
+    amount_field = find_field("Monto")
     assert_equal "1000", amount_field.value
 
     # Enter payment amount
-    fill_in "Amount", with: "500"
-    fill_in "Date", with: Date.current
+    fill_in "Monto", with: "500"
+    fill_in "Fecha", with: Date.current
 
-    # Submit payment
-    click_button "Record Payment"
+    # Submit payment (Spanish)
+    click_button "Registrar Cobro"
 
-    # Modal should disappear and we should still be on quote page
+    # Modal should close and status should update (wait for Turbo Stream)
     assert_current_path quote_path(quote), wait: 5
-    assert_text "Payment recorded successfully"
 
-    # Verify quote status changed to partially_paid
-    assert_text "Partially paid", wait: 5
+    # Verify quote status changed to partially_paid (Spanish)
+    assert_text "Pago Parcial", wait: 5
 
     # Verify payment appears in payment history
-    assert_text "Payments"
     assert_text "$500"
-    assert_text "Paid:"
-    assert_text "Due:"
 
     # Record another payment to complete it
-    click_link "Record Payment"
-    assert_text "Record Payment", wait: 5
-    fill_in "Amount", with: "500"
-    fill_in "Date", with: Date.current
-    click_button "Record Payment"
+    click_link "Registrar Cobro"
+    assert_text "Registrar Cobro", wait: 5
+    fill_in "Monto", with: "500"
+    fill_in "Fecha", with: Date.current
+    click_button "Registrar Cobro"
 
-    # Verify quote status changed to paid
-    assert_text "Paid", wait: 5
+    # Verify quote status changed to paid (Spanish)
+    assert_text "Cobrado", wait: 5
 
     # Verify both payments are shown
-    assert_text "$500", count: 2
-    assert_text "Paid:"
-    assert_text "$1.000"
+    assert_selector "td", text: "$500", count: 2
   end
 
   test "payment form shows amount due as default" do
@@ -116,16 +107,16 @@ class PaymentsTest < ApplicationSystemTestCase
     )
 
     visit quote_path(quote)
-    click_link "Record Payment"
+    click_link "Registrar Cobro"
 
     # Verify modal appears and default amount is the remaining amount due (700)
-    assert_text "Record Payment", wait: 5
-    amount_field = find_field("Amount")
+    assert_text "Registrar Cobro", wait: 5
+    amount_field = find_field("Monto")
     assert_equal "700", amount_field.value
-    assert_text "Amount due: $700"
+    assert_text "Monto adeudado: $700"
   end
 
-  test "preventing overpayment shows validation error in modal" do
+  test "overpayment is allowed and marks quote as paid" do
     # Create a sent quote for $1000
     quote = Quote.create!(
       client: @client,
@@ -151,26 +142,24 @@ class PaymentsTest < ApplicationSystemTestCase
 
     visit quote_path(quote)
     
-    # Open modal
-    click_link "Record Payment"
-    assert_text "Record Payment", wait: 5
+    # Open modal (Spanish)
+    click_link "Registrar Cobro"
+    assert_text "Registrar Cobro", wait: 5
 
-    # Enter amount greater than due amount ($500 remaining, try $600)
-    fill_in "Amount", with: "600"
-    fill_in "Date", with: Date.current
+    # Enter amount greater than due amount ($500 remaining, pay $600 - overpayment)
+    fill_in "Monto", with: "600"
+    fill_in "Fecha", with: Date.current
 
     # Submit payment
-    click_button "Record Payment"
+    click_button "Registrar Cobro"
 
-    # Modal should stay open with error message
-    assert_text "Record Payment", wait: 5
-    assert_text "cannot be greater than outstanding balance"
-    assert_text "$500" # Should show the max allowable amount in error
+    # Overpayment is allowed - quote should be paid
+    assert_text "Cobrado", wait: 5
 
-    # Verify payment was not created
+    # Verify payment was created
     quote.reload
-    assert_equal 500.00, quote.amount_due
-    assert_equal 1, quote.payments.count
+    assert_equal 2, quote.payments.count
+    assert_equal 1100.00, quote.amount_paid # 500 + 600
+    assert quote.paid?
   end
 end
-

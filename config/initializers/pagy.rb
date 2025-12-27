@@ -1,4 +1,7 @@
-# Pagy configuration
-# Note: Pagy::DEFAULT is frozen, so we configure via VARS
-# Default items per page is already 20, so no need to change
-# If you need to customize, use pagy() method with options in controllers
+# frozen_string_literal: true
+
+# Pagy configuration for v9+
+# See https://ddnexus.github.io/pagy/
+
+# Load the series_nav helper for HTML navigation
+require "pagy/toolbox/helpers/series_nav"

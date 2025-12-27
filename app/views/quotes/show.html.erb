@@ -32,12 +32,12 @@
           <div class="space-y-2 text-sm">
             <div>
               <span class="text-gray-600 print:text-gray-700">Fecha:</span>
-              <span class="font-semibold text-gray-900 print:text-black"><%= @quote.date.strftime("%B %d, %Y") %></span>
+              <span class="font-semibold text-gray-900 print:text-black"><%= l(@quote.date) %></span>
             </div>
             <% if @quote.expiration_date %>
               <div>
                 <span class="text-gray-600 print:text-gray-700">Vence:</span>
-                <span class="font-semibold text-gray-900 print:text-black"><%= @quote.expiration_date.strftime("%B %d, %Y") %></span>
+                <span class="font-semibold text-gray-900 print:text-black"><%= l(@quote.expiration_date) %></span>
               </div>
             <% end %>
           </div>
@@ -148,7 +148,7 @@
                   <% @quote.payments.order(date: :desc).each do |payment| %>
                     <tr id="payment_<%= payment.id %>">
                       <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 print:text-black">
-                        <%= payment.date.strftime("%d/%m/%Y") %>
+                        <%= l(payment.date) %>
                       </td>
                       <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right print:text-black">
                         $<%= number_with_precision(payment.amount, precision: 0) %>
