@@ -10,21 +10,71 @@ class ClientsController < ApplicationController
   def show
     @custom_prices = @client.custom_prices.includes(:product).references(:product).order("products.name")
 
-    # Build ledger: combine quotes and payments, sort by date descending
-    quotes = @client.quotes.where(status: [ :sent, :partially_paid, :paid, :cancelled ])
-    payments = @client.payments
+    # Parse date filter params
+    @start_date = parse_date(params[:start_date])
+    @end_date = parse_date(params[:end_date])
 
-    all_ledger_items = (quotes.map { |q| { type: :quote, item: q, date: q.date } } +
-                        payments.map { |p| { type: :payment, item: p, date: p.date } })
-                       .sort_by { |entry| -entry[:date].to_time.to_i }
+    # Determine if we're filtering
+    @filtering = @start_date.present? || @end_date.present?
+
+    # Get all quotes and payments for the client
+    quotes_scope = @client.quotes.where(status: [ :sent, :partially_paid, :paid, :cancelled ])
+    payments_scope = @client.payments
+
+    # Calculate Previous Balance (Saldo Anterior) if filtering by start_date
+    @previous_balance = 0
+    if @start_date.present?
+      # Sum of quotes before start_date
+      previous_quotes_total = quotes_scope.where("date < ?", @start_date).sum(:total_amount)
+      # Sum of payments before start_date
+      previous_payments_total = payments_scope.where("date < ?", @start_date).sum(:amount)
+      # Previous balance = what they owed before this period
+      @previous_balance = previous_quotes_total - previous_payments_total
+    end
+
+    # Apply date filters to the ledger items
+    filtered_quotes = quotes_scope
+    filtered_payments = payments_scope
+
+    if @start_date.present?
+      filtered_quotes = filtered_quotes.where("date >= ?", @start_date)
+      filtered_payments = filtered_payments.where("date >= ?", @start_date)
+    end
+
+    if @end_date.present?
+      # Use end of day for the end_date
+      end_of_day = @end_date.end_of_day
+      filtered_quotes = filtered_quotes.where("date <= ?", @end_date)
+      filtered_payments = filtered_payments.where("date <= ?", @end_date)
+    end
+
+    # Build ledger: combine quotes and payments, sort by date ascending for running balance
+    all_ledger_items = (filtered_quotes.map { |q| { type: :quote, item: q, date: q.date } } +
+                        filtered_payments.map { |p| { type: :payment, item: p, date: p.date } })
+                       .sort_by { |entry| [ entry[:date], entry[:type] == :quote ? 0 : 1 ] }
+
+    # Calculate running balance for each item
+    running_balance = @previous_balance
+    @ledger_with_balance = all_ledger_items.map do |entry|
+      if entry[:type] == :quote
+        running_balance += entry[:item].total_amount
+      else
+        running_balance -= entry[:item].amount
+      end
+      entry.merge(balance: running_balance)
+    end
+
+    # When filtering, show chronologically (oldest first) so running balance makes sense
+    # When not filtering, show newest first for quick access to recent activity
+    @ledger_with_balance_display = @filtering ? @ledger_with_balance : @ledger_with_balance.reverse
 
     # Manual pagination for the ledger items
     page = (params[:ledger_page] || 1).to_i
     per_page = 10
-    total_items = all_ledger_items.length
+    total_items = @ledger_with_balance_display.length
     total_pages = (total_items.to_f / per_page).ceil
 
-    @ledger_items = all_ledger_items.slice((page - 1) * per_page, per_page) || []
+    @ledger_items = @ledger_with_balance_display.slice((page - 1) * per_page, per_page) || []
     @ledger_pagination = {
       current_page: page,
       total_pages: total_pages,
@@ -32,9 +82,15 @@ class ClientsController < ApplicationController
       per_page: per_page
     }
 
-    # Calculate KPIs
-    @total_invoiced = quotes.sum(:total_amount) || 0
-    @total_collected = payments.sum(:amount) || 0
+    # Calculate KPIs (for the filtered period if filtering, otherwise all-time)
+    @total_invoiced = filtered_quotes.sum(:total_amount) || 0
+    @total_collected = filtered_payments.sum(:amount) || 0
+
+    # Respond to CSV format
+    respond_to do |format|
+      format.html
+      format.csv { send_data generate_ledger_csv, filename: csv_filename }
+    end
   end
 
   def new
@@ -76,5 +132,96 @@ class ClientsController < ApplicationController
 
   def client_params
     params.require(:client).permit(:name, :email, :phone, :tax_id, :address, :balance)
+  end
+
+  def parse_date(date_string)
+    return nil if date_string.blank?
+
+    # Handle DD/MM/YYYY format
+    if date_string.include?("/")
+      parts = date_string.split("/")
+      if parts.length == 3
+        return Date.new(parts[2].to_i, parts[1].to_i, parts[0].to_i)
+      end
+    end
+
+    # Fallback to standard parsing
+    Date.parse(date_string)
+  rescue ArgumentError, TypeError
+    nil
+  end
+
+  def generate_ledger_csv
+    require "csv"
+
+    CSV.generate(headers: true, col_sep: ";") do |csv|
+      # Header row
+      csv << [
+        t("clients.show.ledger_headers.date"),
+        t("clients.show.ledger_headers.concept"),
+        t("clients.show.ledger_headers.debe"),
+        t("clients.show.ledger_headers.haber"),
+        t("clients.show.csv_headers.balance")
+      ]
+
+      # Initial/Previous balance row
+      # Show previous balance when filtering, or initial balance (0) when showing all
+      initial_balance_label = @filtering && @start_date.present? ? t("clients.show.csv_previous_balance") : t("clients.show.csv_initial_balance")
+      initial_balance_date = @start_date.present? ? I18n.l(@start_date) : (@ledger_with_balance.any? ? I18n.l(@ledger_with_balance.first[:date]) : "")
+      csv << [
+        initial_balance_date,
+        initial_balance_label,
+        @previous_balance > 0 ? number_to_currency_integer(@previous_balance) : "",
+        @previous_balance < 0 ? number_to_currency_integer(@previous_balance.abs) : "",
+        number_to_currency_integer(@previous_balance)
+      ]
+
+      # Data rows (use chronological order for CSV, not reversed)
+      @ledger_with_balance.each do |entry|
+        if entry[:type] == :quote
+          csv << [
+            I18n.l(entry[:date]),
+            "#{t('clients.show.ledger_concepts.quote', id: entry[:item].id)}",
+            number_to_currency_integer(entry[:item].total_amount),
+            "",
+            number_to_currency_integer(entry[:balance])
+          ]
+        else
+          csv << [
+            I18n.l(entry[:date]),
+            t("clients.show.ledger_concepts.payment"),
+            "",
+            number_to_currency_integer(entry[:item].amount),
+            number_to_currency_integer(entry[:balance])
+          ]
+        end
+      end
+
+      # Final balance row
+      final_balance = @ledger_with_balance.any? ? @ledger_with_balance.last[:balance] : @previous_balance
+      csv << [
+        "",
+        t("clients.show.csv_final_balance"),
+        "",
+        "",
+        number_to_currency_integer(final_balance)
+      ]
+    end
+  end
+
+  def csv_filename
+    date_range = ""
+    if @start_date.present? || @end_date.present?
+      start_str = @start_date.present? ? @start_date.strftime("%Y%m%d") : "inicio"
+      end_str = @end_date.present? ? @end_date.strftime("%Y%m%d") : "hoy"
+      date_range = "_#{start_str}_a_#{end_str}"
+    end
+
+    client_slug = @client.name.parameterize.underscore.first(30)
+    "cuenta_corriente_#{client_slug}#{date_range}.csv"
+  end
+
+  def number_to_currency_integer(amount)
+    "$#{ActionController::Base.helpers.number_with_delimiter(amount.to_i, delimiter: '.')}"
   end
 end

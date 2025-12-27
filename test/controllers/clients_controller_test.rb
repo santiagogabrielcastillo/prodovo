@@ -28,4 +28,56 @@ class ClientsControllerTest < ActionDispatch::IntegrationTest
     get edit_client_path(@client)
     assert_response :success
   end
+
+  # Date filtering tests
+  test "should get show with date filters" do
+    get client_path(@client, start_date: "2024-01-01", end_date: "2024-12-31")
+    assert_response :success
+  end
+
+  test "should get show with start date only" do
+    get client_path(@client, start_date: "2024-01-01")
+    assert_response :success
+  end
+
+  test "should get show with end date only" do
+    get client_path(@client, end_date: "2024-12-31")
+    assert_response :success
+  end
+
+  # CSV export tests
+  test "should export CSV" do
+    get client_path(@client, format: :csv)
+    assert_response :success
+    assert_equal "text/csv", response.content_type.split(";").first
+  end
+
+  test "should export CSV with date filters" do
+    get client_path(@client, format: :csv, start_date: "2024-01-01", end_date: "2024-12-31")
+    assert_response :success
+    assert_equal "text/csv", response.content_type.split(";").first
+    # Check filename includes date range
+    assert_match(/cuenta_corriente_.*_20240101_a_20241231\.csv/, response.headers["Content-Disposition"])
+  end
+
+  test "CSV includes initial balance row" do
+    get client_path(@client, format: :csv)
+    assert_response :success
+    # Check that CSV contains "Saldo Inicial"
+    assert_includes response.body, I18n.t("clients.show.csv_initial_balance")
+  end
+
+  test "CSV includes previous balance row when filtering" do
+    get client_path(@client, format: :csv, start_date: "2024-06-01")
+    assert_response :success
+    # Check that CSV contains "Saldo Anterior"
+    assert_includes response.body, I18n.t("clients.show.csv_previous_balance")
+  end
+
+  test "CSV includes final balance row" do
+    get client_path(@client, format: :csv)
+    assert_response :success
+    # Check that CSV contains "Saldo Final"
+    assert_includes response.body, I18n.t("clients.show.csv_final_balance")
+  end
 end

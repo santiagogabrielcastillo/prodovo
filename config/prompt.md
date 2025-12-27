@@ -926,3 +926,49 @@ Let's refine the user experience and view scalability through pagination and cor
 ## Deliverables
 - Updated code (Controllers, Views, Locales).
 - Completion report in `config/steps_logs/step_15_completion_report.md`.
+
+
+# Step 16: Client Ledger Date Filtering & CSV Export
+
+We need to add date range filtering to the Client's Current Account (Ledger) in `clients#show` and allow exporting that specific range to CSV.
+
+## Missing Requirements & Architectural Decisions
+You must handle the **"Previous Balance"** problem. When filtering by a date range (e.g., last month), the ledger cannot start from zero. It must calculate the cumulative balance of all transactions *prior* to the `start_date` and display/export it as the first line item.
+
+## Main Tasks
+
+### 1. Flatpickr Integration (Stimulus)
+- **Dependency**: Add `flatpickr` to the project (use `bin/importmap pin flatpickr` if using importmaps, or yarn/npm otherwise).
+- **Controller**: Create a reusable Stimulus controller `app/javascript/controllers/datepicker_controller.js`.
+    - It should initialize `flatpickr` on `connect`.
+    - It should verify if `config/locales/es-AR.yml` or specific Flatpickr config is needed for Spanish localization.
+
+### 2. Controller Logic (`ClientsController#show`)
+- Update the `#show` action to accept `start_date` and `end_date` params.
+- **Logic**:
+    1.  **Date Parsing**: Handle string inputs to Date objects. Apply correct end-of-day logic for `end_date`.
+    2.  **Previous Balance**: Calculate the sum of payments/invoices *before* the `start_date`.
+    3.  **Filtered Movements**: Fetch movements within the range.
+- **CSV Response**: Implement `respond_to do |format| format.csv ... end`.
+    - Use Ruby's `CSV` library.
+    - Columns: Date, Description/Type, Debit (Invoices), Credit (Payments), Balance.
+    - **Crucial**: If `start_date` is present, the first row of data must be "Saldo Anterior" (Previous Balance).
+
+### 3. View Implementation (`clients/show.html.erb`)
+- **Filter Form**: Add a form above the Ledger table (inside the `turbo_frame_tag` established in Step 15 or wrapping it).
+    - Inputs: `start_date` and `end_date` using the `datepicker` controller.
+    - Button: "Filtrar" (Optional if you make it auto-submit on change, but a button is safer for UX initially).
+    - Button: "Exportar CSV". This link/button must send the current `start_date` and `end_date` params to the controller.
+- **Ledger Table**:
+    - Display the "Saldo Anterior" row at the top if a filter is active.
+    - Ensure the running balance in the table respects the starting balance.
+
+### 4. Refinement
+- Ensure the date inputs preserve their value after the page/frame reloads.
+- Ensure the CSV filename includes the client name and date range (e.g., `cuenta_corriente_clienteX_2023-10.csv`).
+
+## Deliverables
+- `datepicker_controller.js`.
+- Updated `ClientsController` with filtering and CSV logic.
+- Updated `clients/show.html.erb` with date inputs and export button.
+- Completion report in `config/steps_logs/step_16_completion_report.md`.

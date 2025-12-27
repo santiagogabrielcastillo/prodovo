@@ -59,17 +59,21 @@ es-AR:
       current_balance: "Saldo Actual"
       total_invoiced: "Total Facturado"
       total_collected: "Total Cobrado"
+      filtered_period: "período filtrado"
       balance_description: "El saldo se recalcula automáticamente una vez que se registran presupuestos y cobros."
       custom_price_list: "Lista de Precios Personalizados"
       add_custom_price: "Agregar Precio Personalizado"
       no_custom_prices: "No se han definido precios personalizados para este cliente."
-      cuenta_corriente: "Cuenta Corriente (Ledger)"
+      cuenta_corriente: "Cuenta Corriente"
       no_ledger_entries: "Aún no hay movimientos. Crea un presupuesto para comenzar."
+      export_csv: "Exportar CSV"
+      previous_balance: "Saldo Anterior"
       ledger_headers:
         date: "Fecha"
         concept: "Concepto"
-        debe: "Debe (Cargos)"
-        haber: "Haber (Créditos)"
+        debe: "Debe"
+        haber: "Haber"
+        balance: "Saldo"
       ledger_concepts:
         quote: "Presupuesto #%{id}"
         payment: "Cobro"
@@ -80,6 +84,20 @@ es-AR:
       custom_price_headers:
         product: "Producto"
         overridden_price: "Precio Personalizado"
+      filter:
+        start_date: "Desde"
+        end_date: "Hasta"
+        apply: "Filtrar"
+        clear: "Limpiar"
+      pagination:
+        previous: "Anterior"
+        next: "Siguiente"
+        page_info: "Página %{current} de %{total}"
+      csv_headers:
+        balance: "Saldo"
+      csv_previous_balance: "Saldo Anterior"
+      csv_initial_balance: "Saldo Inicial"
+      csv_final_balance: "Saldo Final"
     new:
       title: "Nuevo Cliente"
       description: "Crear un nuevo registro de cliente."

@@ -68,3 +68,6 @@ gem "grover"
 # Search and pagination
 gem "ransack"
 gem "pagy"
+
+# CSV export (required in Ruby 3.4+)
+gem "csv"
