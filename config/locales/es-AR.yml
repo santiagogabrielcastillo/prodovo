@@ -22,6 +22,7 @@ es-AR:
       updated_successfully: "actualizado exitosamente"
       deleted_successfully: "eliminado exitosamente"
       payment_recorded: "Cobro registrado exitosamente"
+      payment_updated: "Cobro actualizado exitosamente"
       quote_sent: "Presupuesto enviado exitosamente"
       quote_cancelled: "Presupuesto cancelado exitosamente"
       custom_price_added: "Precio personalizado agregado exitosamente"
@@ -54,6 +55,7 @@ es-AR:
     show:
       title: "Cliente"
       new_quote: "Nuevo Presupuesto"
+      register_payment: "Registrar Cobro"
       contact_info: "Información de Contacto"
       financials: "Finanzas"
       current_balance: "Saldo Actual"
@@ -77,6 +79,7 @@ es-AR:
       ledger_concepts:
         quote: "Presupuesto #%{id}"
         payment: "Cobro"
+        standalone_payment: "Pago a Cuenta"
       contact_labels:
         phone: "Teléfono"
         tax_id: "CUIT/CUIL"
@@ -191,6 +194,10 @@ es-AR:
       due: "Debe"
       paid_percentage: "% pagado"
       no_payments: "Aún no se han registrado cobros."
+      payments_headers:
+        date: "Fecha"
+        amount: "Cantidad"
+        notes: "Notas"
       notes: "Notas"
       no_items: "No hay items en este presupuesto."
     new:
@@ -222,9 +229,19 @@ es-AR:
   payments:
     new:
       title: "Registrar Cobro"
-      subtitle: "Presupuesto #%{quote_id} - %{client_name}"
+      subtitle_quote: "Presupuesto #%{quote_id} - %{client_name}"
+      subtitle_client: "Cliente: %{client_name}"
       amount_due: "Monto adeudado: $%{amount}"
+      amount_hint: "Ingrese el monto del cobro. Use valores negativos para ajustes o descuentos."
       record_payment: "Registrar Cobro"
+      errors_header: "Por favor corrige lo siguiente:"
+    edit:
+      title: "Editar Cobro"
+      subtitle_quote: "Presupuesto #%{quote_id} - %{client_name}"
+      subtitle_client: "Cliente: %{client_name}"
+      amount_hint: "Use valores negativos para ajustes o descuentos."
+      update_payment: "Actualizar Cobro"
+      errors_header: "Por favor corrige lo siguiente:"
   custom_prices:
     new:
       title: "Nuevo Precio Personalizado"

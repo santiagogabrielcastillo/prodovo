@@ -4,7 +4,8 @@ class Product < ApplicationRecord
 
   validates :name, presence: true
   validates :sku, presence: true
-  validates :base_price, presence: true, numericality: { greater_than: 0 }
+  # Allow flexible pricing (including zero or negative for discounts/credits)
+  validates :base_price, presence: true, numericality: true
   validate :cannot_delete_if_has_quotes, on: :destroy
 
   # Returns the price for a given client (CustomPrice if exists, otherwise base_price)

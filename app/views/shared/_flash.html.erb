@@ -1,28 +1,29 @@
-<% flash.each do |key, message| %>
-  <% next if message.blank? %>
-  <% 
-    styling = case key.to_sym
-    when :notice, :success
-      "bg-green-50 border-green-200 text-green-800"
-    when :alert, :error
-      "bg-red-50 border-red-200 text-red-800"
-    else
-      "bg-blue-50 border-blue-200 text-blue-800"
-    end
-  %>
-  <div class="mb-4 rounded-lg border px-4 py-3 text-sm <%= styling %> flex items-center justify-between" 
-       role="alert" 
-       data-controller="flash"
-       data-flash-target="message">
-    <span><%= message %></span>
-    <button type="button" 
-            class="ml-4 text-current opacity-70 hover:opacity-100 focus:outline-none"
-            data-action="click->flash#dismiss"
-            aria-label="Cerrar">
-      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-  </div>
-<% end %>
-
+<div id="flash_messages">
+  <% flash.each do |key, message| %>
+    <% next if message.blank? %>
+    <% 
+      styling = case key.to_sym
+      when :notice, :success
+        "bg-green-50 border-green-200 text-green-800"
+      when :alert, :error
+        "bg-red-50 border-red-200 text-red-800"
+      else
+        "bg-blue-50 border-blue-200 text-blue-800"
+      end
+    %>
+    <div class="mb-4 rounded-lg border px-4 py-3 text-sm <%= styling %> flex items-center justify-between" 
+         role="alert" 
+         data-controller="flash"
+         data-flash-target="message">
+      <span><%= message %></span>
+      <button type="button" 
+              class="ml-4 text-current opacity-70 hover:opacity-100 focus:outline-none"
+              data-action="click->flash#dismiss"
+              aria-label="Cerrar">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  <% end %>
+</div>

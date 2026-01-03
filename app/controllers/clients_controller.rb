@@ -42,8 +42,6 @@ class ClientsController < ApplicationController
     end
 
     if @end_date.present?
-      # Use end of day for the end_date
-      end_of_day = @end_date.end_of_day
       filtered_quotes = filtered_quotes.where("date <= ?", @end_date)
       filtered_payments = filtered_payments.where("date <= ?", @end_date)
     end
@@ -64,9 +62,9 @@ class ClientsController < ApplicationController
       entry.merge(balance: running_balance)
     end
 
-    # When filtering, show chronologically (oldest first) so running balance makes sense
-    # When not filtering, show newest first for quick access to recent activity
-    @ledger_with_balance_display = @filtering ? @ledger_with_balance : @ledger_with_balance.reverse
+    # Always show chronologically (oldest first) so running balance makes sense
+    # This ensures consistent behavior regardless of filtering
+    @ledger_with_balance_display = @ledger_with_balance
 
     # Manual pagination for the ledger items
     page = (params[:ledger_page] || 1).to_i
@@ -187,9 +185,19 @@ class ClientsController < ApplicationController
             number_to_currency_integer(entry[:balance])
           ]
         else
+          # Build payment description: include quote reference if linked, otherwise notes or "Pago a Cuenta"
+          payment = entry[:item]
+          payment_description = if payment.quote.present?
+            "#{t('clients.show.ledger_concepts.payment')} - #{t('clients.show.ledger_concepts.quote', id: payment.quote.id)}"
+          elsif payment.notes.present?
+            "#{t('clients.show.ledger_concepts.payment')} - #{payment.notes.truncate(50)}"
+          else
+            t("clients.show.ledger_concepts.standalone_payment")
+          end
+
           csv << [
             I18n.l(entry[:date]),
-            t("clients.show.ledger_concepts.payment"),
+            payment_description,
             "",
             number_to_currency_integer(entry[:item].amount),
             number_to_currency_integer(entry[:balance])

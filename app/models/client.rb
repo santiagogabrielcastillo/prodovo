@@ -1,4 +1,6 @@
 class Client < ApplicationRecord
+  include LedgerCalculable
+
   has_many :custom_prices, dependent: :destroy
   has_many :quotes, dependent: :destroy
   has_many :payments, dependent: :destroy

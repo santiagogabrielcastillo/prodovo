@@ -972,3 +972,192 @@ You must handle the **"Previous Balance"** problem. When filtering by a date ran
 - Updated `ClientsController` with filtering and CSV logic.
 - Updated `clients/show.html.erb` with date inputs and export button.
 - Completion report in `config/steps_logs/step_16_completion_report.md`.
+
+# Step 17: Client-Centric Payments & Flexible Transactions
+
+We need to decouple `Payments` from `Quotes`. Currently, a payment can only exist if it belongs to a Quote. The goal is to allow registering payments directly against a Client (creating a true "Current Account" / Ledger model), allow editing payments, and support negative values (e.g., for corrections or discounts).
+
+## Missing Requirements & Architectural Decisions
+- **Entity Promotion**: The `Payment` entity must be promoted to belong primarily to a `Client`. The association with `Quote` becomes **optional**.
+- **Data Integrity (Crucial)**: Existing payments must not be orphaned. A migration script must backfill the new `client_id` column in the `payments` table using the existing `quote.client_id` relationship.
+- **Negative Values**: Financial corrections require flexibility. We must remove strict "positive only" validations to allow negative inputs.
+
+## Main Tasks
+
+### 1. Database & Migrations
+- **Schema Changes**:
+    - Add `client_id` to the `payments` table (foreign key, indexed).
+    - Change `quote_id` in `payments` to be **nullable** (`null: true`).
+- **Data Migration (Backfill)**:
+    - Inside the migration, iterate over existing `Payments`.
+    - Set `payment.client_id = payment.quote.client_id`.
+    - *Note*: Ensure this runs safely so production data is preserved.
+
+### 2. Model Refactoring (`Payment.rb`)
+- **Associations**:
+    - Update `Payment` to `belongs_to :client`.
+    - Update `Payment` to `belongs_to :quote, optional: true`.
+    - Ensure `Client` has `has_many :payments`.
+- **Validations**:
+    - Remove `numericality: { greater_than: 0 }` (or similar) from `amount/price`.
+    - Allow negative numbers for adjustments/discounts.
+    - *Check also*: `Product` and `CustomPrice` models to remove positive-only constraints if they exist, as requested.
+
+### 3. Controller Logic (`PaymentsController`)
+- **Context Awareness**:
+    - The controller must handle creation from two entry points: `quotes/:id/payments/new` OR `clients/:id/payments/new`.
+    - Implement a `set_parent` private method to detect if `params[:quote_id]` or `params[:client_id]` is present.
+- **Create Action**:
+    - If created via Quote: Assign both `quote_id` and `client_id`.
+    - If created via Client: Assign only `client_id` (`quote_id` is nil).
+- **Edit/Update Capabilities**:
+    - Add `edit` and `update` actions.
+    - Add routes for editing (recommend using `shallow: true` or un-nested `resources :payments, only: [:edit, :update]` to keep paths simple).
+
+### 4. UI Implementation
+- **Clients Show View (`clients/show.html.erb`)**:
+    - Add a **"REGISTRAR COBRO"** (Register Payment) button next to "NUEVO PRESUPUESTO".
+    - This button links to the new client-scoped payment form.
+- **Payment Form (`payments/_form.html.erb`)**:
+    - Adapt the form to handle both contexts (Quote vs Client).
+    - If the context is "Client-only", do not require a Quote selection (or hide the field).
+- **Edit Buttons**:
+    - Add an "Edit" (pencil icon) button to the payment rows in the payment history lists (both in `quotes#show` and `clients#show`).
+
+## Deliverables
+- Migration file (structure changes + data backfill).
+- Updated `Payment`, `Client`, `Product` models (validations/associations).
+- Refactored `PaymentsController` (handling distinct parents + edit actions).
+- Updated `routes.rb`.
+- Updated Views: `clients/show`, `payments/_form`, `payments/edit`.
+- Completion report in `config/steps_logs/step_17_completion_report.md`.
+
+# Step 17.5: Production Safeguards & Regression Testing
+
+We have successfully refactored Payments to be client-centric. However, since the application is in production, we must perform a "Safety Audit" to ensure that the introduction of "Quote-less Payments" does not cause `NullPointerExceptions` (500 errors) in existing views that expect a Quote to always exist.
+
+## Objectives
+1.  **Null Safety**: Ensure no view crashes when rendering a payment that has no associated Quote.
+2.  **Context Logic**: Ensure Turbo Streams update the correct DOM elements depending on whether the user is on the Quote page or the Client page.
+3.  **Calculation Integrity**: Verify `Client` balance logic includes all payments.
+
+## Main Tasks
+
+### 1. View & PDF Audit (Crucial)
+Scan the entire codebase (`app/views`, `app/pdfs` if applicable, `app/services`) for calls to `payment.quote`.
+- **Refactor**: Change any direct access like `payment.quote.attribute` to safe navigation `payment.quote&.attribute` OR use conditionals `if payment.quote`.
+- **Specific check**: Look at `app/views/payments/_payment.html.erb` (or similar partials used in lists). If it displays the "Quote Number", ensure it handles the nil case (e.g., display "-" or "Pago a Cuenta").
+
+### 2. Turbo Stream Logic (`app/views/payments/create.turbo_stream.erb`)
+The `create` action now serves two masters: The Quote Page and the Client Page.
+- **Logic**: Wrap the update of quote-specific DOM elements in a check.
+    ```erb
+    <%# Example of defensive coding needed %>
+    <%= turbo_stream.prepend "payments_list", partial: "payments/payment", locals: { payment: @payment } %>
+
+    <% if @payment.quote %>
+      <%# Update Quote specific totals only if quote exists %>
+      <%= turbo_stream.replace "quote_total", ... %>
+    <% end %>
+
+    <%# Always update Client Ledger/Balance if that element is present on the current page %>
+    <%# Note: You might need to check if the DOM element exists or send updates to multiple potential targets %>
+    ```
+
+### 3. Verification of Balance Logic
+- **Check `Client.rb`**: Locate the method that calculates the balance (e.g., `def balance`, `def current_account_balance`).
+- **Verify**: Ensure it sums `payments.sum(:amount)` directly from the association, rather than iterating through quotes.
+    - *Correct*: `invoices.sum(:total) - payments.sum(:amount)`
+    - *Risk*: If it was previously doing `quotes.map(&:payments).sum`, strictly verify this still holds or if it needs to change to `self.payments.sum(:amount)`.
+
+### 4. Controller Redirect Safety
+- Review `PaymentsController#update`.
+- Ensure that if a user edits a payment that *belongs to a quote*, they are redirected back to the **Quote**.
+- Ensure that if a user edits a payment that *is standalone*, they are redirected back to the **Client**.
+
+## Deliverables
+- Modified views with Safe Navigation (`&.`) for `payment.quote`.
+- Robust `create.turbo_stream.erb` handling both contexts.
+- Verified/Updated `Client` balance method in `app/models/client.rb`.
+- Completion report in `config/steps_logs/step_17.5_completion_report.md`.
+
+
+# Step 18: Ledger Logic Consolidation & Chronological Sorting
+
+We need to update the logic from Step 16 (Ledger Filtering & CSV) to support the architectural changes from Step 17 (Client-Centric Payments) and enforce a strict chronological order.
+
+## The Problem
+1.  **Data Source**: The current logic likely fetches payments via `client.quotes.map(&:payments)`. Since Step 17, payments can exist directly on the client without a quote. The current view might be missing these "standalone" payments.
+2.  **Sorting**: The user explicitly requires the Ledger (Cuenta Corriente) to be sorted from **Oldest to Newest** (Ascending), regardless of whether filters are applied.
+
+## Main Tasks
+
+### 1. Update `ClientsController#show`
+Refactor how the Ledger data is assembled.
+- **Fetch All Records**:
+    - Fetch Quotes (that act as Invoices/Debits): `quotes = @client.quotes.where(status: [...relevant statuses...])`
+    - Fetch Payments (Credits): `payments = @client.payments` (This acts as the single source of truth for ALL payments now).
+- **Filter by Date (if params present)**:
+    - Apply `where(date: start_date..end_date)` to both collections if filters are active.
+- **Previous Balance Calculation**:
+    - If filtering by date, calculate `previous_balance`:
+        - `(sum of all previous quotes) - (sum of all previous payments)`
+        - *Crucial*: Ensure this looks at data strictly *before* `start_date`.
+- **Merge & Sort (The Fix)**:
+    - Combine `quotes` and `payments` into a single collection (e.g., `@movements`).
+    - **Sort Order**: Sort the combined collection by `date` in **ASCENDING** order (Oldest -> Newest).
+    - *Tip*: Ruby's `sort_by { |m| m.date }` is effective here.
+
+### 2. Update CSV Export Logic
+- Ensure the CSV generation iterates over the *exact same* sorted `@movements` collection used in the view.
+- Verify that the columns match the chronological flow: Date | Type (Invoice/Payment) | Debit | Credit | Balance.
+- **Standalone Payments**: Ensure the "Description" column handles payments without quotes gracefully (e.g., display the `payment.notes` or "Pago a Cuenta").
+
+### 3. View Consistency (`clients/show.html.erb`)
+- Update the table iteration to use the sorted `@movements`.
+- Ensure the "Running Balance" (Saldo acumulado renglón por renglón) is calculated visually starting from the `previous_balance`.
+
+## Deliverables
+- Refactored `ClientsController#show` with unified `@movements` sorted ASC.
+- Verified CSV export matching the screen data.
+- Completion report in `config/steps_logs/step_18_completion_report.md`.
+
+# Step 19: Real-time Ledger Updates (UX Fix)
+
+The user reports a bad UX in `clients#show`: after creating a payment (via the new modal/form), the Ledger (Cuenta Corriente) and the Client Balance do not update automatically. The user has to manually refresh the page.
+
+## The Problem
+The `PaymentsController#create` action responds with `turbo_stream`, but currently, it likely only targets the "Flash Messages" or the "Quote" context. It is missing the instructions to update the **Client Ledger Table** and the **Client Total Balance**.
+
+**Constraint**: Since this is a Ledger with a "Running Balance" (Saldo Acumulado) and chronological sorting, we cannot simply `append` the new row. We must **replace** the table body to ensure the sorting and math are correct.
+
+## Main Tasks
+
+### 1. View Preparation (`clients/show.html.erb`)
+- Identify the HTML container for the Ledger Table Body.
+- **Action**: Ensure the `<tbody>` of the movements table has a specific ID.
+    - Example: `<tbody id="client_ledger_body">`
+- Identify the HTML container for the Total Balance.
+    - Example: `<h1 id="client_total_balance">...</h1>` or `<span id="client_balance_value">...</span>`
+
+### 2. Controller Update (`PaymentsController.rb`)
+- In the `create` action, after the payment is saved:
+    - Check if `@parent` is a `Client`.
+    - If it is, we need to **fetch the updated movements** for that client (reusing the logic from `ClientsController` or Step 18) to pass them to the view.
+    - *Refactor Hint*: You might want to extract the "fetch movements" logic into a private method or model method (`Client#movements_ledger`) so both controllers can use it without duplicating code.
+
+### 3. Turbo Stream Update (`app/views/payments/create.turbo_stream.erb`)
+- Add specific streams for the Client context:
+    1.  **Update Balance**: Replace the content of `#client_total_balance` with the new value.
+    2.  **Update Ledger**: Replace the content of `#client_ledger_body` with the `clients/movements` partial (or however the rows are rendered), passing the fresh `@movements` collection.
+    3.  **Close Modal**: Ensure the modal is closed (if using `modal_controller`).
+    4.  **Flash**: Show the success message (already present, but verify).
+
+### 4. Partials Refactor (If needed)
+- If the rows inside `clients/show` are hardcoded in the view, extract them into a partial `clients/_movements_list.html.erb` or `clients/_ledger_row.html.erb` so it can be rendered easily by the Turbo Stream.
+
+## Deliverables
+- Updated `clients/show.html.erb` with proper DOM IDs.
+- Updated `PaymentsController` to fetch fresh ledger data on create.
+- Updated `create.turbo_stream.erb` to trigger the table and balance refresh.
+- Completion report in `config/steps_logs/step_19_completion_report.md`.
