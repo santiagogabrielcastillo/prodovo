@@ -5,11 +5,7 @@ export default class extends Controller {
   static targets = ["panel", "backdrop"]
 
   connect() {
-    this.isOpen = false
-    console.log("Sidebar controller connected", {
-      hasPanel: this.hasPanelTarget,
-      hasBackdrop: this.hasBackdropTarget
-    })
+    this.isOpen = false;
   }
 
   toggle() {

@@ -25,10 +25,14 @@ class PaymentTest < ActiveSupport::TestCase
     assert payment.errors[:amount].any?
   end
 
-  test "should require amount greater than 0" do
+  test "should allow zero amount" do
     payment = Payment.new(client: @client, quote: @quote, amount: 0, date: Date.current)
-    assert_not payment.valid?
-    assert_includes payment.errors[:amount], "debe ser mayor que 0"
+    assert payment.valid?, "Zero amount should be allowed"
+  end
+
+  test "should allow negative amount for adjustments" do
+    payment = Payment.new(client: @client, quote: @quote, amount: -100, date: Date.current)
+    assert payment.valid?, "Negative amount should be allowed for adjustments/credits"
   end
 
   test "should require date" do
@@ -198,5 +202,121 @@ class PaymentTest < ActiveSupport::TestCase
     )
 
     assert payment.valid?
+  end
+
+  # ============================================
+  # Step 17: Standalone Payments (Without Quote)
+  # ============================================
+
+  test "standalone payment without quote is valid" do
+    payment = Payment.new(
+      client: @client,
+      quote: nil,
+      amount: 500.00,
+      date: Date.current
+    )
+
+    assert payment.valid?, "Standalone payment without quote should be valid"
+  end
+
+  test "standalone payment with negative amount is valid" do
+    payment = Payment.new(
+      client: @client,
+      quote: nil,
+      amount: -200.00,
+      date: Date.current,
+      notes: "Credit adjustment"
+    )
+
+    assert payment.valid?, "Negative standalone payment should be valid"
+  end
+
+  test "standalone payment updates client balance" do
+    @client.recalculate_balance!
+    initial_balance = @client.balance
+
+    payment = Payment.create!(
+      client: @client,
+      quote: nil,
+      amount: 300.00,
+      date: Date.current,
+      notes: "Pago a Cuenta"
+    )
+
+    @client.reload
+    expected_balance = initial_balance - 300.00
+    assert_equal expected_balance, @client.balance, "Client balance should decrease by standalone payment amount"
+  end
+
+  test "standalone negative payment increases client balance" do
+    @client.recalculate_balance!
+    initial_balance = @client.balance
+
+    payment = Payment.create!(
+      client: @client,
+      quote: nil,
+      amount: -100.00,
+      date: Date.current,
+      notes: "Discount applied"
+    )
+
+    @client.reload
+    expected_balance = initial_balance + 100.00
+    assert_equal expected_balance, @client.balance, "Client balance should increase when negative payment is applied"
+  end
+
+  test "standalone payment does not affect any quote status" do
+    # Setup: quote is sent
+    assert @quote.sent?
+
+    payment = Payment.create!(
+      client: @client,
+      quote: nil,
+      amount: 500.00,
+      date: Date.current,
+      notes: "Standalone payment"
+    )
+
+    @quote.reload
+    assert @quote.sent?, "Quote status should remain unchanged when standalone payment is created"
+  end
+
+  test "deleting standalone payment updates client balance but not quote" do
+    @client.recalculate_balance!
+    initial_balance = @client.balance
+
+    payment = Payment.create!(
+      client: @client,
+      quote: nil,
+      amount: 400.00,
+      date: Date.current
+    )
+
+    @client.reload
+    balance_after_payment = @client.balance
+    assert_equal initial_balance - 400.00, balance_after_payment
+
+    payment.destroy
+
+    @client.reload
+    assert_equal initial_balance, @client.balance, "Client balance should revert after standalone payment deletion"
+    
+    # Quote should be unaffected
+    @quote.reload
+    assert @quote.sent?
+  end
+
+  # ============================================
+  # Step 22: Comma-to-Dot Decimal Parsing
+  # ============================================
+
+  test "should convert comma to dot in amount" do
+    payment = Payment.new(client: @client, quote: @quote, amount: "500,50", date: Date.current)
+    assert_equal 500.50, payment.amount, "Comma should be converted to dot for amount"
+  end
+
+  test "should handle negative amount with comma" do
+    payment = Payment.new(client: @client, quote: nil, amount: "-100,25", date: Date.current)
+    assert_equal(-100.25, payment.amount, "Negative comma amount should be parsed correctly")
   end
 end

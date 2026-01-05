@@ -17,17 +17,17 @@ class ClientsController < ApplicationController
     # Determine if we're filtering
     @filtering = @start_date.present? || @end_date.present?
 
-    # Get all quotes and payments for the client
+    # Get all quotes and payments for the client (eager load quote for payments to avoid N+1)
     quotes_scope = @client.quotes.where(status: [ :sent, :partially_paid, :paid, :cancelled ])
-    payments_scope = @client.payments
+    payments_scope = @client.payments.includes(:quote)
 
     # Calculate Previous Balance (Saldo Anterior) if filtering by start_date
     @previous_balance = 0
     if @start_date.present?
       # Sum of quotes before start_date
-      previous_quotes_total = quotes_scope.where("date < ?", @start_date).sum(:total_amount)
+      previous_quotes_total = quotes_scope.where("quotes.date < ?", @start_date).sum(:total_amount)
       # Sum of payments before start_date
-      previous_payments_total = payments_scope.where("date < ?", @start_date).sum(:amount)
+      previous_payments_total = payments_scope.where("payments.date < ?", @start_date).sum(:amount)
       # Previous balance = what they owed before this period
       @previous_balance = previous_quotes_total - previous_payments_total
     end
@@ -37,13 +37,13 @@ class ClientsController < ApplicationController
     filtered_payments = payments_scope
 
     if @start_date.present?
-      filtered_quotes = filtered_quotes.where("date >= ?", @start_date)
-      filtered_payments = filtered_payments.where("date >= ?", @start_date)
+      filtered_quotes = filtered_quotes.where("quotes.date >= ?", @start_date)
+      filtered_payments = filtered_payments.where("payments.date >= ?", @start_date)
     end
 
     if @end_date.present?
-      filtered_quotes = filtered_quotes.where("date <= ?", @end_date)
-      filtered_payments = filtered_payments.where("date <= ?", @end_date)
+      filtered_quotes = filtered_quotes.where("quotes.date <= ?", @end_date)
+      filtered_payments = filtered_payments.where("payments.date <= ?", @end_date)
     end
 
     # Build ledger: combine quotes and payments, sort by date ascending for running balance

@@ -11,6 +11,12 @@ class Payment < ApplicationRecord
   after_destroy :update_quote_status!
   after_destroy :update_client_balance!
 
+  # Sanitize comma-separated decimals (e.g., "500,50" -> "500.50")
+  def amount=(value)
+    return super(value) if value.blank?
+    super(value.to_s.gsub(",", "."))
+  end
+
   # Ransack configuration
   def self.ransackable_attributes(auth_object = nil)
     %w[id amount date notes client_id quote_id created_at updated_at]

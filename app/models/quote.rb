@@ -11,14 +11,16 @@ class Quote < ApplicationRecord
   validates :client, presence: true
   validates :status, presence: true
   validates :date, presence: true
-  validates :total_amount, numericality: { greater_than_or_equal_to: 0 }
+  # Allow negative totals for quotes with discount items
+  validates :total_amount, numericality: true
   validate :cannot_delete_if_has_payments, on: :destroy
 
   before_save :calculate_total!
 
   def calculate_total!
-    self.total_amount = quote_items.sum do |item|
-      item.calculate_total_price! if item.total_price.nil?
+    self.total_amount = quote_items.reject(&:marked_for_destruction?).sum do |item|
+      # Always recalculate item total (quantity * unit_price may have changed)
+      item.calculate_total_price!
       item.total_price || 0.0
     end
   end
@@ -51,13 +53,15 @@ class Quote < ApplicationRecord
   def update_status_based_on_payments!
     return if draft? || cancelled?
 
-    total_paid = amount_paid
+    # Use rounded values to avoid floating-point precision issues
+    total_paid = amount_paid.round(2)
+    total_quote = total_amount.round(2)
 
-    if total_paid >= total_amount
+    if total_paid >= total_quote
       update!(status: :paid)
-    elsif total_paid > 0 && total_paid < total_amount
+    elsif total_paid > 0 && total_paid < total_quote
       update!(status: :partially_paid)
-    elsif total_paid == 0
+    elsif total_paid <= 0
       update!(status: :sent)
     end
   end

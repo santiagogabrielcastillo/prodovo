@@ -191,7 +191,8 @@ es-AR:
       subtotal: "Subtotal"
       payments: "Cobros"
       paid: "Pagado"
-      due: "Debe"
+      due: "Resta"
+      fully_paid: "PAGADO COMPLETO"
       paid_percentage: "% pagado"
       no_payments: "Aún no se han registrado cobros."
       payments_headers:
@@ -311,6 +312,14 @@ es-AR:
         blank: "no puede estar en blanco"
         greater_than: "debe ser mayor que %{count}"
         greater_than_or_equal_to: "debe ser mayor o igual a %{count}"
+        equal_to: "debe ser igual a %{count}"
+        less_than: "debe ser menor que %{count}"
+        less_than_or_equal_to: "debe ser menor o igual a %{count}"
+        other_than: "debe ser distinto de %{count}"
+        odd: "debe ser impar"
+        even: "debe ser par"
+        not_a_number: "no es un número"
+        not_an_integer: "debe ser un número entero"
     enums:
       quote:
         status:

@@ -80,4 +80,40 @@ class ClientsControllerTest < ActionDispatch::IntegrationTest
     # Check that CSV contains "Saldo Final"
     assert_includes response.body, I18n.t("clients.show.csv_final_balance")
   end
+
+  # ============================================
+  # Step 18: Standalone Payment Labels in CSV
+  # ============================================
+
+  test "CSV includes standalone payment with Pago a Cuenta label" do
+    # Create a standalone payment
+    Payment.create!(
+      client: @client,
+      quote: nil,
+      amount: 500.00,
+      date: Date.current,
+      notes: ""
+    )
+
+    get client_path(@client, format: :csv)
+    assert_response :success
+    # Check that CSV contains the standalone payment label
+    assert_includes response.body, I18n.t("clients.show.ledger_concepts.standalone_payment")
+  end
+
+  test "CSV includes standalone payment notes" do
+    # Create a standalone payment with notes
+    Payment.create!(
+      client: @client,
+      quote: nil,
+      amount: 300.00,
+      date: Date.current,
+      notes: "Anticipo proyecto"
+    )
+
+    get client_path(@client, format: :csv)
+    assert_response :success
+    # Check that CSV contains the payment notes
+    assert_includes response.body, "Anticipo proyecto"
+  end
 end

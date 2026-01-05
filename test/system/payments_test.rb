@@ -162,4 +162,134 @@ class PaymentsTest < ApplicationSystemTestCase
     assert_equal 1100.00, quote.amount_paid # 500 + 600
     assert quote.paid?
   end
+
+  # ============================================
+  # Step 17: Standalone Payments from Client Page
+  # ============================================
+
+  test "creating standalone payment from client page" do
+    @client.recalculate_balance!
+
+    visit client_path(@client)
+
+    # Click "Registrar Cobro" button to open modal
+    click_link I18n.t("clients.show.register_payment")
+
+    # Verify modal appears with client context
+    assert_text I18n.t("payments.new.title"), wait: 5
+    assert_text @client.name
+
+    # Fill in payment details
+    fill_in I18n.t("activerecord.attributes.payment.amount"), with: "500"
+    fill_in I18n.t("activerecord.attributes.payment.date"), with: Date.current
+    fill_in I18n.t("activerecord.attributes.payment.notes"), with: "Pago a Cuenta"
+
+    # Submit
+    click_button I18n.t("payments.new.record_payment")
+
+    # Verify redirect to client page
+    assert_current_path client_path(@client), wait: 5
+
+    # Verify payment appears in ledger
+    assert_text "Pago a Cuenta"
+    assert_text I18n.t("clients.show.ledger_concepts.standalone_payment")
+  end
+
+  test "editing a payment from quote page" do
+    # Create a quote with a payment
+    quote = Quote.create!(
+      client: @client,
+      user: @user,
+      date: Date.current,
+      status: :sent
+    )
+    quote.quote_items.create!(
+      product: @product,
+      quantity: 1,
+      unit_price: 1000.00
+    )
+    quote.calculate_total!
+    quote.save!
+
+    payment = Payment.create!(
+      client: @client,
+      quote: quote,
+      amount: 300.00,
+      date: Date.current,
+      notes: "Initial payment"
+    )
+
+    visit quote_path(quote)
+
+    # Click edit on the payment - use CSS selector to find it anywhere on the page
+    find("a[href='#{edit_payment_path(payment)}']").click
+
+    # Edit the payment
+    fill_in I18n.t("activerecord.attributes.payment.amount"), with: "400"
+    fill_in I18n.t("activerecord.attributes.payment.notes"), with: "Updated payment"
+
+    click_button I18n.t("payments.edit.update_payment")
+
+    # Should redirect back to quote
+    assert_current_path quote_path(quote), wait: 5
+
+    # Verify updated amount shown
+    assert_text "$400"
+
+    payment.reload
+    assert_equal 400.00, payment.amount
+    assert_equal "Updated payment", payment.notes
+  end
+
+  test "editing a standalone payment from client ledger" do
+    # Create a standalone payment
+    payment = Payment.create!(
+      client: @client,
+      quote: nil,
+      amount: 250.00,
+      date: Date.current,
+      notes: "Standalone"
+    )
+
+    visit client_path(@client)
+
+    # Click edit on the payment in the ledger
+    within "#client_ledger" do
+      find("a[href='#{edit_payment_path(payment)}']").click
+    end
+
+    # Edit the payment
+    fill_in I18n.t("activerecord.attributes.payment.amount"), with: "350"
+    fill_in I18n.t("activerecord.attributes.payment.notes"), with: "Updated standalone"
+
+    click_button I18n.t("payments.edit.update_payment")
+
+    # Should redirect back to client
+    assert_current_path client_path(@client), wait: 5
+
+    payment.reload
+    assert_equal 350.00, payment.amount
+    assert_equal "Updated standalone", payment.notes
+  end
+
+  test "creating negative payment as discount" do
+    visit client_path(@client)
+
+    click_link I18n.t("clients.show.register_payment")
+    assert_text I18n.t("payments.new.title"), wait: 5
+
+    # Enter a negative amount
+    fill_in I18n.t("activerecord.attributes.payment.amount"), with: "-100"
+    fill_in I18n.t("activerecord.attributes.payment.date"), with: Date.current
+    fill_in I18n.t("activerecord.attributes.payment.notes"), with: "Discount applied"
+
+    click_button I18n.t("payments.new.record_payment")
+
+    assert_current_path client_path(@client), wait: 5
+
+    # Verify the negative payment was created
+    payment = Payment.last
+    assert_equal(-100.00, payment.amount)
+    assert_equal "Discount applied", payment.notes
+  end
 end

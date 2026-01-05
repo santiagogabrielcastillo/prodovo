@@ -20,8 +20,8 @@
                   <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 print:text-black">
                     <%= l(payment.date) %>
                   </td>
-                  <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right print:text-black">
-                    $<%= number_with_precision(payment.amount, precision: 0) %>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-right print:text-black <%= payment.amount < 0 ? 'text-red-600' : 'text-gray-900' %>">
+                    <%= format_currency_integer(payment.amount) %>
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-700 print:text-black">
                     <%= payment.notes.presence || "—" %>
@@ -53,15 +53,22 @@
 
   <%# Replace payment summary (amount paid and due) %>
   <%= turbo_stream.replace "payment_summary" do %>
-    <div class="mb-6" id="payment_summary">
-      <div class="flex justify-between items-center mb-2">
-        <span class="text-sm font-medium text-gray-700 print:text-black"><%= t('quotes.show.paid') %>:</span>
-        <span class="text-lg font-semibold text-gray-900 print:text-black" id="amount_paid">$<%= number_with_precision(@quote.amount_paid, precision: 0) %></span>
+    <div class="pt-4 mt-4 border-t border-gray-200 space-y-2" id="payment_summary">
+      <div class="flex justify-between text-sm text-gray-600">
+        <span><%= t('quotes.show.paid') %>:</span>
+        <span class="text-green-600 font-semibold"><%= format_currency_integer(@quote.amount_paid) %></span>
       </div>
-      <div class="flex justify-between items-center mb-2">
-        <span class="text-sm font-medium text-gray-700 print:text-black"><%= t('quotes.show.due') %>:</span>
-        <span class="text-lg font-semibold text-gray-900 print:text-black" id="amount_due">$<%= number_with_precision(@quote.amount_due, precision: 0) %></span>
-      </div>
+      <% if @quote.paid? %>
+        <div class="flex justify-between text-sm">
+          <span class="text-green-700 font-bold"><%= t('quotes.show.fully_paid') %></span>
+          <span class="text-green-600">✓</span>
+        </div>
+      <% else %>
+        <div class="flex justify-between text-sm text-gray-600">
+          <span><%= t('quotes.show.due') %>:</span>
+          <span class="text-red-600 font-semibold"><%= format_currency_integer(@quote.amount_due) %></span>
+        </div>
+      <% end %>
     </div>
   <% end %>
 

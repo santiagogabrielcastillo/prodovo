@@ -8,6 +8,12 @@ class Product < ApplicationRecord
   validates :base_price, presence: true, numericality: true
   validate :cannot_delete_if_has_quotes, on: :destroy
 
+  # Sanitize comma-separated decimals (e.g., "100,50" -> "100.50")
+  def base_price=(value)
+    return super(value) if value.blank?
+    super(value.to_s.gsub(",", "."))
+  end
+
   # Returns the price for a given client (CustomPrice if exists, otherwise base_price)
   def price_for_client(client)
     custom_price = CustomPrice.find_by(client: client, product: self)

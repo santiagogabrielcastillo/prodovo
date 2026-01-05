@@ -106,7 +106,7 @@ class QuotesController < ApplicationController
   private
 
   def set_quote
-    @quote = Quote.find(params[:id])
+    @quote = Quote.includes(quote_items: :product, payments: []).find(params[:id])
   end
 
   def ensure_draft

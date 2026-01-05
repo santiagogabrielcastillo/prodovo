@@ -14,15 +14,15 @@ module LedgerCalculable
   def compute_ledger(start_date: nil, end_date: nil, page: 1, per_page: 10)
     filtering = start_date.present? || end_date.present?
 
-    # Get all quotes and payments
+    # Get all quotes and payments (eager load quote for payments to avoid N+1)
     quotes_scope = quotes.where(status: [:sent, :partially_paid, :paid, :cancelled])
-    payments_scope = payments
+    payments_scope = payments.includes(:quote)
 
     # Calculate Previous Balance if filtering by start_date
     previous_balance = 0
     if start_date.present?
-      previous_quotes_total = quotes_scope.where("date < ?", start_date).sum(:total_amount)
-      previous_payments_total = payments_scope.where("date < ?", start_date).sum(:amount)
+      previous_quotes_total = quotes_scope.where("quotes.date < ?", start_date).sum(:total_amount)
+      previous_payments_total = payments_scope.where("payments.date < ?", start_date).sum(:amount)
       previous_balance = previous_quotes_total - previous_payments_total
     end
 
@@ -31,13 +31,13 @@ module LedgerCalculable
     filtered_payments = payments_scope
 
     if start_date.present?
-      filtered_quotes = filtered_quotes.where("date >= ?", start_date)
-      filtered_payments = filtered_payments.where("date >= ?", start_date)
+      filtered_quotes = filtered_quotes.where("quotes.date >= ?", start_date)
+      filtered_payments = filtered_payments.where("payments.date >= ?", start_date)
     end
 
     if end_date.present?
-      filtered_quotes = filtered_quotes.where("date <= ?", end_date)
-      filtered_payments = filtered_payments.where("date <= ?", end_date)
+      filtered_quotes = filtered_quotes.where("quotes.date <= ?", end_date)
+      filtered_payments = filtered_payments.where("payments.date <= ?", end_date)
     end
 
     # Build ledger: combine quotes and payments, sort by date ascending

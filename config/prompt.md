@@ -1161,3 +1161,367 @@ The `PaymentsController#create` action responds with `turbo_stream`, but current
 - Updated `PaymentsController` to fetch fresh ledger data on create.
 - Updated `create.turbo_stream.erb` to trigger the table and balance refresh.
 - Completion report in `config/steps_logs/step_19_completion_report.md`.
+
+# Step 20: UI Refinements - Translations & Numeric Flexibility
+
+The user provided visual feedback regarding missing translations on the Payment creation page and specific requirements for Quote Items (decimals and negative numbers).
+
+## Main Tasks
+
+### 1. Translations (`config/locales/es-AR.yml`)
+We need to fix the missing translations visible in the UI (Title, Subtitle, and ActiveRecord errors).
+- **Update `es-AR.yml`**:
+    - Under `payments:` -> `new:`, ensure definitions exist for:
+        - `title_client`: "Registrar Cobro" (or similar context-aware title).
+        - `subtitle_client`: "Registra un movimiento en la cuenta corriente de %{name}".
+        - `title_quote`: "Registrar Cobro al Presupuesto".
+        - `subtitle_quote`: "Presupuesto #%{number}".
+    - Under `activerecord:` -> `attributes:` -> `payment:`, ensure definitions exist for:
+        - `amount`: "Monto"
+        - `date`: "Fecha"
+        - `method`: "Método de Pago"
+        - `notes`: "Notas"
+    - **Error Messages**: Ensure `activerecord.errors.models.payment.attributes.amount` handles errors gracefully (e.g., "no puede estar vacío").
+
+### 2. Quote Item Flexibility (Logic & Schema)
+The user needs to enter **negative prices** (for discounts) and **decimals** for quantities (e.g., 1.5 units).
+
+- **Database Check (Crucial)**:
+    - Check `db/schema.rb` for the `quote_items` table.
+    - If `quantity` is an `integer`, **generate a migration** to change it to `decimal` (precision: 10, scale: 2) or `float`. We need to support values like `1.5`.
+- **Model Validations (`QuoteItem.rb`)**:
+    - Remove any validation that enforces `price > 0`. It should allow negative numbers (or at least allow `price` to be any number).
+    - Ensure `quantity` validation allows floats/decimals (e.g., `numericality: true`).
+
+### 3. Quote Form UI (`views/quotes/_quote_item_fields.html.erb`)
+Update the input fields to support the requested formats.
+
+- **Quantity Field**:
+    - Add `step: "0.1"` (or "any") to allow entering 1 decimal place.
+    - Example: `<%= f.number_field :quantity, step: 0.1, ... %>`
+- **Price/Unit Price Field**:
+    - Remove `min: 0` if present (to allow negatives).
+    - Add `step: "0.01"` to explicitly support 2 decimal places.
+
+### 4. Verification
+- Verify that the "New Payment" page shows correct Spanish titles and attributes.
+- Verify that a Quote Item can be saved with `quantity: 1.5` and `price: -500`.
+
+## Deliverables
+- Updated `config/locales/es-AR.yml`.
+- Migration file (if `quantity` was an integer).
+- Updated `QuoteItem` model.
+- Updated `_quote_item_fields.html.erb`.
+- Completion report in `config/steps_logs/step_20_completion_report.md`.
+
+# Step 21: Smart Quotes - Automated Lifecycle & Precision Rendering
+
+We need to finalize the "Smart Quote" overhaul. This involves two major pillars:
+1.  **Automated Status**: The Quote status (`sent`, `partially_paid`, `paid`) must update automatically based on payments.
+2.  **Precision Display**: We enabled decimal quantities and negative prices in the DB, but the UI (Views, PDFs) likely still renders them as integers or unformatted numbers. We must audit ALL render points.
+
+## Main Tasks
+
+### Part A: Automated Status Logic (The Brain)
+
+#### 1. Logic Implementation (`Quote.rb`)
+- Create a method `update_payment_status!`.
+- **Logic Rule**:
+    - If `status` is `draft` or `canceled`, DO NOT touch it.
+    - Calculate `total_paid = payments.sum(:amount)`.
+    - Calculate `total_quote = total_amount`.
+    - **Transitions**:
+        - If `total_paid >= total_quote` -> Update status to `:paid`.
+        - If `total_paid > 0 && total_paid < total_quote` -> Update status to `:partially_paid`.
+        - If `total_paid <= 0` -> Revert status to `:sent` (assuming it was previously sent).
+    - *Precision*: Use a small epsilon or `round(2)` for comparisons to avoid floating-point errors.
+
+#### 2. Triggers (`Payment.rb`)
+- Use `after_commit` (or `after_save` + `after_destroy`) callbacks.
+- Trigger: Whenever a payment linked to a quote is saved or destroyed, call `quote.update_payment_status!`.
+- *Safety*: Handle standalone payments (where `quote` is nil).
+
+---
+
+### Part B: Precision Rendering (The Face)
+
+#### 3. Global Formatting Helper (`ApplicationHelper`)
+- Create a helper method `format_quantity(number)`.
+    - **Requirement**: Display decimals only if relevant.
+    - Example: `1.0` -> "1", `1.5` -> "1.5", `1.25` -> "1.25".
+    - Code hint: `number_with_precision(number, strip_insignificant_zeros: true, precision: 2)` (or use `number_with_delimiter` logic based on locale).
+
+#### 4. View Audit & Update (Crucial)
+Scan and update the following files to use `format_quantity` for quantities and `number_to_currency` for ALL prices (unit prices, subtotals, totals).
+
+- **Quotes Show**: `app/views/quotes/show.html.erb`
+    - Update the items table loop.
+    - Ensure negative prices (Discounts) display correctly (standard `number_to_currency` usually handles this as `-$100` or `($100)` depending on locale configuration, ensure it looks good).
+- **Quote Items Partial**: `app/views/quotes/_quote_item.html.erb` (if it exists).
+- **PDF Template**: Check `app/views/quotes/pdf.html.erb` (or the relevant layout/template for PDF generation).
+    - *Priority*: The PDF is what the client sees. It MUST look perfect.
+- **Exports**: If there is a CSV export for Quotes, ensure it exports the raw decimal numbers (not strings) so Excel handles them as numbers.
+
+#### 5. UI Indicators
+- In `quotes/show.html.erb`:
+    - Show the "Saldo Restante" (Remaining Balance) prominently.
+    - If `status` is `paid`, show a "PAGADO" badge clearly.
+    - If `status` is `partially_paid`, show "Pagado: $X / Resta: $Y".
+
+## Verification & Testing
+1.  **Lifecycle Test**:
+    - Create Quote ($1000). Add Payment ($500) -> Status becomes `partially_paid`.
+    - Add Payment ($500) -> Status becomes `paid`.
+    - Delete Payment -> Status reverts.
+2.  **Display Test**:
+    - Add an item with Quantity `1.5` and Price `-200`.
+    - Verify `show` view displays "1.5" and "-$200.00".
+    - Verify PDF displays exactly the same.
+    - Verify Quantity `1.0` displays as "1".
+
+## Deliverables
+- Updated `Quote.rb` and `Payment.rb` with status logic.
+- New `format_quantity` helper.
+- Refactored Views and PDF templates for correct formatting.
+- Completion report in `config/steps_logs/step_21_completion_report.md`.
+
+# Step 22: Fix Decimal Parsing & Translations
+
+The user is encountering translation errors (`greater_than_or_equal_to`) and issues with decimal precision when entering numbers like "2,5" or "3500,51".
+Ruby/Rails truncates "2,5" to "2.0" by default unless we sanitize the input.
+
+## Main Tasks
+
+### 1. Fix Translations (`config/locales/es-AR.yml`)
+Add the missing ActiveRecord error keys to ensure validation messages are displayed correctly in Spanish.
+- Add/Update under `es-AR: activerecord: errors: messages:`:
+    ```yaml
+    greater_than: "debe ser mayor que %{count}"
+    greater_than_or_equal_to: "debe ser mayor o igual a %{count}"
+    equal_to: "debe ser igual a %{count}"
+    less_than: "debe ser menor que %{count}"
+    less_than_or_equal_to: "debe ser menor o igual a %{count}"
+    other_than: "debe ser distinto de %{count}"
+    odd: "debe ser impar"
+    even: "debe ser par"
+    not_a_number: "no es un número"
+    ```
+
+### 2. Smart Decimal Parsing (`app/models/quote_item.rb`)
+We need to ensure that if the user types a comma (e.g., "2,5"), it is correctly converted to a dot ("2.5") *before* Rails tries to cast it to a number.
+- Override the setter methods for `quantity` and `unit_price` in the `QuoteItem` model.
+- **Logic**: Convert input to string, replace `,` with `.`, and call `super`.
+    ```ruby
+    def quantity=(value)
+      super(value.to_s.gsub(',', '.')) if value.present?
+    end
+
+    def unit_price=(value)
+      super(value.to_s.gsub(',', '.')) if value.present?
+    end
+    ```
+
+### 3. Quote Validations (`app/models/quote.rb`)
+- Check validation on `total_amount`.
+- If there is a `validates :total_amount, numericality: { greater_than_or_equal_to: 0 }`, consider **removing it** or changing it to allow negative totals (since we implemented negative line items/discounts in Step 17).
+- If `total_amount` is calculated via a callback/method, ensure it handles the new decimal inputs correctly.
+
+### 4. Verification
+- Try creating a Quote Item with Quantity "2,5" and Price "100,50".
+- Verify it saves as `2.5` and `100.5`.
+- Verify the error message "Translation missing" is gone if a validation fails.
+
+## Deliverables
+- Updated `es-AR.yml`.
+- Updated `QuoteItem.rb` with comma sanitization.
+- Updated `Quote.rb` (validation adjustment).
+- Completion report in `config/steps_logs/step_22_completion_report.md`.
+
+# Step 23: Fix Decimal Rendering in Views & PDF
+
+The user reports that despite saving decimal quantities (e.g., 2.5), the Quote Show view and PDF are still rendering them as integers (e.g., "2"), or not respecting the correct formatting.
+
+## Main Tasks
+
+### 1. Refine `ApplicationHelper`
+Update `format_quantity` to be strictly compliant with the Spanish (Argentina) locale.
+- **Goal**:
+    - `2.5` -> "2,5"
+    - `2.0` -> "2" (Strip zeros is good, but NOT if it rounds decimals)
+    - `1000.5` -> "1.000,5"
+- **Implementation**:
+    ```ruby
+    def format_quantity(number)
+      return "-" if number.blank?
+      # Ensure we don't accidentally cast to int before formatting
+      number_with_precision(number, precision: 2, strip_insignificant_zeros: true, separator: ',', delimiter: '.')
+    end
+    ```
+
+### 2. Audit Views (`quotes/show.html.erb`)
+- Scan the file for `item.quantity`.
+- **Remove** any `.to_i` or `.round`.
+- **Ensure** it is wrapped in the helper: `<%= format_quantity(item.quantity) %>`.
+
+### 3. Audit PDF Template
+- Locate the PDF template. It is likely `app/views/quotes/pdf.html.erb` OR `app/views/layouts/pdf.html.erb` (or check `QuotesController#show` format.pdf block to see which template renders).
+- Apply the same fix: Use `<%= format_quantity(item.quantity) %>` instead of raw output.
+- *Note*: PDFs usually generate from a separate view file or layout than the HTML show.
+
+### 4. Verify Locale Defaults (`config/locales/es-AR.yml`)
+Ensure the default number format is correct so Rails helpers behave natively.
+- check under `es-AR:` -> `number:` -> `format:`:
+    ```yaml
+    number:
+      format:
+        separator: ','
+        delimiter: '.'
+        precision: 2
+    ```
+
+## Verification
+1. Open a Quote with an item quantity of `2.5`.
+2. Check the Web View: Should say "2,5".
+3. Check the PDF: Should say "2,5".
+4. Check an integer quantity `5.0`: Should say "5".
+
+## Deliverables
+- Updated `ApplicationHelper`.
+- Updated `quotes/show.html.erb`.
+- Updated PDF template.
+- Completion report in `config/steps_logs/step_23_completion_report.md`.
+
+# Step 24: Fix Live Calculations (JS) & Edit State Pre-filling
+
+The user reports two critical issues in the Quote form:
+1.  **No Reactivity**: Editing items does not automatically update the Quote Subtotal.
+2.  **Missing Data on Edit**: When editing an existing quote, the "Item Total" is empty (not pre-calculated), even though Quantity and Price are present.
+
+**Root Cause**:
+- We recently changed inputs to use **commas** for decimals (Step 22/23). Standard JavaScript `parseFloat` breaks with commas (e.g., `parseFloat("2,5")` returns `2`, ignoring the decimal).
+- The Stimulus controller likely lacks a `connect()` method that triggers an initial calculation for existing items.
+
+## Main Tasks
+
+### 1. Refactor `quote_form_controller.js`
+Completely overhaul the controller to handle locale-aware parsing and initialization.
+
+- **Helper Methods (Internal)**:
+    - `parseLocalFloat(string)`: Replace `,` with `.` and then `parseFloat`. Return `0` if invalid.
+    - `formatLocalCurrency(number)`: Format the result back to Argentine style (dots for thousands, comma for decimals). Use `Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 })`.
+
+- **Lifecycle (`connect`)**:
+    - Trigger `this.recalculate()` immediately when the controller connects. This fixes the "Missing Data on Edit" issue.
+
+- **Actions (`recalculate`)**:
+    - Iterate over all "item-row" targets.
+    - For each row:
+        - Get `quantity` and `price` inputs.
+        - Calculate `line_total = parseLocalFloat(qty) * parseLocalFloat(price)`.
+        - Update the `total` target in that row with `formatLocalCurrency(line_total)`.
+    - Sum all `line_total`s to get `subtotal`.
+    - Update the main `subtotal` target.
+
+### 2. Update View `_quote_item_fields.html.erb`
+Ensure the HTML structure matches the targets expected by the new controller logic.
+
+- **Wrapper**: The container div needs `data-quote-form-target="itemRow"`.
+- **Inputs**:
+    - Quantity input: `data-action="input->quote-form#recalculate"`
+    - Price input: `data-action="input->quote-form#recalculate"`
+- **Output**:
+    - Item Total display: Ensure it has `data-quote-form-target="itemTotal"`.
+    - *UX Tip*: If it's a `<span>` or `div`, ensure the JS updates its `textContent`.
+
+### 3. Update View `quotes/_form.html.erb`
+- Ensure the Subtotal display element has `data-quote-form-target="subtotal"`.
+
+## Verification
+1.  **Edit Test**: Open an existing Quote. Verify that "Item Total" and "Subtotal" are populated immediately without clicking anything.
+2.  **Math Test**: Change a quantity to `1,5`. Verify the math uses `1.5` and not `1`.
+3.  **Format Test**: Verify the results appear as `1.500,50` (dots for thousands, comma for decimals).
+
+## Deliverables
+- Rewritten `app/javascript/controllers/quote_form_controller.js`.
+- Updated `app/views/quotes/_quote_item_fields.html.erb`.
+- Completion report in `config/steps_logs/step_24_completion_report.md`.
+
+# Step 25: Fix JS Targets for Pre-calculation (Edit Mode)
+
+The user reports that on the "Edit Quote" page, the Item Totals are still not pre-loading, although they likely update when typing.
+This indicates that the Stimulus controller's `connect()` method (which runs on load) cannot find the input fields because the `data-target` attributes are likely missing or mismatched in the HTML.
+
+## Main Tasks
+
+### 1. Update View (`views/quotes/_quote_item_fields.html.erb`)
+We must strictly ensure the Stimulus Targets exist.
+- **Wrapper**: Ensure the outer div has `data-quote-form-target="itemRow"`.
+- **Quantity Input**: Add `data-quote-form-target="quantity"`.
+    - *Current likely state*: Has `data-action` but missing `data-quote-form-target`.
+- **Price Input**: Add `data-quote-form-target="price"`.
+- **Total Output**: Ensure the element displaying the result has `data-quote-form-target="itemTotal"`.
+
+### 2. Update Controller (`javascript/controllers/quote_form_controller.js`)
+Refine the logic to ensure it is robust against "Argentine Formatting" (commas) during the initial load.
+
+- **Targets**: Define `static targets = ["itemRow", "subtotal"]` (we will find inputs *inside* the rows to avoid index mismatch).
+- **Connect**:
+    ```javascript
+    connect() {
+      console.log("QuoteForm connected");
+      this.recalculate(); // Trigger immediately on load
+    }
+    ```
+- **Recalculate Logic**:
+    - Iterate over `this.itemRowTargets`.
+    - For each `row`:
+        - Find input `quantity`: `row.querySelector('[data-quote-form-target="quantity"]')`
+        - Find input `price`: `row.querySelector('[data-quote-form-target="price"]')`
+        - Find output `total`: `row.querySelector('[data-quote-form-target="itemTotal"]')`
+        - **Parse**: Get values. If value is "2,5", replace `,` -> `.` and `parseFloat`.
+        - **Calculate**: `qty * price`.
+        - **Format**: Convert back to "1.000,00" format (use `Intl.NumberFormat('es-AR')`).
+        - **Update**: Set `total.textContent`.
+    - **Sum Subtotal**: Sum all line totals and update `this.subtotalTarget`.
+
+### 3. Verification
+- Open an existing Quote in Edit mode.
+- **Expectation**: All "Total" fields (Items and Subtotal) should be populated immediately, even before clicking anything.
+- **Expectation**: Editing a quantity (e.g., changing 1 to 1,5) should update the row total and the subtotal instantly.
+
+## Deliverables
+- Updated `_quote_item_fields.html.erb` with correct targets.
+- Updated `quote_form_controller.js` with robust `connect` and `recalculate` logic.
+- Completion report in `config/steps_logs/step_25_completion_report.md`.
+
+# Step 26: Standardize Decimal Precision (2 Decimals for Quantity)
+
+The client changed the requirement: **Quantity** must now behave exactly like **Price** regarding precision. It should support and display **2 decimals** (e.g., "1,50", "2,00") instead of stripping zeros or limiting to 1 decimal.
+
+## Main Tasks
+
+### 1. Update Input Fields (`views/quotes/_quote_item_fields.html.erb`)
+- Locate the **Quantity** input field.
+- **Action**: Ensure the `step` attribute is set to `"0.01"` (it might be `"0.1"` currently).
+    - Example: `<%= f.number_field :quantity, step: "0.01", ... %>`
+
+### 2. Update Display Helper (`app/helpers/application_helper.rb`)
+- Modify the `format_quantity(number)` method.
+- **Goal**: Enforce strict 2-decimal formatting (do NOT strip zeros).
+- **Change**:
+    - **Before**: `number_with_precision(..., strip_insignificant_zeros: true)`
+    - **After**: `number_with_precision(number, precision: 2, strip_insignificant_zeros: false, separator: ',', delimiter: '.')`
+- **Result Expectation**:
+    - `1` -> "1,00"
+    - `1.5` -> "1,50"
+    - `1.25` -> "1,25"
+
+### 3. Verification
+- **Edit Form**: Verify you can enter "1,25" in Quantity.
+- **Show View/PDF**: Verify that a quantity of "1" displays as "1,00".
+- **JS Controller**: Ensure the live calculation (Step 24/25) still works with this precision (it should, as it parses floats).
+
+## Deliverables
+- Updated `_quote_item_fields.html.erb`.
+- Updated `ApplicationHelper`.
+- Completion report in `config/steps_logs/step_27_completion_report.md`.
