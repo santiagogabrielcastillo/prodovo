@@ -1525,3 +1525,77 @@ The client changed the requirement: **Quantity** must now behave exactly like **
 - Updated `_quote_item_fields.html.erb`.
 - Updated `ApplicationHelper`.
 - Completion report in `config/steps_logs/step_27_completion_report.md`.
+
+# Step 27: PDF Refinements - Branding Removal & Compact Layout
+
+The client requires changes to the generated PDF for Quotes. Currently, the layout is too spacious (wasting paper) and contains unwanted internal branding (Prodovo email).
+
+## Main Tasks
+
+### 1. Remove Branding (White-labeling)
+- **Target**: Check `app/views/layouts/pdf.html.erb` and `app/views/quotes/show.html.erb`.
+- **Action**: Locate the hardcoded email address (likely "prodovo@" or similar contact info in the footer/header).
+- **Remove it**: Delete this section entirely. The PDF should focus only on the Client and the Quote data.
+
+### 2. Compact Layout (Density Increase)
+The goal is to fit as many items as possible on a single page. The current "Web" spacing is too generous for "Print".
+
+- **Target**: `app/views/quotes/show.html.erb` (and `_quote_item.html.erb` if used).
+- **Table Adjustments**:
+    - Locate the `<table>` rows (`<tr>`, `<td>`, `<th>`) for the quote items.
+    - **Vertical Padding**: Change existing generous paddings (e.g., `py-4`, `py-3`) to minimal padding (`py-1` or `py-0.5`).
+    - **Font Size**: Reduce the font size of the items table to `text-sm`.
+- **Section Spacing**:
+    - Reduce the vertical margins (`my-`, `mb-`, `mt-`) between the Header, Client Details, and the Table. Compact the header section to take up less vertical space.
+    - Reduce the space between the Table and the Totals section.
+
+### 3. Verify Layout
+- Ensure the columns (Quantity, Description, Unit Price, Total) remain aligned despite the font/padding changes.
+- Ensure the "Totals" section (Subtotal, Tax, Total, Payment Summary) is also compact but readable.
+
+## Deliverables
+- Updated `layouts/pdf.html.erb` (clean footer).
+- Updated `quotes/show.html.erb` (compact styles, optimized for print/PDF density).
+- Completion report in `config/steps_logs/step_28_completion_report.md`.
+
+# Step 28: PDF Final Polish - Monochrome, Layout & Positioning
+
+The user wants three specific refinements for the Quote PDF (and View):
+1.  **Monochrome:** Remove all colors (e.g., red for negative numbers). The document should be strictly black/white/grayscale.
+2.  **SKU Column:** Separate the Product Code/SKU into its own dedicated column to save vertical space in the Description column.
+3.  **Sticky Footer:** Force the "Totals" section (Subtotal, Totals, Payments) to stick to the bottom of the page, ensuring a consistent full-page look.
+
+## Main Tasks
+
+### 1. Structure & Positioning (`app/views/quotes/show.html.erb`)
+Refactor the main container to use a "Flex Column" layout that fills the page height.
+- **Wrapper**: Ensure the main container has `class="flex flex-col min-h-screen"` (or `min-h-[1000px]` if screen is inconsistent in PDF generator).
+- **Content Split**:
+    - Group the **Header, Client Info, and Items Table** in a top `<div>` that grows naturally.
+    - Group the **Totals, Payment Summary, and Footer** in a bottom `<div>`.
+    - Apply `class="mt-auto"` to this bottom group. This forces it to the bottom of the container (the page).
+- *Tip*: Ensure `break-inside-avoid` is used on the totals block to prevent it from being cut in half if it spans pages (though the goal is single page).
+
+### 2. Table Refactoring (SKU Column)
+- **Header**: Add a new `<th>` for "CÓDIGO" (SKU).
+- **Body**:
+    - Add a new `<td>` for the SKU.
+    - Remove the SKU rendering from the "PRODUCTO" description cell.
+    - **Widths**: Adjust column widths (e.g., Code: 15%, Product: 45%, Qty: 10%, Unit: 15%, Total: 15%) to fit the new column neatly.
+- **Vertical Compactness**: Ensure the new layout allows rows to be shorter (single line) if the description is short.
+
+### 3. Color Removal (Monochrome)
+- Audit `app/views/quotes/show.html.erb` and `_quote_item.html.erb` (if used).
+- **Action**: Remove specific color classes:
+    - `text-red-600` / `text-green-600`: Replace with `text-black` or simply remove the class.
+    - `bg-gray-50` / `bg-blue-50`: Remove background colors or change to explicit white/border-only styles for print clarity.
+- **Negative Numbers**: Since red is gone, ensure `number_to_currency` handles the minus sign clearly (standard behavior), or keep them in parentheses if preferred, but usually `-$500` in black is standard.
+
+## Verification
+1.  **Layout**: The "Totals" box should be at the very bottom of the page, leaving empty whitespace between the last item and the total if the quote is short.
+2.  **Columns**: SKU should be distinct from Description.
+3.  **Colors**: No colored text or backgrounds should appear.
+
+## Deliverables
+- Updated `quotes/show.html.erb` with Flex layout, SKU column, and monochrome styles.
+- Completion report in `config/steps_logs/step_29_completion_report.md`.

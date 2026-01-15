@@ -124,13 +124,13 @@ es-AR:
       title: "Productos"
       headers:
         name: "Nombre"
-        sku: "SKU"
+        sku: "Código"
         base_price: "Precio Base"
       new_product: "Nuevo Producto"
       no_products: "Aún no hay productos."
       create_first: "Crea tu primer producto"
       search_placeholder: "Buscar por nombre..."
-      search_sku_placeholder: "Buscar por SKU..."
+      search_sku_placeholder: "Buscar por código..."
       search: "Buscar"
       clear: "Limpiar"
     new:
@@ -142,7 +142,7 @@ es-AR:
       update_product: "Actualizar Producto"
     show:
       title: "Producto"
-      sku_label: "SKU:"
+      sku_label: "Código:"
       base_price: "Precio Base"
       description: "Descripción"
       no_description: "Sin descripción"
@@ -156,7 +156,7 @@ es-AR:
       update_product: "Actualizar Producto"
     form:
       name: "Nombre"
-      sku: "SKU"
+      sku: "Código"
       base_price: "Precio Base"
       description: "Descripción"
       errors_header: "Por favor corrige lo siguiente:"
@@ -299,7 +299,7 @@ es-AR:
         quote: "Presupuesto"
       product:
         name: "Nombre"
-        sku: "SKU"
+        sku: "Código"
         base_price: "Precio Base"
       quote_item:
         product: "Producto"
