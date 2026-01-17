@@ -15,7 +15,8 @@ module LedgerCalculable
     filtering = start_date.present? || end_date.present?
 
     # Get all quotes and payments (eager load quote for payments to avoid N+1)
-    quotes_scope = quotes.where(status: [:sent, :partially_paid, :paid, :cancelled])
+    # Exclude draft and cancelled quotes - only include actual debts
+    quotes_scope = quotes.where(status: [ :sent, :partially_paid, :paid ])
     payments_scope = payments.includes(:quote)
 
     # Calculate Previous Balance if filtering by start_date
@@ -44,7 +45,7 @@ module LedgerCalculable
     all_ledger_items = (
       filtered_quotes.map { |q| { type: :quote, item: q, date: q.date } } +
       filtered_payments.map { |p| { type: :payment, item: p, date: p.date } }
-    ).sort_by { |entry| [entry[:date], entry[:type] == :quote ? 0 : 1] }
+    ).sort_by { |entry| [ entry[:date], entry[:type] == :quote ? 0 : 1 ] }
 
     # Calculate running balance for each item
     running_balance = previous_balance
@@ -59,8 +60,8 @@ module LedgerCalculable
 
     # Pagination
     total_items = ledger_with_balance.length
-    total_pages = [(total_items.to_f / per_page).ceil, 1].max
-    page = [[page, 1].max, total_pages].min
+    total_pages = [ (total_items.to_f / per_page).ceil, 1 ].max
+    page = [ [ page, 1 ].max, total_pages ].min
     ledger_items = ledger_with_balance.slice((page - 1) * per_page, per_page) || []
 
     # Calculate KPIs
@@ -85,4 +86,3 @@ module LedgerCalculable
     }
   end
 end
-

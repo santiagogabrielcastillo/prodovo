@@ -18,7 +18,8 @@ class ClientsController < ApplicationController
     @filtering = @start_date.present? || @end_date.present?
 
     # Get all quotes and payments for the client (eager load quote for payments to avoid N+1)
-    quotes_scope = @client.quotes.where(status: [ :sent, :partially_paid, :paid, :cancelled ])
+    # Exclude draft and cancelled quotes - only include actual debts
+    quotes_scope = @client.quotes.where(status: [ :sent, :partially_paid, :paid ])
     payments_scope = @client.payments.includes(:quote)
 
     # Calculate Previous Balance (Saldo Anterior) if filtering by start_date
@@ -84,10 +85,15 @@ class ClientsController < ApplicationController
     @total_invoiced = filtered_quotes.sum(:total_amount) || 0
     @total_collected = filtered_payments.sum(:amount) || 0
 
-    # Respond to CSV format
+    # Respond to various formats
     respond_to do |format|
       format.html
       format.csv { send_data generate_ledger_csv, filename: csv_filename }
+      format.pdf do
+        html = render_to_string(template: "clients/show_pdf", layout: "pdf", formats: [:html])
+        pdf = Grover.new(html, format: "A4", wait_until: "networkidle0", print_background: true).to_pdf
+        send_data pdf, filename: pdf_filename, type: "application/pdf", disposition: "inline"
+      end
     end
   end
 
@@ -218,6 +224,14 @@ class ClientsController < ApplicationController
   end
 
   def csv_filename
+    "#{base_export_filename}.csv"
+  end
+
+  def pdf_filename
+    "#{base_export_filename}.pdf"
+  end
+
+  def base_export_filename
     date_range = ""
     if @start_date.present? || @end_date.present?
       start_str = @start_date.present? ? @start_date.strftime("%Y%m%d") : "inicio"
@@ -226,7 +240,7 @@ class ClientsController < ApplicationController
     end
 
     client_slug = @client.name.parameterize.underscore.first(30)
-    "cuenta_corriente_#{client_slug}#{date_range}.csv"
+    "estado_cuenta_#{client_slug}#{date_range}"
   end
 
   def number_to_currency_integer(amount)

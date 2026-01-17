@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Presupuesto <%= formatted_quote_id(@quote.id) %></title>
+    <title><%= @quote ? "Presupuesto #{formatted_quote_id(@quote.id)}" : (@client ? "Estado de Cuenta - #{@client.name}" : "Documento PDF") %></title>
     <style>
       <%= File.read(Rails.root.join('app', 'assets', 'builds', 'tailwind.css')).html_safe %>
       @media print {

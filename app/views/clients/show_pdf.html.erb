@@ -1,0 +1,138 @@
+<div class="w-full max-w-4xl mx-auto p-4">
+  <!-- Header: Horizontal Split Layout -->
+  <div class="flex justify-between items-start mb-6 pb-4 border-b-2 border-gray-400">
+    <!-- Left Column: Document Info -->
+    <div class="w-1/2">
+      <h1 class="text-2xl font-bold text-black uppercase">Estado de Cuenta</h1>
+      <p class="text-sm text-gray-700 mt-1">Fecha de emisión: <%= Date.current.strftime("%d/%m/%Y") %></p>
+      <% if @filtering %>
+        <p class="text-sm text-gray-600 mt-1">
+          Período: <%= @start_date ? @start_date.strftime("%d/%m/%Y") : "Inicio" %> - <%= @end_date ? @end_date.strftime("%d/%m/%Y") : "Hoy" %>
+        </p>
+      <% end %>
+    </div>
+    <!-- Right Column: Client Info -->
+    <div class="w-1/2 text-right">
+      <h2 class="text-xl font-bold text-black"><%= @client.name %></h2>
+      <p class="text-sm text-gray-700"><%= @client.email %></p>
+      <% if @client.phone.present? %>
+        <p class="text-sm text-gray-700"><%= @client.phone %></p>
+      <% end %>
+      <% if @client.tax_id.present? %>
+        <p class="text-sm text-gray-700">CUIT/CUIL: <%= @client.tax_id %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Summary Box -->
+  <div class="mb-4 p-4 border-2 border-gray-400 bg-gray-50">
+    <div class="flex justify-between items-center">
+      <div>
+        <p class="text-sm font-semibold text-gray-700">Saldo Actual</p>
+      </div>
+      <div class="text-right">
+        <% balance_value = @client.balance || 0 %>
+        <p class="text-2xl font-bold text-black">
+          <%= format_currency_integer(balance_value) %>
+        </p>
+      </div>
+    </div>
+    <% if @filtering %>
+      <div class="mt-2 pt-2 border-t border-gray-300 flex justify-between text-sm">
+        <span class="text-gray-600">Total Facturado (período):</span>
+        <span class="font-semibold text-black"><%= format_currency_integer(@total_invoiced) %></span>
+      </div>
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-600">Total Cobrado (período):</span>
+        <span class="font-semibold text-black"><%= format_currency_integer(@total_collected) %></span>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Movements Table -->
+  <div class="mb-4">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Movimientos</h2>
+    
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b-2 border-gray-400">
+          <th class="text-left py-1 px-2 text-xs font-semibold text-black uppercase">Fecha</th>
+          <th class="text-left py-1 px-2 text-xs font-semibold text-black uppercase">Concepto</th>
+          <th class="text-right py-1 px-2 text-xs font-semibold text-black uppercase">Debe</th>
+          <th class="text-right py-1 px-2 text-xs font-semibold text-black uppercase">Haber</th>
+          <th class="text-right py-1 px-2 text-xs font-semibold text-black uppercase">Saldo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if @filtering && @start_date.present? %>
+          <!-- Previous Balance Row -->
+          <tr class="border-b border-gray-200 bg-gray-100">
+            <td class="py-1 px-2 text-black"><%= l(@start_date) %></td>
+            <td class="py-1 px-2 text-black italic">Saldo Anterior</td>
+            <td class="py-1 px-2 text-right text-black">
+              <%= @previous_balance > 0 ? format_currency_integer(@previous_balance) : "—" %>
+            </td>
+            <td class="py-1 px-2 text-right text-black">
+              <%= @previous_balance < 0 ? format_currency_integer(@previous_balance.abs) : "—" %>
+            </td>
+            <td class="py-1 px-2 text-right font-semibold text-black"><%= format_currency_integer(@previous_balance) %></td>
+          </tr>
+        <% end %>
+
+        <% @ledger_with_balance.each do |entry| %>
+          <tr class="border-b border-gray-200">
+            <td class="py-1 px-2 text-black"><%= l(entry[:date]) %></td>
+            <td class="py-1 px-2 text-black">
+              <% if entry[:type] == :quote %>
+                Presupuesto #<%= entry[:item].id %>
+              <% else %>
+                <% payment = entry[:item] %>
+                <% if payment.quote.present? %>
+                  Pago - Presupuesto #<%= payment.quote.id %>
+                <% elsif payment.notes.present? %>
+                  Pago - <%= truncate(payment.notes, length: 40) %>
+                <% else %>
+                  Pago a Cuenta
+                <% end %>
+              <% end %>
+            </td>
+            <td class="py-1 px-2 text-right text-black">
+              <% if entry[:type] == :quote %>
+                <%= format_currency_integer(entry[:item].total_amount) %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td class="py-1 px-2 text-right text-black">
+              <% if entry[:type] == :payment %>
+                <%= format_currency_integer(entry[:item].amount) %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td class="py-1 px-2 text-right font-semibold text-black"><%= format_currency_integer(entry[:balance]) %></td>
+          </tr>
+        <% end %>
+
+        <% if @ledger_with_balance.empty? && !(@filtering && @start_date.present?) %>
+          <tr>
+            <td colspan="5" class="py-4 text-center text-gray-500">No hay movimientos registrados.</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Final Balance -->
+  <div class="mt-4 pt-4 border-t-2 border-gray-400">
+    <div class="flex justify-end">
+      <div class="w-64">
+        <div class="flex justify-between text-lg font-bold text-black">
+          <span>Saldo Final:</span>
+          <% final_balance = @ledger_with_balance.any? ? @ledger_with_balance.last[:balance] : @previous_balance %>
+          <span><%= format_currency_integer(final_balance) %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

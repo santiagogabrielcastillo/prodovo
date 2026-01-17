@@ -1599,3 +1599,141 @@ Refactor the main container to use a "Flex Column" layout that fills the page he
 ## Deliverables
 - Updated `quotes/show.html.erb` with Flex layout, SKU column, and monochrome styles.
 - Completion report in `config/steps_logs/step_29_completion_report.md`.
+
+# Step 29: Bugfix - Exclude Canceled Quotes from Ledger
+
+The user reports a discrepancy in the Client Ledger (`clients/show`):
+1.  The **Client Balance** (Header) is correct.
+2.  The **Ledger Running Balance** (Table) is incorrect because it includes **Canceled Quotes** (e.g., Quote #54 which was canceled but still appears as a debt).
+
+**Diagnosis**: The logic that fetches "Movements" for the Ledger (likely in `ClientsController` or the `LedgerCalculable` concern) is not filtering out `canceled` quotes. It should only fetch quotes that are effectively "Debits" (`sent`, `partially_paid`, `paid`).
+
+## Main Tasks
+
+### 1. Fix Ledger Query Logic
+- **Target**: Check `app/models/concerns/ledger_calculable.rb` (or `ClientsController#show` if logic is inline).
+- **Action**: Locate the query where `quotes` are fetched for the ledger.
+    - *Current (Likely)*: `quotes.where(status: [:sent, :paid, :partially_paid, :canceled])` OR just `quotes.all`.
+    - *Correction*: Explicitly **exclude** `:canceled` and `:draft`.
+    - *Requirement*: The query should strictly look like: `quotes.where(status: [:sent, :partially_paid, :paid])`.
+
+### 2. Verify `Client#recalculate_balance!`
+- Although the user says the balance is correct, double-check `app/models/client.rb`.
+- Ensure the `recalculate_balance!` method (which updates the `balance` column) also strictly sums only `[:sent, :partially_paid, :paid]` quotes. If it includes canceled ones, fix it too to ensure total consistency.
+
+### 3. Verification (The "Cancel" Test)
+1.  Create a new Quote for a client ($1000).
+2.  Send it (Status: `sent`).
+3.  Check the Ledger: It should appear, and the Running Balance should increase by $1000.
+4.  **Cancel** the Quote.
+5.  Check the Ledger: **It should disappear entirely**, and the Running Balance should recalculate as if that debt never existed.
+
+## Deliverables
+- Updated `LedgerCalculable` (or controller logic) to exclude canceled quotes.
+- Verified/Updated `Client` balance logic.
+- Completion report in `config/steps_logs/step_30_completion_report.md`.
+
+# Step 30: Client Ledger PDF Export
+
+The user needs to export the Client Ledger (Cuenta Corriente) as a PDF file, in addition to the existing CSV export. This allows sharing a formal account statement with clients.
+
+## Main Tasks
+
+### 1. Controller Update (app/controllers/clients_controller.rb)
+In the `show` action, add a `format.pdf` block. It should render the template using the `pdf` layout (same as Quotes).
+Important: Ensure the `@movements` and `@previous_balance` logic is available to the PDF format just like it is for HTML/CSV.
+
+  ```ruby
+  respond_to do |format|
+    format.html
+    format.csv { ... } # Existing logic
+    format.pdf do
+      render template: "clients/show",
+            layout: "pdf",
+            locals: { is_pdf: true }
+    end
+  end
+  ```
+
+### 2. PDF View Template (app/views/clients/show.pdf.erb)
+Create a new view file specifically for the PDF render. Do not reuse the HTML view directly to avoid buttons, modals, and navbars.
+
+**Structure (Simple & Professional):**
+- **Header**:
+    - **Logo/Brand**: (Optional, minimal).
+    - **Title**: "Estado de Cuenta" or "Resumen de Cuenta Corriente".
+    - **Client Info**: Name, Email, Phone.
+    - **Period**: "Desde: [Start Date] - Hasta: [End Date]" (if filters applied).
+    - **Date of Issue**: Use `Date.current`.
+- **Summary Box**:
+    - **Current Balance**: Big and bold (Use `@client.balance` or the calculated ending balance).
+- **Movements Table**:
+    - **Style**: Use the compact, monochrome style defined in Step 29 (Tailwind `text-sm`, `py-1`, black text, no borders except headers).
+    - **Columns**: Fecha | Tipo | Descripción | Debe | Haber | Saldo.
+    - **Logic**:
+        - Iterate over `@movements`.
+        - Maintain a running balance variable inside the loop (start with `@previous_balance`).
+        - **Formatting**: Use `format_date` and `format_currency`.
+
+### 3. UI Update (app/views/clients/show.html.erb)
+Add a "Descargar PDF" button next to the existing CSV Export button in the Ledger section.
+
+    <%= link_to "Descargar PDF",
+        client_path(@client, format: :pdf, start_date: params[:start_date], end_date: params[:end_date]),
+        class: "btn btn-secondary",
+        target: "_blank" %>
+
+### 4. Technical Constraints
+- **Helpers**: Ensure `format_currency` handles negative numbers correctly (e.g., `-$500`) as per previous steps.
+- **Layout**: The `layouts/pdf.html.erb` should already provide the necessary CSS/Tailwind structure. Ensure the new view uses full width.
+
+## Verification
+1.  **Filter Test**: Go to a Client, filter by a specific date range.
+2.  **Export**: Click "Descargar PDF".
+3.  **Check PDF**:
+    - Does it respect the date range?
+    - Is the "Previous Balance" (Saldo Anterior) correct for that date range?
+    - Does the table look professional (no UI clutter)?
+
+## Deliverables
+- `app/views/clients/show.pdf.erb` created.
+- `app/controllers/clients_controller.rb` updated.
+- `app/views/clients/show.html.erb` updated with PDF button.
+- Completion report in `config/steps_logs/step_31_completion_report.md`.
+
+# Step 31: Optimize PDF Header Layout (Horizontal Split)
+
+The user wants to optimize the vertical space in the Client Ledger PDF (`clients/show.pdf.erb`).
+Currently, the "Document Info" (Title/Date) and "Client Info" are stacked vertically.
+**Goal:** Merge these into a single horizontal header row:
+- **Left**: Document Title ("Estado de Cuenta"), Date of Issue, and Filter Period.
+- **Right**: Client Details (Name, Email, Phone, CUIT).
+
+## Main Tasks
+
+### 1. Update PDF View (`app/views/clients/show.pdf.erb`)
+Refactor the top section of the view.
+
+- **Container**: Create a main wrapper `div` with `class="flex justify-between items-start mb-6"`.
+- **Left Column (`w-1/2`)**:
+    - Include the Main Title: `<h1 class="text-2xl font-bold uppercase">Estado de Cuenta</h1>`.
+    - Include the Date: `<p class="text-sm mt-1">Fecha de emisión: <%= Date.current.strftime("%d/%m/%Y") %></p>`.
+    - Include Period (if exists): `<p class="text-sm text-gray-600">Periodo: ...</p>`.
+- **Right Column (`w-1/2 text-right`)**:
+    - Include Client Name: `<h2 class="text-xl font-bold"><%= @client.name %></h2>`.
+    - Include Details: Email, Phone, CUIT (each on a new line or compact block, `text-sm`).
+    - *Style Tip*: Align this text to the right so it balances the page opposite the title.
+
+### 2. Balance & Summary Position
+- Ensure the "Saldo Actual" (Current Balance) box remains visible.
+- You can place it immediately below this header row, perhaps as a full-width bar or aligned to the right under the client info for maximum impact.
+- **Decision**: Keep it distinct below the header to ensure it stands out.
+
+### 3. Verification
+- Generate the PDF.
+- Check that the header takes up approx 50% less vertical height than before.
+- Check that long client names or emails don't overlap with the "Estado de Cuenta" title.
+
+## Deliverables
+- Updated `app/views/clients/show.pdf.erb` with the new Flex layout.
+- Completion report in `config/steps_logs/step_32_completion_report.md`.

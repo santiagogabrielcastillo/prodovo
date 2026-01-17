@@ -57,7 +57,7 @@ class ClientsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal "text/csv", response.content_type.split(";").first
     # Check filename includes date range
-    assert_match(/cuenta_corriente_.*_20240101_a_20241231\.csv/, response.headers["Content-Disposition"])
+    assert_match(/estado_cuenta_.*_20240101_a_20241231\.csv/, response.headers["Content-Disposition"])
   end
 
   test "CSV includes initial balance row" do

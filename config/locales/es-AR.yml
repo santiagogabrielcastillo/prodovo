@@ -69,6 +69,7 @@ es-AR:
       cuenta_corriente: "Cuenta Corriente"
       no_ledger_entries: "Aún no hay movimientos. Crea un presupuesto para comenzar."
       export_csv: "Exportar CSV"
+      export_pdf: "Descargar PDF"
       previous_balance: "Saldo Anterior"
       ledger_headers:
         date: "Fecha"
