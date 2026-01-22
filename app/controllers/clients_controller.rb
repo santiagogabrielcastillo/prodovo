@@ -68,10 +68,11 @@ class ClientsController < ApplicationController
     @ledger_with_balance_display = @ledger_with_balance
 
     # Manual pagination for the ledger items
-    page = (params[:ledger_page] || 1).to_i
+    # Default to last page (most recent items) when no page is specified
     per_page = 10
     total_items = @ledger_with_balance_display.length
-    total_pages = (total_items.to_f / per_page).ceil
+    total_pages = [ (total_items.to_f / per_page).ceil, 1 ].max
+    page = params[:ledger_page].present? ? params[:ledger_page].to_i : total_pages
 
     @ledger_items = @ledger_with_balance_display.slice((page - 1) * per_page, per_page) || []
     @ledger_pagination = {

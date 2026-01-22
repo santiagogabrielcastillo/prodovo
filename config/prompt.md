@@ -1737,3 +1737,59 @@ Refactor the top section of the view.
 ## Deliverables
 - Updated `app/views/clients/show.pdf.erb` with the new Flex layout.
 - Completion report in `config/steps_logs/step_32_completion_report.md`.
+
+# Step 32: Client Ledger Improvements - PDF Params & Default Pagination
+
+The user has identified two usability issues in the Client Ledger:
+1.  **PDF Bug**: The "Descargar PDF" button ignores the currently applied Date Filters (`start_date`, `end_date`), always exporting the full history.
+2.  **Pagination UX**: The ledger shows the *first page* (oldest items) by default. The user wants to see the *last page* (newest items) immediately upon opening the client view, as that contains the most relevant current info.
+
+## Main Tasks
+
+### 1. Fix PDF Link (`app/views/clients/show.html.erb`)
+The `link_to` for the PDF export is likely missing the query parameters.
+- **Action**: Update the "Descargar PDF" button.
+- **Implementation**: Ensure it merges the current `request.query_parameters` (or specifically `start_date` and `end_date`) into the link generation.
+- **Code Pattern**:
+    ```erb
+    <%= link_to "Descargar PDF",
+        client_path(@client, format: :pdf, start_date: params[:start_date], end_date: params[:end_date]),
+        class: "...",
+        target: "_blank" %>
+    ```
+
+### 2. Default to Last Page (`app/controllers/clients_controller.rb`)
+In the `show` action, logic is needed to default to the last page if `params[:page]` is missing.
+
+- **Current Logic**: Likely just calls `pagy(scope)`.
+- **New Logic**:
+    1.  Define the `quotes_scope` (filtered by date if applicable).
+    2.  Check if `params[:page]` is present.
+    3.  **If `params[:page]` is missing (initial load)**:
+        - Calculate the total count of records in `quotes_scope`.
+        - Calculate the last page number based on `Pagy::DEFAULT[:items]` (usually 10 or 20).
+        - Pass this calculated page number to the `pagy` method.
+    4.  **Important**: Ensure `@previous_balance` logic remains correct. It usually relies on the `pagy` offset. By forcing the page number, Pagy handles the offset correctly, so the balance calculation should work automatically if it relies on `pagy.offset`.
+
+    *Example Implementation Plan:*
+    ```ruby
+    # Inside show action, after setting quotes_scope
+    if params[:page].blank?
+      items_per_page = Pagy::DEFAULT[:items] || 20 # Verify your pagy initializer default
+      total_items = quotes_scope.count
+      last_page = (total_items.to_f / items_per_page).ceil
+      params[:page] = last_page > 1 ? last_page : 1
+    end
+
+    @pagy, @movements = pagy(quotes_scope)
+    ```
+
+## Verification
+1.  **PDF Filter**: Apply a date filter (e.g., "Last month"). Click "Descargar PDF". Verify the PDF only contains rows from that month.
+2.  **Pagination**: Open a client with many movements (enough for 2+ pages). Verify that you land immediately on the last page (most recent items at the bottom).
+3.  **Balance Check**: Verify the "Running Balance" on the last page is mathematically correct (i.e., it didn't reset to 0 because we skipped page 1).
+
+## Deliverables
+- `app/views/clients/show.html.erb` updated.
+- `app/controllers/clients_controller.rb` updated.
+- Completion report in `config/steps_logs/step_33_completion_report.md`.
