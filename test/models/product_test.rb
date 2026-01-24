@@ -47,4 +47,43 @@ class ProductTest < ActiveSupport::TestCase
 
     assert_equal product.base_price, product.price_for_client(client)
   end
+
+  # ============================================
+  # Step 34: Include in Stats Flag
+  # ============================================
+
+  test "include_in_stats defaults to false" do
+    product = Product.create!(
+      name: "Test Product",
+      sku: "TEST-001",
+      base_price: 100.00
+    )
+
+    assert_equal false, product.include_in_stats
+  end
+
+  test "for_stats scope returns only products with include_in_stats true" do
+    # Clear existing products to avoid fixture interference
+    Product.destroy_all
+
+    included_product = Product.create!(
+      name: "Physical Product",
+      sku: "PHYS-001",
+      base_price: 100.00,
+      include_in_stats: true
+    )
+
+    excluded_product = Product.create!(
+      name: "Admin Fee",
+      sku: "FEE-001",
+      base_price: 50.00,
+      include_in_stats: false
+    )
+
+    stats_products = Product.for_stats
+
+    assert_includes stats_products, included_product
+    assert_not_includes stats_products, excluded_product
+    assert_equal 1, stats_products.count
+  end
 end

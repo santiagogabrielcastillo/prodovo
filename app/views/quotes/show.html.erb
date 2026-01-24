@@ -2,6 +2,7 @@
   <!-- Action Buttons (Hidden in Print) -->
   <div class="mb-6 flex flex-col sm:flex-row gap-3 no-print">
     <%= link_to t('global.actions.back'), quotes_path, class: "px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" %>
+    <%= link_to t('global.actions.view_client'), client_path(@quote.client), class: "px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" %>
     <% if @quote.can_edit? %>
       <%= link_to t('global.actions.edit'), edit_quote_path(@quote), class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
       <%= button_to t('global.actions.finalize_send'), mark_as_sent_quote_path(@quote), method: :patch, class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700", data: { turbo_confirm: t('global.confirmations.finalize') } %>
@@ -174,7 +175,7 @@
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-200 print:divide-gray-300" id="payment_history_body">
-                    <% @quote.payments.order(date: :desc).each do |payment| %>
+                    <% @quote.payments.order(date: :desc, id: :desc).each do |payment| %>
                       <tr id="payment_<%= payment.id %>">
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 print:px-2 print:py-1 print:text-black">
                           <%= l(payment.date) %>

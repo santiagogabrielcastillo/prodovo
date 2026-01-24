@@ -353,4 +353,81 @@ class ClientTest < ActiveSupport::TestCase
     assert_equal 1000.00, result[:total_invoiced]
     assert_equal 500.00, result[:total_collected] # 300 + 200
   end
+
+  # ============================================
+  # Step 33: Smart Turbo Update for Ledger
+  # ============================================
+
+  test "compute_ledger supports page: :last to get last page" do
+    @client.quotes.destroy_all
+    @client.payments.destroy_all
+
+    # Create 5 quotes to span multiple pages
+    5.times do |i|
+      quote = Quote.create!(client: @client, user: @user, date: Date.new(2025, 1, i + 1), status: :sent)
+      quote.quote_items.create!(product: products(:one), quantity: 1, unit_price: 100.00 * (i + 1))
+      quote.calculate_total!
+      quote.save!
+    end
+
+    result = @client.compute_ledger(page: :last, per_page: 2)
+
+    # With 5 items and 2 per page, we have 3 pages. Last page should be page 3.
+    assert_equal 3, result[:pagination][:current_page]
+    assert_equal 3, result[:pagination][:total_pages]
+    # Last page should have 1 item (the 5th quote)
+    assert_equal 1, result[:ledger_items].length
+  end
+
+  test "compute_ledger sorts items by created_at within same date" do
+    @client.quotes.destroy_all
+    @client.payments.destroy_all
+
+    same_date = Date.new(2025, 6, 15)
+
+    # Create quote first
+    quote = Quote.create!(client: @client, user: @user, date: same_date, status: :sent)
+    quote.quote_items.create!(product: products(:one), quantity: 1, unit_price: 500.00)
+    quote.calculate_total!
+    quote.save!
+
+    # Small delay to ensure different created_at
+    sleep(0.01)
+
+    # Create payment after (should appear after quote in ledger)
+    payment = Payment.create!(client: @client, quote: nil, amount: 100.00, date: same_date)
+
+    @client.reload
+    result = @client.compute_ledger(per_page: 100)
+
+    # Both items on same date, should be ordered by created_at
+    assert_equal 2, result[:ledger_items].length
+    assert_equal :quote, result[:ledger_items][0][:type], "Quote (created first) should be first"
+    assert_equal :payment, result[:ledger_items][1][:type], "Payment (created second) should be second"
+  end
+
+  test "compute_ledger newly created item appears on last page" do
+    @client.quotes.destroy_all
+    @client.payments.destroy_all
+
+    # Create 10 items to fill exactly one page
+    10.times do |i|
+      quote = Quote.create!(client: @client, user: @user, date: Date.new(2025, 1, i + 1), status: :sent)
+      quote.quote_items.create!(product: products(:one), quantity: 1, unit_price: 100.00)
+      quote.calculate_total!
+      quote.save!
+    end
+
+    # Create a new payment (should be on a new last page)
+    Payment.create!(client: @client, quote: nil, amount: 50.00, date: Date.new(2025, 1, 15))
+
+    @client.reload
+    result = @client.compute_ledger(page: :last, per_page: 10)
+
+    # With 11 items and 10 per page, we have 2 pages. Last page should have 1 item.
+    assert_equal 2, result[:pagination][:current_page]
+    assert_equal 2, result[:pagination][:total_pages]
+    assert_equal 1, result[:ledger_items].length
+    assert_equal :payment, result[:ledger_items][0][:type], "New payment should be on last page"
+  end
 end

@@ -8,6 +8,9 @@ class Product < ApplicationRecord
   validates :base_price, presence: true, numericality: true
   validate :cannot_delete_if_has_quotes, on: :destroy
 
+  # Scope for products included in statistics (physical products, not admin items)
+  scope :for_stats, -> { where(include_in_stats: true) }
+
   # Sanitize comma-separated decimals (e.g., "100,50" -> "100.50")
   def base_price=(value)
     return super(value) if value.blank?
@@ -25,7 +28,7 @@ class Product < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    [ "base_price", "created_at", "description", "id", "name", "sku", "updated_at" ]
+    [ "base_price", "created_at", "description", "id", "include_in_stats", "name", "sku", "updated_at" ]
   end
 
   private

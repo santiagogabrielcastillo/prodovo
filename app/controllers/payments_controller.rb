@@ -1,7 +1,7 @@
 class PaymentsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_parent
-  before_action :set_payment, only: [:edit, :update]
+  before_action :set_payment, only: [ :edit, :update ]
 
   def new
     @payment = Payment.new
@@ -31,16 +31,16 @@ class PaymentsController < ApplicationController
         @quote.reload
         respond_to do |format|
           format.turbo_stream
-          format.html { redirect_to @quote, notice: t('global.messages.payment_recorded') }
+          format.html { redirect_to @quote, notice: t("global.messages.payment_recorded") }
         end
       else
         # Reload client to get updated balance
         @client.reload
-        # Fetch fresh ledger data for turbo_stream update
-        @ledger_data = @client.compute_ledger(page: 1, per_page: 10)
+        # Fetch fresh ledger data for turbo_stream update (jump to last page to show new payment)
+        @ledger_data = @client.compute_ledger(page: :last, per_page: 10)
         respond_to do |format|
           format.turbo_stream
-          format.html { redirect_to @client, notice: t('global.messages.payment_recorded') }
+          format.html { redirect_to @client, notice: t("global.messages.payment_recorded") }
         end
       end
     else
@@ -55,9 +55,9 @@ class PaymentsController < ApplicationController
   def update
     if @payment.update(payment_params)
       if @payment.quote
-        redirect_to @payment.quote, notice: t('global.messages.payment_updated')
+        redirect_to @payment.quote, notice: t("global.messages.payment_updated")
       else
-        redirect_to @payment.client, notice: t('global.messages.payment_updated')
+        redirect_to @payment.client, notice: t("global.messages.payment_updated")
       end
     else
       render :edit, status: :unprocessable_entity

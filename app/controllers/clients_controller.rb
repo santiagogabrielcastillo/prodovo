@@ -48,9 +48,10 @@ class ClientsController < ApplicationController
     end
 
     # Build ledger: combine quotes and payments, sort by date ascending for running balance
+    # Secondary sort by created_at for true chronological ordering within the same date
     all_ledger_items = (filtered_quotes.map { |q| { type: :quote, item: q, date: q.date } } +
                         filtered_payments.map { |p| { type: :payment, item: p, date: p.date } })
-                       .sort_by { |entry| [ entry[:date], entry[:type] == :quote ? 0 : 1 ] }
+                       .sort_by { |entry| [ entry[:date], entry[:item].created_at ] }
 
     # Calculate running balance for each item
     running_balance = @previous_balance
@@ -91,7 +92,7 @@ class ClientsController < ApplicationController
       format.html
       format.csv { send_data generate_ledger_csv, filename: csv_filename }
       format.pdf do
-        html = render_to_string(template: "clients/show_pdf", layout: "pdf", formats: [:html])
+        html = render_to_string(template: "clients/show_pdf", layout: "pdf", formats: [ :html ])
         pdf = Grover.new(html, format: "A4", wait_until: "networkidle0", print_background: true).to_pdf
         send_data pdf, filename: pdf_filename, type: "application/pdf", disposition: "inline"
       end

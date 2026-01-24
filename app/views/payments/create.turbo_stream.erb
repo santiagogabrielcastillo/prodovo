@@ -15,7 +15,7 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200 print:divide-gray-300" id="payment_history_body">
-              <% @quote.payments.order(date: :desc).each do |payment| %>
+              <% @quote.payments.order(date: :desc, id: :desc).each do |payment| %>
                 <tr id="payment_<%= payment.id %>">
                   <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 print:text-black">
                     <%= l(payment.date) %>

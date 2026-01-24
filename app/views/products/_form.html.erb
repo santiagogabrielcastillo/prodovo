@@ -30,6 +30,16 @@
     <%= form.text_area :description, rows: 4, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 text-base" %>
   </div>
 
+  <div class="flex items-start">
+    <div class="flex items-center h-5">
+      <%= form.check_box :include_in_stats, class: "h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" %>
+    </div>
+    <div class="ml-3">
+      <%= form.label :include_in_stats, t('products.form.include_in_stats'), class: "text-sm font-medium text-gray-700" %>
+      <p class="text-sm text-gray-500"><%= t('products.form.include_in_stats_hint') %></p>
+    </div>
+  </div>
+
   <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
     <%= link_to t('global.actions.cancel'),
         product.persisted? ? product : products_path,

@@ -1793,3 +1793,89 @@ In the `show` action, logic is needed to default to the last page if `params[:pa
 - `app/views/clients/show.html.erb` updated.
 - `app/controllers/clients_controller.rb` updated.
 - Completion report in `config/steps_logs/step_33_completion_report.md`.
+
+# Step 33: Smart Turbo Update for Ledger
+
+The user wants to preserve the "smooth" Turbo Stream experience when creating a Payment, but ensures the Ledger Table updates correctly.
+Currently, standard Turbo `append` might add the row to the wrong page if the user isn't on the last page.
+**Goal:** When a payment is created, the server should calculate the **last page** of the ledger, fetch those records, and `replace` the entire ledger container via Turbo Stream. This simulates a "jump to last page" without a full browser reload.
+
+## Main Tasks
+
+### 1. Update Payments Controller (`app/controllers/payments_controller.rb`)
+In the `create` action, inside the `if @payment.save` block:
+
+1.  **Define Scope**: Replicate the scope logic from `ClientsController` (e.g., `scope = @client.movements.order(...)`).
+2.  **Calculate Last Page**:
+    ```ruby
+    items_per_page = Pagy::DEFAULT[:items] || 10 # Check your initializer
+    total_items = scope.count
+    last_page = (total_items.to_f / items_per_page).ceil
+    last_page = 1 if last_page < 1
+    ```
+3.  **Pagy & Movements**:
+    - Call `@pagy, @movements = pagy(scope, page: last_page)`
+4.  **Balance Calculation**:
+    - Re-calculate `@previous_balance` so the running balance column is correct.
+    - Logic: `@previous_balance = @client.balance_prior_to(@movements.first.date, @movements.first.id)` (or reuse the logic from `ClientsController`).
+    - *Tip*: If you haven't extracted this logic to a Concern yet, copying it is acceptable for now, but ensure it matches `ClientsController`.
+
+### 2. Update Turbo Stream View (`app/views/payments/create.turbo_stream.erb`)
+Instead of appending a single row, we will replace the whole table container.
+
+```erb
+<%# 1. Update the Flash messages %>
+<%= turbo_stream.update "flash", partial: "shared/flash" %>
+
+<%# 2. Update the Balance Card (if exists) %>
+<%= turbo_stream.update "client_balance_#{@client.id}", format_currency(@client.balance) %>
+
+<%# 3. Replace the entire Ledger Content (Table + Pagination) %>
+<%# Ensure 'ledger_content' is the ID wrapping the table and pagy nav in clients/show %>
+<%= turbo_stream.replace "ledger_content", partial: "clients/ledger_content", locals: { client: @client, movements: @movements, pagy: @pagy } %>
+
+<%# 4. Close Modal %>
+<%= turbo_stream.action(:close_modal, "#modal") %>
+```
+
+### 3 Verify Partial (`app/views/clients/_ledger_content.html.erb`)
+Ensure this partial exists (created in previous steps) and contains:
+
+- The `<table>` with movements.
+- The `<%== pagy_nav(@pagy) %>` helper.
+- The wrapping DOM ID `id="ledger_content"`.
+
+# Step 34: Add "Include in Stats" Flag to Products
+
+The user wants to differentiate between "Pure Products" (items sold) and "Administrative Items" (taxes, fees, adjustments) for future statistical analysis.
+**Requirement:** Add a boolean attribute to the `Product` model.
+**Default:** `false`.
+
+## Main Tasks
+
+### 1. Database Migration
+Generate a migration to add the boolean column to the `products` table.
+- **Column Name**: `include_in_stats` (Boolean).
+- **Default**: `false` (add `null: false, default: false` in the migration file).
+- **Command**: `bin/rails g migration AddIncludeInStatsToProducts include_in_stats:boolean`
+
+### 2. Model Update (`app/models/product.rb`)
+- Add a scope: `scope :for_stats, -> { where(include_in_stats: true) }`.
+
+### 3. Controller Update (`app/controllers/products_controller.rb`)
+- Update `product_params` to permit `:include_in_stats`.
+
+### 4. Form Update (`app/views/products/_form.html.erb`)
+- Add a checkbox field/toggle for this new attribute.
+- **Label**: "Incluir en Estadísticas" / "Producto Físico".
+- **Description**: "Marcar si este ítem debe contar para métricas de ventas."
+
+### 5. Update Tests/Seeds
+- **Seeds**: Mark relevant products (like the "Web Development Package") as `true`.
+- **Tests**: Verify the default value is false.
+
+## Deliverables
+- Migration created and run.
+- `app/controllers/products_controller.rb` updated.
+- `app/views/products/_form.html.erb` updated.
+- Completion report.

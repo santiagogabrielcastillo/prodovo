@@ -17,6 +17,7 @@ es-AR:
       record_payment: "Registrar Cobro"
       finalize_send: "Finalizar y Enviar"
       back_to_quotes: "Volver a Presupuestos"
+      view_client: "Ver Cliente"
     messages:
       created_successfully: "creado exitosamente"
       updated_successfully: "actualizado exitosamente"
@@ -147,6 +148,9 @@ es-AR:
       base_price: "Precio Base"
       description: "Descripción"
       no_description: "Sin descripción"
+      include_in_stats: "Incluido en Estadísticas"
+      included_yes: "Sí"
+      included_no: "No"
     new:
       title: "Nuevo Producto"
       description: "Agrega un nuevo producto a tu catálogo."
@@ -161,6 +165,8 @@ es-AR:
       base_price: "Precio Base"
       description: "Descripción"
       errors_header: "Por favor corrige lo siguiente:"
+      include_in_stats: "Incluir en Estadísticas"
+      include_in_stats_hint: "Marcar si este ítem debe contar para métricas de ventas (producto físico)."
   quotes:
     index:
       title: "Presupuestos"
