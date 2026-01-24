@@ -430,4 +430,29 @@ class ClientTest < ActiveSupport::TestCase
     assert_equal 1, result[:ledger_items].length
     assert_equal :payment, result[:ledger_items][0][:type], "New payment should be on last page"
   end
+
+  test "compute_ledger returns page_starting_balance for context on later pages" do
+    @client.quotes.destroy_all
+    @client.payments.destroy_all
+
+    # Create 5 quotes with different amounts
+    5.times do |i|
+      quote = Quote.create!(client: @client, user: @user, date: Date.new(2025, 1, i + 1), status: :sent)
+      quote.quote_items.create!(product: products(:one), quantity: 1, unit_price: 100.00 * (i + 1))
+      quote.calculate_total!
+      quote.save!
+    end
+
+    # Page 1 (2 per page): quotes 1 ($100) and 2 ($200) -> ending balance = $300
+    # Page 2: quotes 3 ($300) and 4 ($400) -> starting balance should be $300
+    result_page1 = @client.compute_ledger(page: 1, per_page: 2)
+    result_page2 = @client.compute_ledger(page: 2, per_page: 2)
+
+    # Page 1 starting balance should be 0 (no previous transactions)
+    assert_equal 0, result_page1[:page_starting_balance], "Page 1 should start at 0"
+
+    # Page 2 starting balance should be the ending balance of page 1
+    # Page 1 ends with: $100 + $200 = $300
+    assert_equal 300.00, result_page2[:page_starting_balance], "Page 2 should start at $300 (end of page 1)"
+  end
 end

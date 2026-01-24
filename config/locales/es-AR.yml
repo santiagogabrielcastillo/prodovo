@@ -72,6 +72,7 @@ es-AR:
       export_csv: "Exportar CSV"
       export_pdf: "Descargar PDF"
       previous_balance: "Saldo Anterior"
+      balance_carried_forward: "Saldo de Página Anterior"
       ledger_headers:
         date: "Fecha"
         concept: "Concepto"

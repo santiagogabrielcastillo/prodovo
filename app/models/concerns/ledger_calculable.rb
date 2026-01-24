@@ -67,6 +67,16 @@ module LedgerCalculable
     page = [ [ page, 1 ].max, total_pages ].min
     ledger_items = ledger_with_balance.slice((page - 1) * per_page, per_page) || []
 
+    # Calculate the balance at the start of the current page
+    # For page 1: it's the previous_balance (from before start_date, or 0)
+    # For page N: it's the balance of the last item on page N-1
+    page_starting_balance = if page == 1
+      previous_balance
+    else
+      last_item_previous_page_index = (page - 1) * per_page - 1
+      ledger_with_balance[last_item_previous_page_index]&.dig(:balance) || previous_balance
+    end
+
     # Calculate KPIs
     total_invoiced = filtered_quotes.sum(:total_amount) || 0
     total_collected = filtered_payments.sum(:amount) || 0
@@ -75,6 +85,7 @@ module LedgerCalculable
       ledger_items: ledger_items,
       ledger_with_balance: ledger_with_balance,
       previous_balance: previous_balance,
+      page_starting_balance: page_starting_balance,
       filtering: filtering,
       start_date: start_date,
       end_date: end_date,
