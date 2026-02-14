@@ -15,11 +15,6 @@
         <%= t('global.actions.download_pdf') %>
       <% end %>
     <% end %>
-    <% if @quote.sent? || @quote.partially_paid? %>
-      <%= link_to t('global.actions.record_payment'), new_quote_payment_path(@quote),
-          class: "px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700",
-          data: { turbo_frame: "modal" } %>
-    <% end %>
   </div>
 
   <!-- Document Sheet - Flex column for sticky footer in print -->

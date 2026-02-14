@@ -1879,3 +1879,50 @@ Generate a migration to add the boolean column to the `products` table.
 - `app/controllers/products_controller.rb` updated.
 - `app/views/products/_form.html.erb` updated.
 - Completion report.
+
+# Step 35: Dashboard Limits Increase
+
+The user wants to see more history on the main Dashboard ("Tablero").
+Currently, it shows the last 5 Quotes and last 5 Payments.
+**Requirement:** Increase this limit to show the last **10** of each.
+
+## Main Tasks
+
+### 1. Update Home Controller (app/controllers/home_controller.rb)
+In the `index` action, locate the queries fetching `@latest_quotes` (or `@quotes`) and `@latest_payments` (or `@payments`).
+Change the limit from `.limit(5)` to `.limit(10)`.
+
+    def index
+      @latest_quotes = Quote.order(date: :desc).limit(10) # Changed from 5
+      @latest_payments = Payment.order(date: :desc).limit(10) # Changed from 5
+      # ... keep other logic ...
+    end
+
+### 2. Verify View (app/views/home/index.html.erb)
+Check the dashboard view to ensure the lists can handle 10 items without breaking the layout (e.g., ensure the container height is flexible or reasonable). No major code changes expected here, just verification.
+
+## Deliverables
+- `app/controllers/home_controller.rb` updated.
+- Completion report in `config/steps_logs/step_36_completion_report.md`.
+
+# Step 36: Remove Payment Button from Quote View
+
+The user wants to enforce a specific workflow: Payments should only be registered from the Client's Ledger (Cuenta Corriente), not from a specific Quote.
+**Requirement:** Remove the "Registrar Cobro" (Register Payment) button from the Quote Show view.
+
+## Main Tasks
+
+### 1. Update Quote Show View (app/views/quotes/show.html.erb)
+Locate the action buttons section (usually near the top or bottom).
+Find the link or button that says "Registrar Cobro" (or points to `new_payment_path` with a `quote_id` parameter).
+**Delete this button.**
+
+    <%# Search for something like this and remove it: %>
+    <%= link_to "Registrar Cobro", new_payment_path(quote_id: @quote.id), ... %>
+
+### 2. Check Quote Actions Partial (if applicable)
+If the buttons are rendered via a partial (e.g., `_actions.html.erb`), remove it from there.
+
+## Deliverables
+- `app/views/quotes/show.html.erb` updated (button removed).
+- Completion report in `config/steps_logs/step_37_completion_report.md`.
