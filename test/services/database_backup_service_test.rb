@@ -156,6 +156,63 @@ class DatabaseBackupServiceTest < ActiveSupport::TestCase
     end
   end
 
+  test "returns false when required ENV variables are missing" do
+    ENV.delete("AWS_REGION")
+    ENV.delete("AWS_BUCKET_NAME")
+
+    result = @service.call
+
+    assert_not result
+  end
+
+  test "does not run pg_dump when ENV variables are missing" do
+    ENV.delete("AWS_ACCESS_KEY_ID")
+    system_called = false
+
+    @service.define_singleton_method(:system) do |*_args|
+      system_called = true
+      true
+    end
+
+    @service.call
+
+    assert_not system_called, "pg_dump should not run when ENV variables are missing"
+  end
+
+  test "cleans up temp file when S3 upload raises an exception" do
+    freeze_time do
+      timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
+      expected_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
+
+      failing_s3 = ->(*) { raise Aws::S3::Errors::ServiceError.new(nil, "Network error") }
+
+      stub_system_call(success: true, touch_file: expected_file) do
+        Aws::S3::Resource.stub(:new, failing_s3) do
+          result = @service.call
+
+          assert_not result
+          assert_not File.exist?(expected_file), "Temp file should be cleaned up even after upload failure"
+        end
+      end
+    end
+  end
+
+  test "returns false when S3 upload raises an exception" do
+    freeze_time do
+      timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
+      expected_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
+
+      failing_s3 = ->(*) { raise StandardError, "Connection refused" }
+
+      stub_system_call(success: true, touch_file: expected_file) do
+        Aws::S3::Resource.stub(:new, failing_s3) do
+          result = @service.call
+          assert_not result
+        end
+      end
+    end
+  end
+
   private
 
   def stub_system_call(success:, touch_file: nil)

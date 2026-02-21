@@ -1,5 +1,13 @@
 class DatabaseBackupService
+  REQUIRED_ENV_VARS = %w[AWS_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_BUCKET_NAME].freeze
+
   def call
+    missing = REQUIRED_ENV_VARS.select { |var| ENV[var].blank? }
+    if missing.any?
+      Rails.logger.error "Backup aborted: missing ENV variables: #{missing.join(', ')}"
+      return false
+    end
+
     timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
     backup_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
 
@@ -24,9 +32,12 @@ class DatabaseBackupService
 
     upload_to_s3(backup_file, "db_backup_#{timestamp}.dump")
 
-    File.delete(backup_file) if File.exist?(backup_file)
-
     true
+  rescue => e
+    Rails.logger.error "Backup failed during upload: #{e.message}"
+    false
+  ensure
+    File.delete(backup_file) if backup_file && File.exist?(backup_file)
   end
 
   private

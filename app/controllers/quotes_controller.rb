@@ -14,7 +14,8 @@ class QuotesController < ApplicationController
       format.pdf do
         html = render_to_string(template: "quotes/show", layout: "pdf", formats: [ :html ])
         pdf = Grover.new(html, format: "A4", wait_until: "networkidle0", print_background: true).to_pdf
-        send_data pdf, filename: "presupuesto_#{@quote.id}.pdf", type: "application/pdf", disposition: "inline"
+        client_name = @quote.client.name.parameterize
+        send_data pdf, filename: "presupuesto_#{@quote.id}_#{client_name}.pdf", type: "application/pdf", disposition: "inline"
       end
     end
   end

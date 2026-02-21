@@ -1926,3 +1926,128 @@ If the buttons are rendered via a partial (e.g., `_actions.html.erb`), remove it
 ## Deliverables
 - `app/views/quotes/show.html.erb` updated (button removed).
 - Completion report in `config/steps_logs/step_37_completion_report.md`.
+
+# Step 38: Add AWS S3 Dependencies
+
+We are implementing a Disaster Recovery database backup strategy using AWS S3.
+**Requirement:** Add the AWS S3 SDK to the project.
+
+## Main Tasks
+
+### 1. Update Gemfile
+Add the `aws-sdk-s3` gem to your Gemfile. It can be placed in the general dependencies area.
+
+    gem 'aws-sdk-s3', '~> 1.144' # Use the latest stable 1.x version
+
+### 2. Bundle Install
+Run `bundle install` to generate the updated `Gemfile.lock`.
+
+## Deliverables
+- `Gemfile` and `Gemfile.lock` updated.
+- Completion report in `config/steps_logs/step_38_completion_report.md`.
+
+---
+
+# Step 39: Ensure pg_dump is available in Production
+
+To perform a database backup from within the Rails application environment, the `pg_dump` utility must be installed in the production Docker container.
+
+## Main Tasks
+
+### 1. Update Dockerfile
+Open the `Dockerfile` at the root of the project.
+Locate the `RUN apt-get update -qq && apt-get install --no-install-recommends -y ...` command in the base or build stage (usually where packages like `libpq-dev` or `nodejs` are installed).
+Add `postgresql-client` to the list of packages to install. This package contains the `pg_dump` executable.
+
+    # Example of how it should look:
+    RUN apt-get update -qq && \
+        apt-get install --no-install-recommends -y curl libvips postgresql-client && \
+        rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+## Deliverables
+- `Dockerfile` updated to include `postgresql-client`.
+- Completion report in `config/steps_logs/step_39_completion_report.md`.
+
+---
+
+# Step 40: Create the Database Backup Service and Rake Task
+
+We need a Ruby service that executes the `pg_dump` command using the active database configuration, and then uploads the resulting file to AWS S3.
+
+## Main Tasks
+
+### 1. Create the Service Object (`app/services/database_backup_service.rb`)
+Create a new service class.
+
+    class DatabaseBackupService
+      def call
+        timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
+        backup_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
+
+        # 1. Execute pg_dump
+        db_config = ActiveRecord::Base.connection_db_config.configuration_hash
+        
+        env_vars = { "PGPASSWORD" => db_config[:password].to_s }
+        command = [
+          "pg_dump",
+          "-Fc", # Custom format (compressed)
+          "-v",
+          "-h", db_config[:host].to_s,
+          "-U", db_config[:username].to_s,
+          "-p", (db_config[:port] || 5432).to_s,
+          "-f", backup_file,
+          db_config[:database].to_s
+        ]
+
+        system(env_vars, *command)
+
+        unless $?.success?
+          Rails.logger.error "Backup creation failed!"
+          return false
+        end
+
+        # 2. Upload to S3
+        upload_to_s3(backup_file, "db_backup_#{timestamp}.dump")
+
+        # 3. Cleanup local file
+        File.delete(backup_file) if File.exist?(backup_file)
+        
+        true
+      end
+
+      private
+
+      def upload_to_s3(file_path, file_name)
+        s3 = Aws::S3::Resource.new(
+          region: ENV['AWS_REGION'],
+          access_key_id: ENV['AWS_ACCESS_KEY_ID'],
+          secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
+        )
+        bucket = s3.bucket(ENV['AWS_BUCKET_NAME'])
+        obj = bucket.object("backups/#{file_name}")
+        obj.upload_file(file_path)
+      end
+    end
+
+### 2. Create a Rake Task (`lib/tasks/db_backup.rake`)
+Create a custom Rake task to wrap the service so we can easily trigger it from Railway or a scheduler.
+
+    namespace :db do
+      desc "Dumps the database and uploads it to AWS S3"
+      task backup: :environment do
+        puts "Starting database backup process..."
+        if DatabaseBackupService.new.call
+          puts "Backup successfully created and uploaded to S3."
+        else
+          puts "Backup failed. Check logs."
+        end
+      end
+    end
+
+### 3. Note for the Developer (Self-Correction/Setup)
+Ensure to mention that ENV variables (`AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET_NAME`) must be configured in Railway later for this to work in production.
+
+## Deliverables
+- `app/services/database_backup_service.rb` created.
+- `lib/tasks/db_backup.rake` created.
+- Completion report in `config/steps_logs/step_40_completion_report.md`.
