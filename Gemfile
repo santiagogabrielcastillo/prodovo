@@ -71,3 +71,6 @@ gem "pagy"
 
 # CSV export (required in Ruby 3.4+)
 gem "csv"
+
+# AWS S3 for database backups
+gem "aws-sdk-s3", "~> 1.144"
