@@ -22,7 +22,17 @@ Grover.configure do |config|
     wait_until: "networkidle0", # Wait until network is idle to ensure styles are loaded
     prefer_css_page_size: true,
     user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36",
-    args: %w[--no-sandbox --disable-setuid-sandbox]
+    # Required for Chromium in containers/restricted environments (Docker, PaaS, etc.)
+    launch_args: %w[
+      --no-sandbox
+      --disable-setuid-sandbox
+      --disable-dev-shm-usage
+      --disable-gpu
+      --disable-software-rasterizer
+      --no-first-run
+      --no-zygote
+      --single-process
+    ]
   }
   
   # Only set executable_path if we have a valid path
