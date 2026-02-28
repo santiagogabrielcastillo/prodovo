@@ -55,8 +55,8 @@ class StatisticsController < ApplicationController
   end
 
   def set_products
-    @products = Product.order(:name)
-    @selected_product = Product.find_by(id: params[:product_id]) if params[:product_id].present?
+    @products = Product.for_stats.order(:name)
+    @selected_product = Product.for_stats.find_by(id: params[:product_id]) if params[:product_id].present?
   end
 
   def compute_kpis

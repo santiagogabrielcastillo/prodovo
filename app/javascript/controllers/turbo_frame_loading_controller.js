@@ -43,8 +43,13 @@ export default class extends Controller {
   }
 
   findFrameForRequest(element) {
-    // Find the turbo-frame that initiated the request
-    return element.closest("turbo-frame")
+    if (!element?.closest) return null
+    const frame = element.closest("turbo-frame")
+    if (!frame) return null
+    // Don't show overlay for full-page visits (data-turbo-frame="_top")
+    const target = element.getAttribute?.("data-turbo-frame") ?? element?.dataset?.turboFrame
+    if (target === "_top") return null
+    return frame
   }
 
   showLoadingState(frame) {
