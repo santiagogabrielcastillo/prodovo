@@ -5,7 +5,7 @@ class QuotesController < ApplicationController
 
   def index
     @q = Quote.includes(:client, :user).ransack(params[:q])
-    @pagy, @quotes = pagy(@q.result(distinct: true).order(created_at: :desc), limit: 5)
+    @pagy, @quotes = pagy(@q.result(distinct: true).order(created_at: :desc))
   end
 
   def show
