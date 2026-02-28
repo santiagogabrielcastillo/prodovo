@@ -42,7 +42,7 @@ class PaymentTest < ActiveSupport::TestCase
   end
 
   test "saving a full payment changes quote status to paid" do
-    payment = Payment.create!(
+    Payment.create!(
       client: @client,
       quote: @quote,
       amount: 1000.00,
@@ -54,8 +54,8 @@ class PaymentTest < ActiveSupport::TestCase
     assert_equal 1000.00, @quote.amount_paid
   end
 
-  test "saving a partial payment changes quote status to partially_paid" do
-    payment = Payment.create!(
+  test "saving a partial payment keeps quote status as sent" do
+    Payment.create!(
       client: @client,
       quote: @quote,
       amount: 500.00,
@@ -63,7 +63,7 @@ class PaymentTest < ActiveSupport::TestCase
     )
 
     @quote.reload
-    assert @quote.partially_paid?, "Quote should be marked as partially_paid when payment is less than total"
+    assert @quote.sent?, "Quote should remain sent when payment is less than total"
     assert_equal 500.00, @quote.amount_paid
   end
 
@@ -77,7 +77,7 @@ class PaymentTest < ActiveSupport::TestCase
     )
 
     @quote.reload
-    assert @quote.partially_paid?, "Quote should be partially_paid after first payment"
+    assert @quote.sent?, "Quote should remain sent after first partial payment"
 
     # Second payment that completes it
     Payment.create!(
@@ -300,7 +300,7 @@ class PaymentTest < ActiveSupport::TestCase
 
     @client.reload
     assert_equal initial_balance, @client.balance, "Client balance should revert after standalone payment deletion"
-    
+
     # Quote should be unaffected
     @quote.reload
     assert @quote.sent?

@@ -19,7 +19,7 @@ class ClientsController < ApplicationController
 
     # Get all quotes and payments for the client (eager load quote for payments to avoid N+1)
     # Exclude draft and cancelled quotes - only include actual debts
-    quotes_scope = @client.quotes.where(status: [ :sent, :partially_paid, :paid ])
+    quotes_scope = @client.quotes.where(status: [ :sent, :paid ])
     payments_scope = @client.payments.includes(:quote)
 
     # Calculate Previous Balance (Saldo Anterior) if filtering by start_date
@@ -148,23 +148,6 @@ class ClientsController < ApplicationController
 
   def client_params
     params.require(:client).permit(:name, :email, :phone, :tax_id, :address, :balance)
-  end
-
-  def parse_date(date_string)
-    return nil if date_string.blank?
-
-    # Handle DD/MM/YYYY format
-    if date_string.include?("/")
-      parts = date_string.split("/")
-      if parts.length == 3
-        return Date.new(parts[2].to_i, parts[1].to_i, parts[0].to_i)
-      end
-    end
-
-    # Fallback to standard parsing
-    Date.parse(date_string)
-  rescue ArgumentError, TypeError
-    nil
   end
 
   def generate_ledger_csv

@@ -2,6 +2,8 @@ class QuoteItem < ApplicationRecord
   belongs_to :quote
   belongs_to :product
 
+  scope :for_stats, -> { where(include_in_stats: true) }
+
   validates :product, presence: true
   # Allow decimal quantities (e.g., 1.5 units) and must be greater than 0
   validates :quantity, presence: true, numericality: { greater_than: 0 }

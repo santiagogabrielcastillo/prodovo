@@ -11,7 +11,8 @@ export default class extends Controller {
     "itemTotal",
     "grandTotal",
     "clientSelect",
-    "destroyField"
+    "destroyField",
+    "includeInStatsCheckbox"
   ]
 
   static values = {
@@ -118,7 +119,17 @@ export default class extends Controller {
   updatePrice(event) {
     const productSelect = event.target
     const productId = productSelect.value
-    
+    const selectedOption = productSelect.options[productSelect.selectedIndex]
+
+    // Auto-set include_in_stats checkbox based on product's attribute
+    if (selectedOption && productId) {
+      const itemCard = productSelect.closest(".quote-item-card")
+      const statsCheckbox = itemCard.querySelector('[data-quote-form-target="includeInStatsCheckbox"]')
+      if (statsCheckbox) {
+        statsCheckbox.checked = selectedOption.dataset.includeInStats === "true"
+      }
+    }
+
     // Get client_id from the main form's client select
     const clientSelect = this.clientSelectTarget
     const clientId = clientSelect ? clientSelect.value : null

@@ -4,7 +4,7 @@ class HomeController < ApplicationController
   def index
     # KPIs
     @total_receivables = Client.where("balance > 0").sum(:balance) || 0
-    @monthly_sales = Quote.where(status: [:sent, :partially_paid, :paid])
+    @monthly_sales = Quote.where(status: [ :sent, :paid ])
                           .where("created_at >= ?", Date.current.beginning_of_month)
                           .sum(:total_amount) || 0
 

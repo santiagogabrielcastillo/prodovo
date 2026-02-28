@@ -62,8 +62,8 @@ class PaymentsTest < ApplicationSystemTestCase
     # Modal should close and status should update (wait for Turbo Stream)
     assert_current_path quote_path(quote), wait: 5
 
-    # Verify quote status changed to partially_paid (Spanish)
-    assert_text "Pago Parcial", wait: 5
+    # Verify quote status remains sent (Spanish) after partial payment
+    assert_text "Enviado", wait: 5
 
     # Verify payment appears in payment history
     assert_text "$500"

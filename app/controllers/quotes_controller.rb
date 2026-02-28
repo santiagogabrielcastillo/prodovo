@@ -79,7 +79,7 @@ class QuotesController < ApplicationController
   end
 
   def cancel
-    if @quote.sent? || @quote.paid? || @quote.partially_paid?
+    if @quote.sent? || @quote.paid?
       @quote.update(status: :cancelled)
       @quote.client.recalculate_balance!
       redirect_to @quote, notice: t("global.messages.quote_cancelled")
@@ -128,6 +128,7 @@ class QuotesController < ApplicationController
         :product_id,
         :quantity,
         :unit_price,
+        :include_in_stats,
         :_destroy
       ]
     )

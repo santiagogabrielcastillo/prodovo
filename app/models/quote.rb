@@ -6,7 +6,11 @@ class Quote < ApplicationRecord
 
   accepts_nested_attributes_for :quote_items, allow_destroy: true
 
-  enum :status, { draft: 0, sent: 1, partially_paid: 2, paid: 3, cancelled: 4 }
+  enum :status, { draft: 0, sent: 1, paid: 3, cancelled: 4 }
+
+  scope :in_stats_period, ->(start_date, end_date) {
+    where(status: [ :sent, :paid ]).where(date: start_date..end_date)
+  }
 
   validates :client, presence: true
   validates :status, presence: true
@@ -23,6 +27,10 @@ class Quote < ApplicationRecord
       item.calculate_total_price!
       item.total_price || 0.0
     end
+  end
+
+  def total_statistical_quantity
+    quote_items.reject(&:marked_for_destruction?).select(&:include_in_stats).sum(&:quantity)
   end
 
   def can_edit?
@@ -59,9 +67,8 @@ class Quote < ApplicationRecord
 
     if total_paid >= total_quote
       update!(status: :paid)
-    elsif total_paid > 0 && total_paid < total_quote
-      update!(status: :partially_paid)
-    elsif total_paid <= 0
+    else
+      # Some or no payment: keep as sent (partially_paid removed)
       update!(status: :sent)
     end
   end

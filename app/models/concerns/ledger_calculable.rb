@@ -16,7 +16,7 @@ module LedgerCalculable
 
     # Get all quotes and payments (eager load quote for payments to avoid N+1)
     # Exclude draft and cancelled quotes - only include actual debts
-    quotes_scope = quotes.where(status: [ :sent, :partially_paid, :paid ])
+    quotes_scope = quotes.where(status: [ :sent, :paid ])
     payments_scope = payments.includes(:quote)
 
     # Calculate Previous Balance if filtering by start_date
