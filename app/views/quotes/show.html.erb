@@ -7,7 +7,7 @@
       <%= link_to t('global.actions.edit'), edit_quote_path(@quote), class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700" %>
       <%= button_to t('global.actions.finalize_send'), mark_as_sent_quote_path(@quote), method: :patch, class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700", data: { turbo_confirm: t('global.confirmations.finalize') } %>
     <% end %>
-    <% if @quote.sent? || @quote.partially_paid? || @quote.paid? %>
+    <% if @quote.sent? || @quote.paid? %>
       <%= link_to quote_path(@quote, format: :pdf), class: "px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 flex items-center gap-2", target: "_blank" do %>
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -85,7 +85,12 @@
                 <tr class="border-b border-gray-200 print:border-gray-300 hidden md:table-row print:table-row">
                   <td class="py-4 px-4 text-gray-700 print:py-1 print:px-2 print:text-black"><%= item.product.sku %></td>
                   <td class="py-4 px-4 print:py-1 print:px-2">
-                    <div class="font-semibold text-gray-900 print:text-black print:font-medium"><%= item.product.name %></div>
+                    <div class="font-semibold text-gray-900 print:text-black print:font-medium">
+                      <%= item.product.name %>
+                      <% unless item.include_in_stats %>
+                        <span class="text-xs font-normal text-gray-400 print:text-gray-500">(Ítem administrativo)</span>
+                      <% end %>
+                    </div>
                   </td>
                   <td class="py-4 px-4 text-right text-gray-900 print:py-1 print:px-2 print:text-black"><%= format_quantity(item.quantity) %></td>
                   <td class="py-4 px-4 text-right text-gray-900 print:py-1 print:px-2 print:text-black"><%= format_currency(item.unit_price) %></td>
@@ -94,7 +99,12 @@
                 <!-- Mobile View -->
                 <tr class="border-b border-gray-200 print:hidden md:hidden">
                   <td class="py-4 px-4" colspan="5">
-                    <div class="font-semibold text-gray-900 mb-1"><%= item.product.name %></div>
+                    <div class="font-semibold text-gray-900 mb-1">
+                      <%= item.product.name %>
+                      <% unless item.include_in_stats %>
+                        <span class="text-xs font-normal text-gray-400">(Adm.)</span>
+                      <% end %>
+                    </div>
                     <div class="text-sm text-gray-500 mb-2">Código: <%= item.product.sku %></div>
                     <div class="flex justify-between text-sm">
                       <span class="text-gray-600">Qty: <%= format_quantity(item.quantity) %></span>
@@ -128,7 +138,7 @@
             <span><%= format_currency_integer(@quote.total_amount) %></span>
           </div>
 
-          <% if @quote.sent? || @quote.partially_paid? || @quote.paid? %>
+          <% if @quote.sent? || @quote.paid? %>
             <!-- Payment Summary - Monochrome -->
             <div class="pt-4 mt-4 border-t border-gray-200 space-y-2 print:pt-2 print:mt-2 print:space-y-1" id="payment_summary">
               <div class="flex justify-between text-sm text-gray-600 print:text-xs print:text-black">
@@ -152,7 +162,7 @@
       </div>
 
       <!-- Payments Section -->
-      <% if @quote.sent? || @quote.partially_paid? || @quote.paid? %>
+      <% if @quote.sent? || @quote.paid? %>
         <div class="pt-8 border-t border-gray-200 print:pt-3 print:border-gray-300">
           <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 print:text-xs print:mb-2 print:text-gray-700">Pagos</h3>
 

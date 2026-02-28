@@ -113,7 +113,7 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @client.id, payment.client_id
 
     @quote.reload
-    assert @quote.partially_paid?
+    assert @quote.sent?
   end
 
   # ============================================

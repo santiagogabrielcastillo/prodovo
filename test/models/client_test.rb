@@ -10,7 +10,7 @@ class ClientTest < ActiveSupport::TestCase
     # Clean up existing quotes and payments for this client
     @client.quotes.destroy_all
     @client.payments.destroy_all
-    
+
     # Create sent quote
     quote = Quote.create!(
       client: @client,
@@ -38,7 +38,7 @@ class ClientTest < ActiveSupport::TestCase
     # Clean up existing quotes and payments for this client
     @client.quotes.destroy_all
     @client.payments.destroy_all
-    
+
     # Create sent quote
     quote = Quote.create!(
       client: @client,
@@ -68,11 +68,11 @@ class ClientTest < ActiveSupport::TestCase
     assert_equal 0.00, @client.balance
   end
 
-  test "recalculate_balance! includes sent, partially_paid, and paid quotes" do
+  test "recalculate_balance! includes sent and paid quotes" do
     # Clean up existing quotes and payments for this client
     @client.quotes.destroy_all
     @client.payments.destroy_all
-    
+
     # Create quotes in different statuses
     sent_quote = Quote.create!(
       client: @client,
@@ -85,16 +85,16 @@ class ClientTest < ActiveSupport::TestCase
     sent_quote.calculate_total!
     sent_quote.save!
 
-    partially_paid_quote = Quote.create!(
+    sent_quote_2 = Quote.create!(
       client: @client,
       user: @user,
       date: Date.current,
-      status: :partially_paid,
+      status: :sent,
       total_amount: 0
     )
-    partially_paid_quote.quote_items.create!(product: products(:one), quantity: 1, unit_price: 300.00)
-    partially_paid_quote.calculate_total!
-    partially_paid_quote.save!
+    sent_quote_2.quote_items.create!(product: products(:one), quantity: 1, unit_price: 300.00)
+    sent_quote_2.calculate_total!
+    sent_quote_2.save!
 
     paid_quote = Quote.create!(
       client: @client,
@@ -121,8 +121,7 @@ class ClientTest < ActiveSupport::TestCase
 
     @client.recalculate_balance!
 
-    # Should include sent (500) + partially_paid (300) + paid (200) = 1000
-    # Should NOT include draft (1000)
+    # Should include sent (500 + 300) + paid (200) = 1000. Should NOT include draft (1000)
     assert_equal 1000.00, @client.balance
   end
 
@@ -130,7 +129,7 @@ class ClientTest < ActiveSupport::TestCase
     # Clean up existing quotes and payments for this client
     @client.quotes.destroy_all
     @client.payments.destroy_all
-    
+
     # Create cancelled quote
     cancelled_quote = Quote.create!(
       client: @client,

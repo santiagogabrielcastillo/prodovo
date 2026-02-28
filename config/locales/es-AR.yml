@@ -261,6 +261,30 @@ es-AR:
     form:
       product: "Producto"
       price: "Precio"
+  statistics:
+    index:
+      title: "Estadísticas"
+      subtitle: "Ventas y métricas por período (presupuestos enviados o cobrados)"
+      date_filter: "Rango de fechas (por fecha de presupuesto)"
+      preset_this_month: "Este mes"
+      preset_last_3_months: "Últimos 3 meses"
+      preset_this_year: "Este año"
+      start_date: "Desde"
+      end_date: "Hasta"
+      apply: "Aplicar"
+      total_financial_sales: "Ventas totales (financieras)"
+      total_financial_sales_hint: "Suma de totales de presupuestos enviados/cobrados"
+      total_pure_quantity: "Unidades (productos puros)"
+      total_pure_quantity_hint: "Solo ítems incluidos en estadísticas"
+      avg_price_all_pure: "Precio promedio (todos los puros)"
+      avg_price_all_pure_hint: "Ponderado por cantidad"
+      product_selector: "Producto"
+      product_selector_placeholder: "Seleccionar producto"
+      specific_product: "Por producto seleccionado"
+      avg_price_product: "Precio promedio"
+      quantity_product: "Unidades vendidas"
+      stats_in_period: "En el período"
+      no_sales: "No hay ventas en el período."
   number:
     format:
       separator: ","
@@ -333,7 +357,6 @@ es-AR:
         status:
           draft: "Borrador"
           sent: "Enviado"
-          partially_paid: "Pago Parcial"
           paid: "Cobrado"
           cancelled: "Cancelado"
     errors:

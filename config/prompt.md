@@ -2051,3 +2051,118 @@ Ensure to mention that ENV variables (`AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SE
 - `app/services/database_backup_service.rb` created.
 - `lib/tasks/db_backup.rake` created.
 - Completion report in `config/steps_logs/step_40_completion_report.md`.
+
+# Step 42: Optional Quote Items (Include in Total Toggle)
+
+The user wants the ability to add "informative" or "administrative" items to a Quote without them automatically adding up to the Quote's subtotal/total.
+**Rules**:
+1. Add an `include_in_total` toggle per quote item.
+2. Default Behavior: When a Product is selected in the dropdown, the toggle automatically mimics the Product's `include_in_stats` attribute (if `include_in_stats` is true, the item is included in the total; if false, it is excluded by default).
+3. The user can manually override this toggle in the form.
+4. Both frontend (Stimulus JS) and backend (Ruby model) calculations must ignore items where `include_in_total` is false.
+
+## Main Tasks
+
+### 1. Database Migration
+Generate a migration to add the boolean column to `quote_items`.
+- **Column**: `include_in_total` (Boolean).
+- **Default**: `true` (null: false).
+- **Command**: `bin/rails g migration AddIncludeInTotalToQuoteItems include_in_total:boolean`
+- Make sure to add `default: true, null: false` in the migration file before running it.
+
+### 2. Form & View Update (app/views/quotes/_quote_item_fields.html.erb)
+- Add a checkbox field for `include_in_total`. Label it something like "Suma al total?".
+- Add `data-action="change->quote-form#calculateTotals"` to this checkbox so toggling it triggers a live recalculation.
+- **Crucial**: Update the Product `<select>` to inject the `include_in_stats` value as a data attribute into each `<option>`.
+    Example:
+    ```erb
+    <%= f.select :product_id, 
+        options_for_select(Product.all.map { |p| [p.name, p.id, { 'data-include-in-stats': p.include_in_stats? }] }, f.object.product_id), 
+        { prompt: "Seleccione producto" }, 
+        { data: { action: "change->quote-form#handleProductChange" }, class: "..." } %>
+    ```
+
+### 3. Stimulus JS Update (app/javascript/controllers/quote_form_controller.js)
+- Create a `handleProductChange(event)` action:
+    - Get the selected option from the dropdown.
+    - Read its `dataset.includeInStats`.
+    - Find the corresponding `include_in_total` checkbox in the same row and set its `checked` property to match the boolean.
+    - Call `this.calculateTotals()`.
+- Update `calculateTotals()`:
+    - When iterating through rows to sum the subtotal/total, check if the `include_in_total` checkbox is checked. If it's NOT checked, its contribution to the final sum must be `0`.
+
+### 4. Backend Logic (app/models/quote.rb & QuotesController)
+- Update `QuotesController#quote_params` to permit `:include_in_total` inside `quote_items_attributes`.
+- In `app/models/quote.rb`, update the math methods (`calculate_totals`, `subtotal`, etc.) to only sum `quote_items` where `include_in_total: true`.
+    - Example: `quote_items.reject(&:marked_for_destruction?).select(&:include_in_total).sum(&:total_price)`
+
+### 5. Show and PDF Views
+- In `app/views/quotes/show.html.erb` and `app/views/quotes/show_pdf.html.erb`:
+    - Display the item normally, but add a visual indicator if `include_in_total` is false (e.g., an asterisk, strike-through the line total, or a small badge "No suma al total") so the math on the PDF makes sense to the final client.
+
+## Deliverables
+- Migration created and run.
+- `_quote_item_fields.html.erb` updated.
+- `quote_form_controller.js` updated with toggle logic.
+- `quote.rb` and `quotes_controller.rb` updated.
+- `show` and `show_pdf` views updated to visually explain the math.
+- Completion report in `config/steps_logs/step_42_completion_report.md`.
+
+# Step 42 (Revised): Toggle Quote Items for Statistics (Volume vs Financial)
+
+The user corrected the previous requirement. All items MUST always add up to the financial total of the quote (the client has to pay for administrative fees). However, administrative items must NOT add up to the "Volume/Quantity" of products sold for statistical purposes.
+**Goal**: Add an `include_in_stats` toggle at the `QuoteItem` level. It inherits from the chosen `Product` but can be overridden. It does not affect the financial total, only the volume metrics.
+
+## Main Tasks
+
+### 1. Database Migration
+Generate a migration to add the boolean column to `quote_items`.
+- **Column**: `include_in_stats` (Boolean).
+- **Default**: `true` (null: false).
+- **Command**: `bin/rails g migration AddIncludeInStatsToQuoteItems include_in_stats:boolean`
+- Ensure you add `default: true, null: false` in the migration file before migrating.
+
+### 2. Model Updates
+- **`app/models/quote_item.rb`**: 
+  Add a scope for future use: `scope :for_stats, -> { where(include_in_stats: true) }`
+- **`app/models/quote.rb`**:
+  Create a method to calculate the statistical volume (total physical items).
+  ```ruby
+  def total_statistical_quantity
+    quote_items.reject(&:marked_for_destruction?).select(&:include_in_stats).sum(&:quantity)
+  end
+  ```
+  *(Note: The financial `total_price` methods remain unchanged because they must sum everything).*
+
+### 3. Form View Update (`app/views/quotes/_quote_item_fields.html.erb`)
+- Add a checkbox field for `include_in_stats`.
+- **Label**: "Incluir en Estadísticas" or "Suma a métricas?".
+- Update the Product `<select>` to inject the product's `include_in_stats` value as a data attribute into each `<option>`.
+  Example:
+  ```erb
+  <%= f.select :product_id, 
+      options_for_select(Product.all.map { |p| [p.name, p.id, { 'data-include-in-stats': p.include_in_stats? }] }, f.object.product_id), 
+      { prompt: "Seleccione producto" }, 
+      { data: { action: "change->quote-form#handleProductChange" }, class: "..." } %>
+  ```
+
+### 4. Stimulus JS Update (`app/javascript/controllers/quote_form_controller.js`)
+- Create or update the `handleProductChange(event)` action:
+  - Get the selected option from the dropdown target.
+  - Read its `dataset.includeInStats`.
+  - Find the corresponding `include_in_stats` checkbox in the same row.
+  - Update the checkbox's `checked` property to match the product's boolean.
+- *Crucial difference from before*: We DO NOT need to touch the `calculateTotals` financial logic.
+
+### 5. Controller Update (`app/controllers/quotes_controller.rb`)
+- Update `quote_params` to permit `:include_in_stats` inside the `quote_items_attributes` array.
+
+### 6. UI Detail (`app/views/quotes/show.html.erb` & PDF)
+- If you are currently showing a "Total Quantity of Items" in the footer of the quote view or PDF, make sure it uses `@quote.total_statistical_quantity` instead of just summing everything, OR add a small label next to items where `include_in_stats` is false (e.g., "(Ítem administrativo)").
+
+## Deliverables
+- Migration created and run.
+- `_quote_item_fields.html.erb` updated.
+- `quote_form_controller.js` updated to inherit the checkbox state.
+- `quote.rb`, `quote_item.rb` and `quotes_controller.rb` updated.
+- Completion report in `config/steps_logs/step_42_revised_completion_report.md`.

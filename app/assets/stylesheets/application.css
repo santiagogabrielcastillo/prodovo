@@ -13,3 +13,8 @@
  *= require_tree .
  *= require_self
  */
+
+/* Turbo frame loading spinner (used by turbo_frame_loading_controller.js) */
+@keyframes turbo-frame-spin {
+  to { transform: rotate(360deg); }
+}
