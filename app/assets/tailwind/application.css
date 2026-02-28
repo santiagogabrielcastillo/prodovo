@@ -1,46 +1,71 @@
 @import "tailwindcss";
 
 @layer utilities {
+
   /* Remove number input spinners */
   .no-spinner::-webkit-inner-spin-button,
   .no-spinner::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-  
+
   .no-spinner {
     -moz-appearance: textfield;
   }
 
-  /* Pagy pagination styling */
+  /* Pagy pagination: default series_nav outputs <nav class="pagy nav"> (two classes), not .pagy-nav */
+  nav.pagy,
   .pagy-nav {
     @apply flex flex-wrap justify-center items-center gap-1 sm:gap-2;
   }
-  
-  .pagy-nav .page {
-    @apply px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 min-w-[2rem] text-center;
+
+  nav.pagy a,
+  .pagy-nav a {
+    @apply px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 min-w-[2rem] text-center no-underline;
   }
-  
-  .pagy-nav .page.active {
+
+  nav.pagy a.current,
+  .pagy-nav a.current {
     @apply bg-indigo-600 text-white border-indigo-600;
   }
-  
-  .pagy-nav .page.disabled {
+
+  nav.pagy a:not([href]),
+  .pagy-nav a:not([href]) {
     @apply opacity-50 cursor-not-allowed pointer-events-none;
   }
-  
-  .pagy-nav .prev,
-  .pagy-nav .next {
-    @apply px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 whitespace-nowrap;
+
+  nav.pagy a:first-child,
+  nav.pagy a:last-child,
+  .pagy-nav a:first-child,
+  .pagy-nav a:last-child {
+    @apply whitespace-nowrap;
   }
-  
-  /* Mobile-specific pagination adjustments */
+
+  nav.pagy a.gap,
+  .pagy-nav a.gap {
+    @apply pointer-events-none;
+  }
+
+  @media (hover: hover) {
+    nav.pagy a[href]:hover,
+    .pagy-nav a[href]:hover {
+      @apply bg-gray-50;
+    }
+
+    nav.pagy a.current:hover,
+    .pagy-nav a.current:hover {
+      @apply bg-indigo-600 text-white;
+    }
+  }
+
   @media (max-width: 640px) {
+    nav.pagy,
     .pagy-nav {
       @apply gap-1;
     }
-    
-    .pagy-nav .page {
+
+    nav.pagy a,
+    .pagy-nav a {
       @apply px-2 py-1.5 text-xs;
     }
   }
@@ -50,14 +75,14 @@
     .no-print {
       display: none !important;
     }
-    
+
     /* Hide navigation and sidebar */
     header,
     aside,
     nav {
       display: none !important;
     }
-    
+
     /* Ensure text is black for printing */
     body {
       color: black !important;

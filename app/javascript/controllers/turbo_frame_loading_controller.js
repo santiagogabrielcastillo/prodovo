@@ -21,29 +21,31 @@ export default class extends Controller {
   }
 
   handleBeforeFetch(event) {
-    const frame = this.findFrameForRequest(event.target)
+    const frame = this.findFrameForRequest(event.target, event)
     if (frame) {
       this.showLoadingState(frame)
     }
   }
 
-  handleAfterFetch(event) {
-    const frame = this.findFrameForRequest(event.target)
-    if (frame) {
-      this.hideLoadingState(frame)
-    }
+  handleAfterFetch() {
+    this.hideLoadingState()
   }
 
-  handleFrameLoad(event) {
-    this.hideLoadingState(event.target)
+  handleFrameLoad() {
+    this.hideLoadingState()
   }
 
-  handleFrameMissing(event) {
-    this.hideLoadingState(event.target)
+  handleFrameMissing() {
+    this.hideLoadingState()
   }
 
-  findFrameForRequest(element) {
+  findFrameForRequest(element, event) {
     if (!element?.closest) return null
+    // Don't show overlay for GET requests (links, search, filter, pagination) — avoids flash
+    const method = (event?.detail?.fetchOptions?.method || "GET").toUpperCase()
+    if (method === "GET") return null
+    // Don't show overlay for pagination links (Pagy uses <nav class="pagy nav"> or .pagy-nav)
+    if (element.closest("nav.pagy") || element.closest(".pagy-nav")) return null
     const frame = element.closest("turbo-frame")
     if (!frame) return null
     // Don't show overlay for full-page visits (data-turbo-frame="_top")
@@ -90,7 +92,7 @@ export default class extends Controller {
     document.body.style.overflow = "hidden"
   }
 
-  hideLoadingState(frame) {
+  hideLoadingState() {
     document.body.removeAttribute("data-loading")
     
     const backdrop = document.body.querySelector(".turbo-frame-loading-backdrop")
