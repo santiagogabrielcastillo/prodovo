@@ -4,9 +4,11 @@ class HomeController < ApplicationController
   def index
     # KPIs
     @total_receivables = Client.where("balance > 0").sum(:balance) || 0
-    @monthly_sales = Quote.where(status: [ :sent, :paid ])
-                          .where("created_at >= ?", Date.current.beginning_of_month)
-                          .sum(:total_amount) || 0
+    # Same logic as Statistics: by quote.date, sent/paid only
+    @monthly_sales = Quote.in_stats_period(
+      Date.current.beginning_of_month,
+      Date.current.end_of_month
+    ).sum(:total_amount) || 0
 
     # Activity Feed
     @last_quotes = Quote.where.not(status: :draft)
