@@ -2166,3 +2166,43 @@ Generate a migration to add the boolean column to `quote_items`.
 - `quote_form_controller.js` updated to inherit the checkbox state.
 - `quote.rb`, `quote_item.rb` and `quotes_controller.rb` updated.
 - Completion report in `config/steps_logs/step_42_revised_completion_report.md`.
+
+# Step 43: Display Total Volume of Pure Products in Quotes
+
+The user wants to display the total quantity of "real" products (items where `include_in_stats: true`) on the Quote `show` and `pdf` views. This number must not include administrative items, fees, or adjustments. It should be displayed near the financial totals at the bottom of the quote.
+
+## Main Tasks
+
+### 1. Verify/Add Model Logic (app/models/quote.rb)
+Ensure the `total_statistical_quantity` method exists (from previous steps) and accurately sums only the items flagged for statistics.
+
+    def total_statistical_quantity
+      quote_items.reject(&:marked_for_destruction?).select(&:include_in_stats).sum(&:quantity)
+    end
+
+### 2. Update Quote Show View (app/views/quotes/show.html.erb)
+Locate the summary section at the bottom where Subtotal and Total are displayed.
+Add a new row to display the total quantity of real products. Label it clearly so the user understands it excludes administrative items.
+
+    <div class="flex justify-between border-b pb-2 mb-2">
+      <span class="font-semibold text-gray-600">Total de artículos:</span>
+      <span><%= @quote.total_statistical_quantity %></span>
+    </div>
+    ### 3. Update Quote PDF View (app/views/quotes/show_pdf.html.erb)
+Locate the totals section in the PDF layout (usually a table footer or a right-aligned block).
+Add the same metric, ensuring it matches the PDF's styling (compact, monochrome).
+
+    <tr>
+      <td colspan="4" class="text-right font-bold py-1">Total de artículos:</td>
+      <td class="text-right py-1"><%= @quote.total_statistical_quantity %></td>
+    </tr>
+
+### 4. Technical Constraints & Format
+- If the `quantity` column is a decimal (e.g., selling by weight like 1.5 kg), ensure it formats nicely (strip `.0` if it's a whole number). If it's strictly integer, standard output is fine.
+- Ensure the label "Total de artículos" (or similar) is clear enough for the end client receiving the PDF.
+
+## Deliverables
+- `app/models/quote.rb` verified/updated.
+- `app/views/quotes/show.html.erb` updated.
+- `app/views/quotes/show_pdf.html.erb` updated.
+- Completion report in `config/steps_logs/step_43_completion_report.md`.

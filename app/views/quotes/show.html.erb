@@ -129,6 +129,10 @@
       <!-- Totals Section -->
       <div class="flex justify-end mb-8 print:mb-3">
         <div class="w-full md:w-72 space-y-2 print:w-56 print:space-y-1 print:text-sm">
+          <div class="flex justify-between border-b pb-2 mb-2 text-gray-700 print:text-black print:border-gray-300 print:pb-1 print:mb-1">
+            <span class="font-semibold text-gray-600"><%= t('.total_products') %>:</span>
+            <span><%= format_quantity(@quote.total_statistical_quantity) %></span>
+          </div>
           <div class="flex justify-between text-gray-700 print:text-black">
             <span class="font-semibold">Subtotal:</span>
             <span><%= format_currency_integer(@quote.total_amount) %></span>

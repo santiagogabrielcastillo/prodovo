@@ -197,6 +197,7 @@ es-AR:
       unit_price: "Precio Unitario"
       total: "Total"
       subtotal: "Subtotal"
+      total_products: "Total de productos"
       payments: "Cobros"
       paid: "Pagado"
       due: "Resta"
