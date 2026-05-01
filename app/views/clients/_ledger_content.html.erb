@@ -25,20 +25,20 @@
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
               <% if previous_balance > 0 %>
-                $<%= number_with_precision(previous_balance, precision: 0) %>
+                $<%= number_with_precision(previous_balance, precision: 2) %>
               <% else %>
                 —
               <% end %>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-green-600 text-right">
               <% if previous_balance < 0 %>
-                $<%= number_with_precision(previous_balance.abs, precision: 0) %>
+                $<%= number_with_precision(previous_balance.abs, precision: 2) %>
               <% else %>
                 —
               <% end %>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-right <%= previous_balance >= 0 ? 'text-gray-900' : 'text-red-600' %>">
-              $<%= number_with_precision(previous_balance, precision: 0) %>
+              $<%= number_with_precision(previous_balance, precision: 2) %>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-center no-print">—</td>
           </tr>
@@ -58,7 +58,7 @@
               —
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-right <%= page_starting_balance >= 0 ? 'text-gray-900' : 'text-red-600' %>">
-              $<%= number_with_precision(page_starting_balance, precision: 0) %>
+              $<%= number_with_precision(page_starting_balance, precision: 2) %>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-center no-print">—</td>
           </tr>
@@ -89,20 +89,20 @@
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
               <% if entry[:type] == :quote %>
-                $<%= number_with_precision(entry[:item].total_amount, precision: 0) %>
+                $<%= number_with_precision(entry[:item].total_amount, precision: 2) %>
               <% else %>
                 —
               <% end %>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-green-600 text-right">
               <% if entry[:type] == :payment %>
-                $<%= number_with_precision(entry[:item].amount, precision: 0) %>
+                $<%= number_with_precision(entry[:item].amount, precision: 2) %>
               <% else %>
                 —
               <% end %>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-right <%= entry[:balance] >= 0 ? 'text-gray-900' : 'text-red-600' %>">
-              $<%= number_with_precision(entry[:balance], precision: 0) %>
+              $<%= number_with_precision(entry[:balance], precision: 2) %>
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-center no-print">
               <% if entry[:type] == :payment %>
@@ -142,4 +142,3 @@
 <% else %>
   <p class="text-gray-500"><%= t('clients.show.no_ledger_entries') %></p>
 <% end %>
-

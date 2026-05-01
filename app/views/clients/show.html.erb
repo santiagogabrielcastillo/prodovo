@@ -19,7 +19,7 @@
       <p class="text-sm font-medium text-gray-500 mb-2"><%= t('.current_balance') %></p>
       <% balance_value = @client.balance || 0 %>
       <% balance_class = balance_value < 0 ? "text-red-600" : balance_value == 0 ? "text-gray-900" : "text-green-600" %>
-      <p class="text-3xl font-bold <%= balance_class %>" id="client_balance_value">$<%= number_with_precision(balance_value, precision: 0) %></p>
+      <p class="text-3xl font-bold <%= balance_class %>" id="client_balance_value">$<%= number_with_precision(balance_value, precision: 2) %></p>
     </div>
     <div class="bg-white shadow rounded-lg p-6 min-w-[200px]" id="client_invoiced_card">
       <p class="text-sm font-medium text-gray-500 mb-2">
@@ -28,7 +28,7 @@
           <span class="text-xs text-gray-400">(<%= t('.filtered_period') %>)</span>
         <% end %>
       </p>
-      <p class="text-3xl font-bold text-gray-900" id="client_invoiced_value">$<%= number_with_precision(@total_invoiced, precision: 0) %></p>
+      <p class="text-3xl font-bold text-gray-900" id="client_invoiced_value">$<%= number_with_precision(@total_invoiced, precision: 2) %></p>
     </div>
     <div class="bg-white shadow rounded-lg p-6 min-w-[200px]" id="client_collected_card">
       <p class="text-sm font-medium text-gray-500 mb-2">
@@ -37,7 +37,7 @@
           <span class="text-xs text-gray-400">(<%= t('.filtered_period') %>)</span>
         <% end %>
       </p>
-      <p class="text-3xl font-bold text-green-600" id="client_collected_value">$<%= number_with_precision(@total_collected, precision: 0) %></p>
+      <p class="text-3xl font-bold text-green-600" id="client_collected_value">$<%= number_with_precision(@total_collected, precision: 2) %></p>
     </div>
   </div>
 
@@ -149,7 +149,7 @@
           <% @custom_prices.each do |custom_price| %>
             <tr>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= custom_price.product.name %></td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">$<%= number_with_precision(custom_price.price, precision: 0) %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">$<%= number_with_precision(custom_price.price, precision: 2) %></td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <%= link_to t('global.actions.edit'), edit_client_custom_price_path(@client, custom_price), class: "text-indigo-600 hover:text-indigo-900 mr-3" %>
                 <%= link_to t('global.actions.delete'), client_custom_price_path(@client, custom_price), data: { turbo_method: :delete, turbo_confirm: t('global.confirmations.delete') }, class: "text-red-600 hover:text-red-900" %>
