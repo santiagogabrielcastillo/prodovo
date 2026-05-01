@@ -4,7 +4,7 @@ class DatabaseBackupService
   def call
     missing = REQUIRED_ENV_VARS.select { |var| ENV[var].blank? }
     if missing.any?
-      Rails.logger.error "Backup aborted: missing ENV variables: #{missing.join(', ')}"
+      $stderr.puts "Backup aborted: missing ENV variables: #{missing.join(', ')}"
       return false
     end
 
@@ -26,7 +26,7 @@ class DatabaseBackupService
     ]
 
     unless system(env_vars, *command)
-      Rails.logger.error "Backup creation failed!"
+      $stderr.puts "pg_dump failed!"
       return false
     end
 
@@ -34,7 +34,7 @@ class DatabaseBackupService
 
     true
   rescue => e
-    Rails.logger.error "Backup failed during upload: #{e.message}"
+    $stderr.puts "Backup failed: #{e.message}"
     false
   ensure
     File.delete(backup_file) if backup_file && File.exist?(backup_file)

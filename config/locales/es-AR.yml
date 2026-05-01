@@ -32,6 +32,9 @@ es-AR:
       only_draft_can_be_finalized: "Solo los presupuestos en borrador pueden ser finalizados"
       only_sent_or_paid_can_be_cancelled: "Solo los presupuestos enviados o pagados pueden ser cancelados"
       only_draft_can_be_edited: "Solo los presupuestos en borrador pueden ser editados o eliminados"
+      expense_created: "Gasto registrado exitosamente"
+      expense_updated: "Gasto actualizado exitosamente"
+      expense_deleted: "Gasto eliminado exitosamente"
     confirmations:
       delete: "¿Estás seguro?"
       finalize: "¿Estás seguro de que deseas finalizar y enviar este presupuesto? Ya no será editable."
@@ -286,6 +289,20 @@ es-AR:
       quantity_product: "Unidades vendidas"
       stats_in_period: "En el período"
       no_sales: "No hay ventas en el período."
+  expenses:
+    index:
+      title: "Gastos"
+      prev_week: "Semana anterior"
+      next_week: "Semana siguiente"
+      week_range: "Del %{from} al %{to}"
+      add_expense: "Agregar gasto"
+    new:
+      title: "Nuevo gasto"
+      subtitle: "Registrá un gasto para el día elegido."
+    edit:
+      title: "Editar gasto"
+    form:
+      errors_header: "No se pudo guardar:"
   number:
     format:
       separator: ","
@@ -307,6 +324,7 @@ es-AR:
       product: "Producto"
       custom_price: "Precio Personalizado"
       quote_item: "Item de Presupuesto"
+      expense: "Gasto"
     attributes:
       client:
         name: "Nombre"
@@ -330,6 +348,10 @@ es-AR:
         notes: "Notas"
         client: "Cliente"
         quote: "Presupuesto"
+      expense:
+        amount: "Monto"
+        date: "Fecha"
+        description: "Descripción"
       product:
         name: "Nombre"
         sku: "Código"

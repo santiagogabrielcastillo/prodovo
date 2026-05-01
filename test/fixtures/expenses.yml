@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  amount: 150.50
+  date: 2026-05-04
+  description: "Compra de insumos"
+
+two:
+  amount: 0
+  date: 2026-05-05
+  description: "Gasto sin monto (ajuste)"

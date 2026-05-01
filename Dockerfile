@@ -13,14 +13,11 @@ WORKDIR /rails
 
 # Install base packages + CHROMIUM + NODE.JS para Grover/PDFs
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y \
-    curl \
-    libjemalloc2 \
-    libvips \
-    postgresql-client \
-    chromium \
-    fonts-liberation \
-    fonts-roboto \
+    apt-get install --no-install-recommends -y curl gnupg libjemalloc2 libvips chromium fonts-liberation fonts-roboto \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update -qq \
+    && apt-get install --no-install-recommends -y postgresql-client-17 \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install --no-install-recommends -y nodejs \
     && rm -rf /var/lib/apt/lists /var/cache/apt/archives

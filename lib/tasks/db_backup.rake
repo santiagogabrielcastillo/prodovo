@@ -1,11 +1,13 @@
 namespace :db do
   desc "Dumps the database and uploads it to AWS S3"
   task backup: :environment do
-    puts "Starting database backup process..."
-    if DatabaseBackupService.new.call
-      puts "Backup successfully created and uploaded to S3."
+    puts "Starting database backup..."
+    success = DatabaseBackupService.new.call
+    if success
+      puts "Backup completed successfully."
     else
-      puts "Backup failed. Check logs."
+      $stderr.puts "Backup failed. Check logs above."
+      exit 1
     end
   end
 end
