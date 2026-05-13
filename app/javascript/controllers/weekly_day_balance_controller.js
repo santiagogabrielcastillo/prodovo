@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Expand/collapse per-day cobranzas vs gastos on weekly_balances#index
+// Expand/collapse per-day cobros vs gastos on weekly_balances#index
 export default class extends Controller {
   static targets = ["details", "caret", "trigger"]
 

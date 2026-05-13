@@ -112,27 +112,26 @@
             <p class="wb-num text-lg font-bold mt-2 <%= row[:net].negative? ? 'text-rose-700' : 'text-slate-800' %>">
               $<%= number_with_precision(row[:net], precision: 2) %>
             </p>
-            <p class="text-xs text-slate-400 mt-1"><%= t(".daily_net_caption") %></p>
             <p class="text-xs text-indigo-600 font-medium mt-2"><%= t(".expand_hint") %></p>
           </button>
 
           <div
             id="<%= details_id %>"
             data-weekly-day-balance-target="details"
-            class="hidden border-t border-slate-200 bg-white px-3 pb-3 pt-2 space-y-3 max-h-56 overflow-y-auto">
-            <div>
-              <div class="flex items-baseline justify-between gap-2 mb-1.5">
-                <p class="text-xs font-bold uppercase tracking-wider text-emerald-800"><%= t(".payments_heading") %></p>
-                <p class="wb-num text-xs font-semibold text-emerald-900">
+            class="hidden border-t border-slate-200 bg-white px-4 pb-8 pt-3 space-y-3 max-h-56 overflow-y-auto min-w-0 scroll-pb-4">
+            <div class="min-w-0">
+              <div class="flex items-baseline justify-between gap-3 mb-1.5 w-full min-w-0">
+                <p class="text-xs font-bold uppercase tracking-wider text-emerald-800 flex-1 min-w-0 pr-2"><%= t(".payments_heading") %></p>
+                <p class="wb-num text-xs font-semibold text-emerald-900 shrink-0 text-right tabular-nums">
                   $<%= number_with_precision(row[:payments], precision: 2) %>
                 </p>
               </div>
               <% if row[:payment_records].empty? %>
                 <p class="text-xs text-slate-400"><%= t(".no_payments") %></p>
               <% else %>
-                <ul class="space-y-1.5">
+                <ul class="space-y-1.5 min-w-0 pr-0.5">
                   <% row[:payment_records].each do |payment| %>
-                    <li class="text-xs text-slate-700 leading-snug">
+                    <li class="text-xs text-slate-700 leading-snug break-words">
                       <span class="wb-num font-semibold text-emerald-900">$<%= number_with_precision(payment.amount, precision: 2) %></span>
                       <span class="text-slate-500"> · <%= payment.client.name %></span>
                       <% if payment.notes.present? %>
@@ -144,19 +143,19 @@
               <% end %>
             </div>
 
-            <div>
-              <div class="flex items-baseline justify-between gap-2 mb-1.5">
-                <p class="text-xs font-bold uppercase tracking-wider text-amber-800"><%= t(".expenses_heading") %></p>
-                <p class="wb-num text-xs font-semibold text-amber-900">
+            <div class="min-w-0">
+              <div class="flex items-baseline justify-between gap-3 mb-1.5 w-full min-w-0">
+                <p class="text-xs font-bold uppercase tracking-wider text-amber-800 flex-1 min-w-0 pr-2"><%= t(".expenses_heading") %></p>
+                <p class="wb-num text-xs font-semibold text-amber-900 shrink-0 text-right tabular-nums">
                   $<%= number_with_precision(row[:expenses], precision: 2) %>
                 </p>
               </div>
               <% if row[:expense_records].empty? %>
                 <p class="text-xs text-slate-400"><%= t(".no_expenses") %></p>
               <% else %>
-                <ul class="space-y-1.5">
+                <ul class="space-y-1.5 min-w-0 pr-0.5">
                   <% row[:expense_records].each do |expense| %>
-                    <li class="text-xs text-slate-700 leading-snug">
+                    <li class="text-xs text-slate-700 leading-snug break-words">
                       <span class="wb-num font-semibold text-amber-900">$<%= number_with_precision(expense.amount, precision: 2) %></span>
                       <span class="text-slate-500"> · <%= expense.description %></span>
                     </li>

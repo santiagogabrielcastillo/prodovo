@@ -5,7 +5,7 @@ status: completed
 date: 2026-05-13
 ---
 
-# Weekly balance (ingresos por cobranzas vs gastos)
+# Weekly balance (ingresos por cobros vs gastos)
 
 ## Overview
 
@@ -18,14 +18,14 @@ Show **week-level totals** and **per-day net** (see below), and reuse the same *
 
 **Totals vocabulary**
 
-- **`total_amount` (weekly):** On `weekly_balances#index`, always show explicit **week totals** for the viewed window: total cobranzas (payments sum), total gastos (expenses sum), and **neto semanal** (difference). Treat these as the primary `total_amount` block (one summary strip or card row—exact layout in implementation).
+- **`total_amount` (weekly):** On `weekly_balances#index`, always show explicit **week totals** for the viewed window: total cobros (payments sum), total gastos (expenses sum), and **neto semanal** (difference). Treat these as the primary `total_amount` block (one summary strip or card row—exact layout in implementation).
 - **Daily net:** For each day Monday–Sunday, show **neto del día** = sum of `Payment#amount` on that date − sum of `Expense#amount` on that date (same global scope). Days with no movement display **0** (or formatted zero), not a hidden row.
 
 **Naming (tentative):** URL/resource name can ship as something neutral in English (`weekly_balances`, `week_summaries`, etc.) with Spanish copy in `config/locales/es-AR.yml` for nav and headings (e.g. *Resumen semanal*, *Balance semanal*, *Flujo semanal* — final copy in i18n only).
 
 ## Problem statement / motivation
 
-Presupuestos reflect **committed** revenue; **cobranzas** reflect **cash**. The business owner needs a quick weekly view of **money in (payments)** vs **money out (expenses)** without opening clients or drilling quote-by-quote. Gastos already established a weekly lens; this screen completes the picture at the same granularity.
+Presupuestos reflect **committed** revenue; **cobros** reflect **cash**. The business owner needs a quick weekly view of **money in (payments)** vs **money out (expenses)** without opening clients or drilling quote-by-quote. Gastos already established a weekly lens; this screen completes the picture at the same granularity.
 
 ## Proposed solution
 
@@ -39,7 +39,7 @@ Presupuestos reflect **committed** revenue; **cobranzas** reflect **cash**. The 
    - Loads **per-day** structures for the seven dates (e.g. `@daily_rows` or two hashes `payments_by_date` / `expenses_by_date` already grouped, then compute **daily net** in the view or a small presenter). Every day in the range must be addressable so the template can render **seven** cells even when sums are zero.
 3. **View:** Dedicated template with:
    - Week title / range and **previous / next week** links (`week_start` ± 7 days), optional “current week” shortcut (same UX pattern as `app/views/expenses/index.html.erb`).
-   - **Weekly `total_amount` block:** Prominent week totals — cobranzas del período, gastos del período, neto del período — using existing currency/number helpers.
+   - **Weekly `total_amount` block:** Prominent week totals — cobros del período, gastos del período, neto del período — using existing currency/number helpers.
    - **Daily net:** A Monday–Sunday row or grid (aligned with Gastos week UX) where each day shows **neto del día** (payments that day − expenses that day).
 4. **Nav:** Add entry to `app/views/shared/_navbar.html.erb` link array. **Active state:** follow the Gastos pattern so query params do not break highlighting — compare `controller_name` to the new controller’s name (and path if needed), not only `current_page?`.
 
@@ -65,7 +65,7 @@ Implementation touchpoints: `app/views/expenses/index.html.erb`, `config/locales
 ### Out of scope (v1)
 
 - Per-client breakdown, quote-accrual views, or mixing quote `total_amount` by quote date (explicitly **not** this feature).
-- Editing payments/expenses from this screen (keep Gastos / cobranzas flows as source of truth).
+- Editing payments/expenses from this screen (keep Gastos / cobros flows as source of truth).
 - PDF/CSV export, multi-week trends, caching layers — note as future enhancements if desired.
 
 ## Acceptance criteria
@@ -74,7 +74,7 @@ Implementation touchpoints: `app/views/expenses/index.html.erb`, `config/locales
 
 - [x] New nav item opens the weekly summary for the **current week** by default.
 - [x] `?week_start=YYYY-MM-DD` selects the week containing that date, **snapped to Monday**; invalid values fall back to current week’s Monday (same behaviour as Gastos).
-- [x] **Weekly `total_amount` strip:** Show three week-level figures — total cobranzas (`Payment` sum in range), total gastos (`Expense` sum in range), **neto semanal** (difference).
+- [x] **Weekly `total_amount` strip:** Show three week-level figures — total cobros (`Payment` sum in range), total gastos (`Expense` sum in range), **neto semanal** (difference).
 - [x] **Daily net:** For each of the seven days, show **neto del día** = that day’s payment sum − that day’s expense sum (zeros visible, not hidden).
 - [x] Previous week / next week links preserve `week_start` as the **Monday** string.
 - [x] Sidebar **active** state works when `week_start` is present (same pattern as expenses + `controller_name`).
@@ -95,7 +95,7 @@ Implementation touchpoints: `app/views/expenses/index.html.erb`, `config/locales
 
 ## Dependencies and risks
 
-- **Risk:** Users confusing **cobranzas** (this screen) with **facturación** (quote dates / statistics). Mitigation: clear labels in Spanish (e.g. ingresos = cobranzas / pagos recibidos).
+- **Risk:** Users confusing **cobros** (this screen) with **facturación** (quote dates / statistics). Mitigation: clear labels in Spanish (e.g. ingresos = cobros del período).
 - **Dependency:** Existing `Payment` and `Expense` models and date fields; no migration required for read-only v1.
 
 ## Implementation sketch (files)
@@ -127,6 +127,6 @@ Implementation touchpoints: `app/views/expenses/index.html.erb`, `config/locales
 
 ## Optional follow-ups
 
-- On `weekly_balances`, add per-day **breakdown** lines (cobranzas del día / gastos del día) under the net, not only the net figure.
+- On `weekly_balances`, add per-day **breakdown** lines (cobros del día / gastos del día) under the net, not only the net figure.
 - Links to `quotes_path` / `expenses_path` with Ransack or query params pre-filled for the week (if the app supports it).
 - Trend chart or “vs previous week” delta.

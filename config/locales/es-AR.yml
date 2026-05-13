@@ -292,21 +292,20 @@ es-AR:
   weekly_balances:
     index:
       title: "Resumen semanal"
-      subtitle: "Cobranzas registradas en la semana frente a gastos (por fecha de cada movimiento)."
+      subtitle: "Cobros registrados en la semana frente a gastos (por fecha de cada movimiento)."
       week_range: "Del %{from} al %{to}"
       prev_week: "Semana anterior"
       next_week: "Semana siguiente"
       current_week: "Semana actual"
       today: "Hoy"
-      payments_total: "Cobranzas del período"
+      payments_total: "Cobros del período"
       expenses_total: "Gastos del período"
       net_total: "Neto semanal"
       daily_net_heading: "Neto por día"
-      daily_net_caption: "Cobranzas del día − gastos del día"
       expand_hint: "Tocá para ver el detalle del día"
-      payments_heading: "Cobranzas"
+      payments_heading: "Cobros"
       expenses_heading: "Gastos"
-      no_payments: "Sin cobranzas este día"
+      no_payments: "Sin cobros este día"
       no_expenses: "Sin gastos este día"
   expenses:
     index:
