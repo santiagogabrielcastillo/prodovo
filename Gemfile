@@ -60,6 +60,8 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  # Minitest 6.x breaks Rails 7.2 test_unit line_filtering (ArgumentError in line_filtering.rb).
+  gem "minitest", "~> 5.25"
 end
 
 # PDF generation

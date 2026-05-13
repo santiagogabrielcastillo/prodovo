@@ -1,4 +1,6 @@
 class ExpensesController < ApplicationController
+  include WeekNavigable
+
   before_action :authenticate_user!
   before_action :set_expense, only: %i[edit update destroy]
 
@@ -57,32 +59,11 @@ class ExpensesController < ApplicationController
     params.require(:expense).permit(:amount, :date, :description)
   end
 
-  def week_start_param
-    raw = params[:week_start].presence
-    if raw.blank?
-      return Date.current.beginning_of_week(:monday)
-    end
-
-    d = Date.parse(raw)
-    d.beginning_of_week(:monday)
-  rescue ArgumentError, TypeError
-    Date.current.beginning_of_week(:monday)
-  end
-
   def expense_date_param
     raw = params[:date].presence
     return nil if raw.blank?
 
     parse_date(raw) || Date.parse(raw)
-  rescue ArgumentError, TypeError
-    nil
-  end
-
-  def week_start_for_form_context
-    raw = params[:week_start].presence
-    return nil if raw.blank?
-
-    Date.parse(raw).beginning_of_week(:monday)
   rescue ArgumentError, TypeError
     nil
   end
