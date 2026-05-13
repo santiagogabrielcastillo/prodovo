@@ -4,6 +4,7 @@
   { name: "Productos", path: products_path },
   { name: "Presupuestos", path: quotes_path },
   { name: "Gastos", path: expenses_path },
+  { name: "Resumen semanal", path: weekly_balances_path },
   { name: "Estadísticas", path: statistics_path }
 ] %>
 
@@ -36,7 +37,13 @@
 
   <nav class="flex-1 overflow-y-auto px-3 py-6 space-y-1">
     <% links.each do |link| %>
-      <% active = (link[:path] == expenses_path && controller_name == "expenses") || (link[:path] != expenses_path && current_page?(link[:path])) %>
+      <% active = if link[:path] == expenses_path
+                    controller_name == "expenses"
+                  elsif link[:path] == weekly_balances_path
+                    controller_name == "weekly_balances"
+                  else
+                    current_page?(link[:path])
+                  end %>
       <% base_classes = "block px-4 py-2 rounded-lg text-sm font-medium transition" %>
       <% classes = active ? "#{base_classes} bg-white/10 text-white shadow-inner" : "#{base_classes} text-white/70 hover:bg-white/10 hover:text-white" %>
       <%= link_to link[:name], link[:path], class: classes %>

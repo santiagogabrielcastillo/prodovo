@@ -29,6 +29,7 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
   resources :statistics, only: [ :index ]
+  resources :weekly_balances, only: [ :index ]
   resources :expenses
 
   # Defines the root path route ("/")

@@ -289,6 +289,24 @@ es-AR:
       quantity_product: "Unidades vendidas"
       stats_in_period: "En el período"
       no_sales: "No hay ventas en el período."
+  weekly_balances:
+    index:
+      title: "Resumen semanal"
+      subtitle: "Cobros registrados en la semana frente a gastos (por fecha de cada movimiento)."
+      week_range: "Del %{from} al %{to}"
+      prev_week: "Semana anterior"
+      next_week: "Semana siguiente"
+      current_week: "Semana actual"
+      today: "Hoy"
+      payments_total: "Cobros del período"
+      expenses_total: "Gastos del período"
+      net_total: "Neto semanal"
+      daily_net_heading: "Neto por día"
+      expand_hint: "Tocá para ver el detalle del día"
+      payments_heading: "Cobros"
+      expenses_heading: "Gastos"
+      no_payments: "Sin cobros este día"
+      no_expenses: "Sin gastos este día"
   expenses:
     index:
       title: "Gastos"
@@ -296,6 +314,11 @@ es-AR:
       next_week: "Semana siguiente"
       week_range: "Del %{from} al %{to}"
       add_expense: "Agregar gasto"
+      total_amount: "Total semanal"
+      day_total: "Total del día"
+      no_expenses: "Sin gastos"
+      current_week: "Semana actual"
+      today: "Hoy"
     new:
       title: "Nuevo gasto"
       subtitle: "Registrá un gasto para el día elegido."
