@@ -43,13 +43,17 @@ class DatabaseBackupService
   private
 
   def upload_to_s3(file_path, file_name)
-    s3 = Aws::S3::Resource.new(
+    client = Aws::S3::Client.new(
       region: ENV["AWS_REGION"],
       access_key_id: ENV["AWS_ACCESS_KEY_ID"],
       secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"]
     )
-    bucket = s3.bucket(ENV["AWS_BUCKET_NAME"])
-    obj = bucket.object("backups/#{file_name}")
-    obj.upload_file(file_path)
+    File.open(file_path, "rb") do |file|
+      client.put_object(
+        bucket: ENV["AWS_BUCKET_NAME"],
+        key: "backups/#{file_name}",
+        body: file
+      )
+    end
   end
 end
