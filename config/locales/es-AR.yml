@@ -303,6 +303,11 @@ es-AR:
       net_total: "Neto semanal"
       daily_net_heading: "Neto por día"
       daily_net_caption: "Cobranzas del día − gastos del día"
+      expand_hint: "Tocá para ver el detalle del día"
+      payments_heading: "Cobranzas"
+      expenses_heading: "Gastos"
+      no_payments: "Sin cobranzas este día"
+      no_expenses: "Sin gastos este día"
   expenses:
     index:
       title: "Gastos"

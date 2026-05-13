@@ -43,6 +43,8 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
     assert_match "99,50", response.body
     assert_match "250,00", response.body
     assert_match "150,50", response.body
+    assert_match "weekly balance test", response.body
+    assert_select "[data-weekly-day-balance-target='details'].hidden", count: 7
   end
 
   test "daily net shows zero for an empty week" do

@@ -14,14 +14,18 @@ class WeeklyBalancesController < ApplicationController
     @expenses_total = Expense.where(date: range).sum(:amount) || 0
     @net_total = @payments_total - @expenses_total
 
-    payment_by_day = Payment.where(date: range).group(:date).sum(:amount)
-    expense_by_day = Expense.where(date: range).group(:date).sum(:amount)
+    payments_grouped = Payment.where(date: range).includes(:client).order(:date, :id).load.group_by(&:date)
+    expenses_grouped = Expense.where(date: range).order(:date, :id).load.group_by(&:date)
 
     @daily_nets = (@week_start..@week_end).map do |day|
-      payments_day = payment_by_day[day] || 0
-      expenses_day = expense_by_day[day] || 0
+      payment_records = payments_grouped[day] || []
+      expense_records = expenses_grouped[day] || []
+      payments_day = payment_records.sum(&:amount) || 0
+      expenses_day = expense_records.sum(&:amount) || 0
       {
         day: day,
+        payment_records: payment_records,
+        expense_records: expense_records,
         payments: payments_day,
         expenses: expenses_day,
         net: payments_day - expenses_day
