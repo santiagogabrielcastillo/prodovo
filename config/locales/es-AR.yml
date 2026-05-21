@@ -301,6 +301,7 @@ es-AR:
       payments_total: "Cobros del período"
       expenses_total: "Gastos del período"
       net_total: "Neto semanal"
+      cumulative_net: "Neto acumulado"
       daily_net_heading: "Neto por día"
       expand_hint: "Tocá para ver el detalle del día"
       no_payments: "Sin cobros este día"

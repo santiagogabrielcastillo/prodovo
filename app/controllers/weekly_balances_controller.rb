@@ -14,6 +14,10 @@ class WeeklyBalancesController < ApplicationController
     @expenses_total = Expense.where(date: range).sum(:amount) || 0
     @net_total = @payments_total - @expenses_total
 
+    cumulative_payments = Payment.where(date: ..@week_end).sum(:amount) || 0
+    cumulative_expenses = Expense.where(date: ..@week_end).sum(:amount) || 0
+    @cumulative_net = cumulative_payments - cumulative_expenses
+
     payments_grouped = Payment.where(date: range).includes(:client).order(:date, :id).load.group_by(&:date)
     expenses_grouped = Expense.where(date: range).order(:date, :id).load.group_by(&:date)
 
