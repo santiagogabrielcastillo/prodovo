@@ -45,8 +45,11 @@ class ExpensesController < ApplicationController
 
   def destroy
     week = @expense.date.beginning_of_week(:monday)
-    @expense.destroy
-    redirect_to expenses_path(week_start: week.to_s), notice: t("global.messages.expense_deleted")
+    if @expense.destroy
+      redirect_to expenses_path(week_start: week.to_s), notice: t("global.messages.expense_deleted")
+    else
+      redirect_to expenses_path(week_start: week.to_s), alert: @expense.errors.full_messages.join(", ")
+    end
   end
 
   private

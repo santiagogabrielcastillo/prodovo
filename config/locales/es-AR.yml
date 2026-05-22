@@ -431,6 +431,10 @@ es-AR:
           attributes:
             base:
               cannot_delete_with_records: "No se puede eliminar un cliente que tiene presupuestos enviados o pagados, o cobros registrados"
+        expense:
+          attributes:
+            base:
+              cannot_delete: "No se puede eliminar este gasto"
         quote_item:
           attributes:
             product:
