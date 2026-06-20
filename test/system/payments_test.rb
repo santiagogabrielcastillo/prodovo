@@ -55,6 +55,7 @@ class PaymentsTest < ApplicationSystemTestCase
     # Enter payment amount
     fill_in "Monto", with: "500"
     fill_in "Fecha", with: Date.current
+    select I18n.t("payments.methods.cash"), from: I18n.t("payments.form.payment_method")
 
     # Submit payment (Spanish)
     click_button "Registrar Cobro"
@@ -73,6 +74,7 @@ class PaymentsTest < ApplicationSystemTestCase
     assert_text "Registrar Cobro", wait: 5
     fill_in "Monto", with: "500"
     fill_in "Fecha", with: Date.current
+    select I18n.t("payments.methods.transfer"), from: I18n.t("payments.form.payment_method")
     click_button "Registrar Cobro"
 
     # Verify quote status changed to paid (Spanish)
@@ -103,7 +105,8 @@ class PaymentsTest < ApplicationSystemTestCase
       client: @client,
       quote: quote,
       amount: 300.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     visit quote_path(quote)
@@ -137,11 +140,12 @@ class PaymentsTest < ApplicationSystemTestCase
       client: @client,
       quote: quote,
       amount: 500.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :transfer
     )
 
     visit quote_path(quote)
-    
+
     # Open modal (Spanish)
     click_link "Registrar Cobro"
     assert_text "Registrar Cobro", wait: 5
@@ -149,6 +153,7 @@ class PaymentsTest < ApplicationSystemTestCase
     # Enter amount greater than due amount ($500 remaining, pay $600 - overpayment)
     fill_in "Monto", with: "600"
     fill_in "Fecha", with: Date.current
+    select I18n.t("payments.methods.cash"), from: I18n.t("payments.form.payment_method")
 
     # Submit payment
     click_button "Registrar Cobro"
@@ -183,6 +188,7 @@ class PaymentsTest < ApplicationSystemTestCase
     fill_in I18n.t("activerecord.attributes.payment.amount"), with: "500"
     fill_in I18n.t("activerecord.attributes.payment.date"), with: Date.current
     fill_in I18n.t("activerecord.attributes.payment.notes"), with: "Pago a Cuenta"
+    select I18n.t("payments.methods.transfer"), from: I18n.t("payments.form.payment_method")
 
     # Submit
     click_button I18n.t("payments.new.record_payment")
@@ -216,7 +222,8 @@ class PaymentsTest < ApplicationSystemTestCase
       quote: quote,
       amount: 300.00,
       date: Date.current,
-      notes: "Initial payment"
+      notes: "Initial payment",
+      payment_method: :cash
     )
 
     visit quote_path(quote)
@@ -248,7 +255,8 @@ class PaymentsTest < ApplicationSystemTestCase
       quote: nil,
       amount: 250.00,
       date: Date.current,
-      notes: "Standalone"
+      notes: "Standalone",
+      payment_method: :deposit
     )
 
     visit client_path(@client)

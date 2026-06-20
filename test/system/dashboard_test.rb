@@ -45,7 +45,8 @@ class DashboardTest < ApplicationSystemTestCase
       client: @client,
       quote: quote,
       amount: 500.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :transfer
     )
 
     # Recalculate to update balance

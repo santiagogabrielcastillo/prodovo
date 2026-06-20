@@ -38,7 +38,8 @@ class ClientsTest < ApplicationSystemTestCase
       client: @client,
       quote: quote,
       amount: 500.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     visit client_path(@client)

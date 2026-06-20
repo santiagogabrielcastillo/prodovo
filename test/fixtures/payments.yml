@@ -13,3 +13,10 @@ two:
   amount: 9.99
   date: 2025-11-25
   notes: MyText
+
+with_method:
+  client: one
+  amount: 150.00
+  date: 2025-11-25
+  payment_method: transfer
+  notes: Payment with method
