@@ -289,6 +289,7 @@ class PaymentsTest < ApplicationSystemTestCase
     # Enter a negative amount
     fill_in I18n.t("activerecord.attributes.payment.amount"), with: "-100"
     fill_in I18n.t("activerecord.attributes.payment.date"), with: Date.current
+    select I18n.t("payments.methods.other"), from: I18n.t("payments.form.payment_method")
     fill_in I18n.t("activerecord.attributes.payment.notes"), with: "Discount applied"
 
     click_button I18n.t("payments.new.record_payment")
