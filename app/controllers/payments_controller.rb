@@ -80,6 +80,6 @@ class PaymentsController < ApplicationController
   end
 
   def payment_params
-    params.require(:payment).permit(:amount, :date, :notes)
+    params.require(:payment).permit(:amount, :date, :notes, :payment_method)
   end
 end

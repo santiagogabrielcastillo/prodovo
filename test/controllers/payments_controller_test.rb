@@ -46,7 +46,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
         payment: {
           amount: 500.00,
           date: Date.current,
-          notes: "Pago a Cuenta"
+          notes: "Pago a Cuenta",
+          payment_method: "transfer"
         }
       }
     end
@@ -72,7 +73,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
         payment: {
           amount: -200.00,
           date: Date.current,
-          notes: "Descuento especial"
+          notes: "Descuento especial",
+          payment_method: "other"
         }
       }
     end
@@ -103,7 +105,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       post quote_payments_path(@quote), params: {
         payment: {
           amount: 500.00,
-          date: Date.current
+          date: Date.current,
+          payment_method: "cash"
         }
       }
     end
@@ -125,7 +128,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       client: @client,
       quote: nil,
       amount: 300.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     get edit_payment_path(payment)
@@ -140,7 +144,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       client: @client,
       quote: @quote,
       amount: 300.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :transfer
     )
 
     get edit_payment_path(payment)
@@ -155,7 +160,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       client: @client,
       quote: nil,
       amount: 300.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     patch payment_path(payment), params: {
@@ -177,7 +183,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       client: @client,
       quote: @quote,
       amount: 300.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :transfer
     )
 
     patch payment_path(payment), params: {
@@ -197,7 +204,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       client: @client,
       quote: nil,
       amount: 300.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     patch payment_path(payment), params: {
@@ -208,6 +216,71 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :unprocessable_entity
+  end
+
+  # ============================================
+  # US-08: payment_method param
+  # ============================================
+
+  test "payment_method is persisted when creating from client context" do
+    assert_difference("Payment.count", 1) do
+      post client_payments_path(@client), params: {
+        payment: {
+          amount: 200.00,
+          date: Date.current,
+          payment_method: "deposit"
+        }
+      }
+    end
+
+    assert_equal "deposit", Payment.last.payment_method
+  end
+
+  test "create fails without payment_method" do
+    assert_no_difference("Payment.count") do
+      post client_payments_path(@client), params: {
+        payment: {
+          amount: 200.00,
+          date: Date.current
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+  end
+
+  test "update can change payment_method on existing payment" do
+    payment = Payment.create!(
+      client: @client,
+      quote: nil,
+      amount: 100.00,
+      date: Date.current,
+      payment_method: :cash
+    )
+
+    patch payment_path(payment), params: {
+      payment: { payment_method: "transfer" }
+    }
+
+    assert_redirected_to client_path(@client)
+    assert_equal "transfer", payment.reload.payment_method
+  end
+
+  test "update with nil payment_method does not fail for historical records" do
+    payment = Payment.create!(
+      client: @client,
+      quote: nil,
+      amount: 100.00,
+      date: Date.current,
+      payment_method: :cash
+    )
+    payment.update_column(:payment_method, nil)
+
+    patch payment_path(payment), params: {
+      payment: { notes: "just updating notes" }
+    }
+
+    assert_redirected_to client_path(@client)
   end
 end
 
