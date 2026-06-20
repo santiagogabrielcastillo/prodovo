@@ -153,6 +153,9 @@
                   </div>
                 </div>
                 <p class="text-xs text-slate-500 mt-0.5 leading-snug"><%= expense.description %></p>
+                <% if expense.payment_method? %>
+                  <span class="inline-block mt-1 text-xs font-medium text-slate-400"><%= expense.payment_method_label %></span>
+                <% end %>
               </div>
             <% end %>
           <% end %>

@@ -336,6 +336,8 @@ es-AR:
       title: "Editar gasto"
     form:
       errors_header: "No se pudo guardar:"
+      payment_method: "Forma de pago"
+      select_method: "Seleccioná una forma de pago"
   number:
     format:
       separator: ","
@@ -386,6 +388,7 @@ es-AR:
         amount: "Monto"
         date: "Fecha"
         description: "Descripción"
+        payment_method: "Forma de pago"
       product:
         name: "Nombre"
         sku: "Código"
