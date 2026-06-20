@@ -34,7 +34,8 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
       quote: quotes(:one),
       amount: 250,
       date: Date.new(2026, 5, 8),
-      notes: "weekly balance test"
+      notes: "weekly balance test",
+      payment_method: :cash
     )
 
     get weekly_balances_path(week_start: monday.to_s)

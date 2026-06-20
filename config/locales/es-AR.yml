@@ -410,14 +410,6 @@ es-AR:
         even: "debe ser par"
         not_a_number: "no es un número"
         not_an_integer: "debe ser un número entero"
-    enums:
-      quote:
-        status:
-          draft: "Borrador"
-          sent: "Enviado"
-          paid: "Cobrado"
-          cancelled: "Cancelado"
-    errors:
       models:
         payment:
           attributes:
@@ -457,6 +449,13 @@ es-AR:
               greater_than: "debe ser mayor que %{count}"
             unit_price:
               greater_than_or_equal_to: "debe ser mayor o igual a %{count}"
+    enums:
+      quote:
+        status:
+          draft: "Borrador"
+          sent: "Enviado"
+          paid: "Cobrado"
+          cancelled: "Cancelado"
   date:
     formats:
       default: "%d/%m/%Y"

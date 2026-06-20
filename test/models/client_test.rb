@@ -59,7 +59,8 @@ class ClientTest < ActiveSupport::TestCase
       client: @client,
       quote: quote,
       amount: 1000.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     @client.recalculate_balance!
@@ -171,7 +172,8 @@ class ClientTest < ActiveSupport::TestCase
       quote: nil,
       amount: 300.00,
       date: Date.current,
-      notes: "Pago a Cuenta"
+      notes: "Pago a Cuenta",
+      payment_method: :transfer
     )
 
     @client.recalculate_balance!
@@ -201,7 +203,8 @@ class ClientTest < ActiveSupport::TestCase
       quote: nil,
       amount: -100.00,
       date: Date.current,
-      notes: "Discount"
+      notes: "Discount",
+      payment_method: :other
     )
 
     @client.recalculate_balance!
@@ -244,7 +247,7 @@ class ClientTest < ActiveSupport::TestCase
     quote2.save!
 
     # Create standalone payment (Jan 20)
-    payment = Payment.create!(client: @client, quote: nil, amount: 100.00, date: Date.new(2025, 1, 20))
+    payment = Payment.create!(client: @client, quote: nil, amount: 100.00, date: Date.new(2025, 1, 20), payment_method: :cash)
 
     @client.reload
     result = @client.compute_ledger(per_page: 100)
@@ -276,7 +279,7 @@ class ClientTest < ActiveSupport::TestCase
     quote2.save!
 
     # Create standalone payment (Jan 15) - $300
-    Payment.create!(client: @client, quote: nil, amount: 300.00, date: Date.new(2025, 1, 15))
+    Payment.create!(client: @client, quote: nil, amount: 300.00, date: Date.new(2025, 1, 15), payment_method: :cash)
 
     @client.reload
     result = @client.compute_ledger(per_page: 100)
@@ -304,7 +307,7 @@ class ClientTest < ActiveSupport::TestCase
     march_quote.calculate_total!
     march_quote.save!
 
-    Payment.create!(client: @client, quote: nil, amount: 200.00, date: Date.new(2025, 4, 1))
+    Payment.create!(client: @client, quote: nil, amount: 200.00, date: Date.new(2025, 4, 1), payment_method: :cash)
 
     result = @client.compute_ledger(start_date: Date.new(2025, 2, 1), end_date: Date.new(2025, 3, 31), per_page: 100)
 
@@ -344,8 +347,8 @@ class ClientTest < ActiveSupport::TestCase
     quote.calculate_total!
     quote.save!
 
-    Payment.create!(client: @client, quote: nil, amount: 300.00, date: Date.current)
-    Payment.create!(client: @client, quote: nil, amount: 200.00, date: Date.current)
+    Payment.create!(client: @client, quote: nil, amount: 300.00, date: Date.current, payment_method: :transfer)
+    Payment.create!(client: @client, quote: nil, amount: 200.00, date: Date.current, payment_method: :cash)
 
     result = @client.compute_ledger(per_page: 100)
 
@@ -394,7 +397,7 @@ class ClientTest < ActiveSupport::TestCase
     sleep(0.01)
 
     # Create payment after (should appear after quote in ledger)
-    payment = Payment.create!(client: @client, quote: nil, amount: 100.00, date: same_date)
+    payment = Payment.create!(client: @client, quote: nil, amount: 100.00, date: same_date, payment_method: :cash)
 
     @client.reload
     result = @client.compute_ledger(per_page: 100)
@@ -418,7 +421,7 @@ class ClientTest < ActiveSupport::TestCase
     end
 
     # Create a new payment (should be on a new last page)
-    Payment.create!(client: @client, quote: nil, amount: 50.00, date: Date.new(2025, 1, 15))
+    Payment.create!(client: @client, quote: nil, amount: 50.00, date: Date.new(2025, 1, 15), payment_method: :deposit)
 
     @client.reload
     result = @client.compute_ledger(page: :last, per_page: 10)

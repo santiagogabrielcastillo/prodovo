@@ -92,7 +92,8 @@ class ClientsControllerTest < ActionDispatch::IntegrationTest
       quote: nil,
       amount: 500.00,
       date: Date.current,
-      notes: ""
+      notes: "",
+      payment_method: :cash
     )
 
     get client_path(@client, format: :csv)
@@ -108,7 +109,8 @@ class ClientsControllerTest < ActionDispatch::IntegrationTest
       quote: nil,
       amount: 300.00,
       date: Date.current,
-      notes: "Anticipo proyecto"
+      notes: "Anticipo proyecto",
+      payment_method: :transfer
     )
 
     get client_path(@client, format: :csv)
