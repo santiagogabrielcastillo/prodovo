@@ -26,12 +26,12 @@ class PaymentTest < ActiveSupport::TestCase
   end
 
   test "should allow zero amount" do
-    payment = Payment.new(client: @client, quote: @quote, amount: 0, date: Date.current)
+    payment = Payment.new(client: @client, quote: @quote, amount: 0, date: Date.current, payment_method: :cash)
     assert payment.valid?, "Zero amount should be allowed"
   end
 
   test "should allow negative amount for adjustments" do
-    payment = Payment.new(client: @client, quote: @quote, amount: -100, date: Date.current)
+    payment = Payment.new(client: @client, quote: @quote, amount: -100, date: Date.current, payment_method: :other)
     assert payment.valid?, "Negative amount should be allowed for adjustments/credits"
   end
 
@@ -46,7 +46,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 1000.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     @quote.reload
@@ -59,7 +60,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 500.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :transfer
     )
 
     @quote.reload
@@ -73,7 +75,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 300.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     @quote.reload
@@ -84,7 +87,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 700.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     @quote.reload
@@ -101,7 +105,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 500.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     @client.reload
@@ -114,7 +119,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 1000.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     @quote.reload
@@ -135,7 +141,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 500.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     @client.reload
@@ -157,7 +164,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 500.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     @quote.reload
@@ -168,7 +176,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 600.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     assert payment.valid?, "Overpayments should be allowed"
@@ -183,7 +192,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 1000.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     assert payment.valid?
@@ -198,7 +208,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: @quote,
       amount: 500.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     assert payment.valid?
@@ -213,7 +224,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: nil,
       amount: 500.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :cash
     )
 
     assert payment.valid?, "Standalone payment without quote should be valid"
@@ -225,7 +237,8 @@ class PaymentTest < ActiveSupport::TestCase
       quote: nil,
       amount: -200.00,
       date: Date.current,
-      notes: "Credit adjustment"
+      notes: "Credit adjustment",
+      payment_method: :other
     )
 
     assert payment.valid?, "Negative standalone payment should be valid"
@@ -240,7 +253,8 @@ class PaymentTest < ActiveSupport::TestCase
       quote: nil,
       amount: 300.00,
       date: Date.current,
-      notes: "Pago a Cuenta"
+      notes: "Pago a Cuenta",
+      payment_method: :transfer
     )
 
     @client.reload
@@ -257,7 +271,8 @@ class PaymentTest < ActiveSupport::TestCase
       quote: nil,
       amount: -100.00,
       date: Date.current,
-      notes: "Discount applied"
+      notes: "Discount applied",
+      payment_method: :other
     )
 
     @client.reload
@@ -274,7 +289,8 @@ class PaymentTest < ActiveSupport::TestCase
       quote: nil,
       amount: 500.00,
       date: Date.current,
-      notes: "Standalone payment"
+      notes: "Standalone payment",
+      payment_method: :cash
     )
 
     @quote.reload
@@ -289,7 +305,8 @@ class PaymentTest < ActiveSupport::TestCase
       client: @client,
       quote: nil,
       amount: 400.00,
-      date: Date.current
+      date: Date.current,
+      payment_method: :deposit
     )
 
     @client.reload
@@ -304,6 +321,47 @@ class PaymentTest < ActiveSupport::TestCase
     # Quote should be unaffected
     @quote.reload
     assert @quote.sent?
+  end
+
+  # ============================================
+  # US-08: payment_method enum
+  # ============================================
+
+  test "payment_method is required on create" do
+    payment = Payment.new(client: @client, quote: @quote, amount: 100.00, date: Date.current)
+    assert_not payment.valid?
+    assert payment.errors[:payment_method].any?
+  end
+
+  test "payment with valid payment_method is valid" do
+    payment = Payment.new(client: @client, quote: @quote, amount: 100.00, date: Date.current, payment_method: :transfer)
+    assert payment.valid?
+  end
+
+  test "all payment_method enum values are accepted" do
+    %w[echeq check transfer cash deposit other].each do |method|
+      payment = Payment.new(client: @client, quote: @quote, amount: 100.00, date: Date.current, payment_method: method)
+      assert payment.valid?, "#{method} should be a valid payment_method"
+    end
+  end
+
+  test "existing payment with nil payment_method stays valid on update" do
+    payment = Payment.create!(client: @client, quote: @quote, amount: 100.00, date: Date.current, payment_method: :cash)
+    # Simulate historical row with nil payment_method by bypassing validation
+    payment.update_column(:payment_method, nil)
+    payment.reload
+    # Update another field — should not fail due to nil payment_method
+    assert payment.update(notes: "updated note"), "Update should succeed even if payment_method is nil"
+  end
+
+  test "payment_method_label returns translated string when set" do
+    payment = Payment.new(payment_method: :transfer)
+    assert_equal I18n.t("payments.methods.transfer"), payment.payment_method_label
+  end
+
+  test "payment_method_label returns dash when payment_method is nil" do
+    payment = Payment.new
+    assert_equal "—", payment.payment_method_label
   end
 
   # ============================================

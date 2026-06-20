@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_21_120000) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_20_143836) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -53,6 +53,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_21_120000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "payment_method"
     t.index ["client_id"], name: "index_payments_on_client_id"
     t.index ["date"], name: "index_payments_on_date"
     t.index ["quote_id"], name: "index_payments_on_quote_id"
@@ -76,7 +77,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_21_120000) do
     t.decimal "total_price", precision: 15, scale: 2
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.boolean "include_in_total", default: true, null: false
     t.boolean "include_in_stats", default: true, null: false
     t.index ["product_id"], name: "index_quote_items_on_product_id"
     t.index ["quote_id"], name: "index_quote_items_on_quote_id"

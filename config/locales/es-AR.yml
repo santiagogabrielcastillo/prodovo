@@ -210,6 +210,7 @@ es-AR:
       payments_headers:
         date: "Fecha"
         amount: "Cantidad"
+        method: "Método"
         notes: "Notas"
       notes: "Notas"
       no_items: "No hay items en este presupuesto."
@@ -240,6 +241,16 @@ es-AR:
       unit_price: "Precio Unitario"
       item_total: "Total del Item"
   payments:
+    methods:
+      echeq: "E-cheq"
+      check: "Cheque"
+      transfer: "Transferencia"
+      cash: "Efectivo"
+      deposit: "Depósito"
+      other: "Otro"
+    form:
+      payment_method: "Método de Pago"
+      select_method: "Seleccioná un método"
     new:
       title: "Registrar Cobro"
       subtitle_quote: "Presupuesto #%{quote_id} - %{client_name}"
@@ -368,6 +379,7 @@ es-AR:
         amount: "Monto"
         date: "Fecha"
         notes: "Notas"
+        payment_method: "Método de Pago"
         client: "Cliente"
         quote: "Presupuesto"
       expense:
@@ -385,6 +397,7 @@ es-AR:
         total_price: "Total"
     errors:
       messages:
+        record_invalid: "La validación falló: %{errors}"
         required: "debe existir"
         blank: "no puede estar en blanco"
         greater_than: "debe ser mayor que %{count}"
