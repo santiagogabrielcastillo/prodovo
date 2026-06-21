@@ -11,3 +11,9 @@ two:
   sku: WID-B
   base_price: 50.00
   description: Another widget
+
+stat_product:
+  name: Stat Widget
+  sku: STAT-001
+  base_price: 200.00
+  include_in_stats: true

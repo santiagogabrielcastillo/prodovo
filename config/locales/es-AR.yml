@@ -241,6 +241,7 @@ es-AR:
       quantity: "Cantidad"
       unit_price: "Precio Unitario"
       item_total: "Total del Item"
+    stock_below_zero_warning: "Stock insuficiente: %{products}. El presupuesto se guardó igualmente, pero el stock quedó en negativo. Corregilo desde el Panel de Stock."
   payments:
     methods:
       echeq: "E-cheq"
@@ -367,6 +368,34 @@ es-AR:
       errors_header: "No se pudo guardar:"
       payment_method: "Forma de pago"
       select_method: "Seleccioná una forma de pago"
+  stock:
+    movement_created: "Entrada de stock registrada exitosamente."
+    show:
+      title: "Panel de Stock"
+      subtitle: "Stock actual de productos estadísticos y registro de movimientos."
+      current_stock_heading: "Stock actual"
+      no_stat_products: "No hay productos con seguimiento de stock."
+      new_entry_heading: "Registrar entrada"
+      product: "Producto"
+      select_product: "Seleccioná un producto"
+      quantity: "Cantidad"
+      date: "Fecha"
+      notes: "Notas (opcional)"
+      submit: "Registrar entrada"
+      history_heading: "Historial de movimientos"
+      history_headers:
+        date: "Fecha"
+        product: "Producto"
+        type: "Tipo"
+        quantity: "Cantidad"
+        quote: "Presupuesto"
+        user: "Usuario"
+      no_movements: "Sin movimientos registrados."
+      movement_types:
+        manual_entry: "Entrada manual"
+        quote_deduction: "Descuento por presupuesto"
+        quote_cancellation: "Reposición por cancelación"
+        quote_deletion: "Reposición por eliminación"
   number:
     format:
       separator: ","

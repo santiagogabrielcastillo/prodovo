@@ -28,6 +28,7 @@ Rails.application.routes.draw do
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
+  resource :stock, only: [ :show, :create ], controller: "stock"
   resources :users, only: [ :index, :update ]
   resources :statistics, only: [ :index ]
   resources :weekly_balances, only: [ :index ]

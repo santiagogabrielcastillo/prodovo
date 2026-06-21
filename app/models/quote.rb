@@ -19,7 +19,12 @@ class Quote < ApplicationRecord
   validates :total_amount, numericality: true
   validate :cannot_delete_if_has_payments, on: :destroy
 
+  has_many :stock_movements, dependent: :nullify
+
   before_save :calculate_total!
+  after_create_commit :deduct_stock!
+  after_update :restore_stock_if_cancelled!, if: :saved_change_to_status?
+  before_destroy :restore_stock_if_draft!, prepend: true
 
   def calculate_total!
     self.total_amount = quote_items.reject(&:marked_for_destruction?).sum do |item|
@@ -82,6 +87,56 @@ class Quote < ApplicationRecord
   end
 
   private
+
+  def deduct_stock!
+    stat_items.each do |item|
+      StockMovement.create(
+        product: item.product,
+        user: user,
+        quote: self,
+        movement_type: :quote_deduction,
+        quantity: -item.quantity,
+        date: date
+      )
+    end
+  end
+
+  def restore_stock_if_cancelled!
+    return unless cancelled?
+
+    stat_items.each do |item|
+      StockMovement.create(
+        product: item.product,
+        user: user,
+        quote: self,
+        movement_type: :quote_cancellation,
+        quantity: item.quantity,
+        date: Date.current
+      )
+    end
+  end
+
+  def restore_stock_if_draft!
+    return unless draft?
+
+    stat_items.each do |item|
+      StockMovement.create(
+        product: item.product,
+        user: user,
+        quote: self,
+        movement_type: :quote_deletion,
+        quantity: item.quantity,
+        date: Date.current
+      )
+    end
+  end
+
+  def stat_items
+    quote_items
+      .joins(:product)
+      .where(include_in_stats: true, products: { include_in_stats: true })
+      .includes(:product)
+  end
 
   def cannot_delete_if_has_payments
     if payments.exists?

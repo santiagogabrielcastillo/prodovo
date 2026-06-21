@@ -1,6 +1,7 @@
 class Product < ApplicationRecord
   has_many :custom_prices, dependent: :destroy
   has_many :quote_items, dependent: :destroy
+  has_many :stock_movements, dependent: :destroy
 
   validates :name, presence: true
   validates :sku, presence: true
@@ -27,8 +28,12 @@ class Product < ApplicationRecord
     quote_items.joins(:quote).where.not(quotes: { status: :draft }).exists?
   end
 
+  def recalculate_stock!
+    update_column(:current_stock, stock_movements.sum(:quantity))
+  end
+
   def self.ransackable_attributes(auth_object = nil)
-    [ "base_price", "created_at", "description", "id", "include_in_stats", "name", "sku", "updated_at" ]
+    [ "base_price", "created_at", "current_stock", "description", "id", "include_in_stats", "name", "sku", "updated_at" ]
   end
 
   private

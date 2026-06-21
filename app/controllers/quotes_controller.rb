@@ -41,6 +41,7 @@ class QuotesController < ApplicationController
     @quote.user = current_user
 
     if @quote.save
+      check_negative_stock(@quote)
       redirect_to @quote, notice: "#{Quote.model_name.human} #{t('global.messages.created_successfully')}"
     else
       @clients = Client.order(:name)
@@ -106,6 +107,17 @@ class QuotesController < ApplicationController
   end
 
   private
+
+  def check_negative_stock(quote)
+    negative = Product.joins(:quote_items)
+                      .where(quote_items: { quote_id: quote.id, include_in_stats: true })
+                      .where(include_in_stats: true)
+                      .where("products.current_stock < 0")
+                      .pluck(:name)
+    return if negative.empty?
+
+    flash[:warning] = t("quotes.stock_below_zero_warning", products: negative.join(", "))
+  end
 
   def set_quote
     @quote = Quote.includes(quote_items: :product, payments: []).find(params[:id])

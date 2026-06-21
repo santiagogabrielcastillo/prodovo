@@ -130,6 +130,103 @@ class QuoteTest < ActiveSupport::TestCase
     assert_equal 75.00, custom_price2.price
   end
 
+  # ── stock callbacks (US-07) ────────────────────────────────────────────────
+
+  test "creating quote with stat items deducts stock" do
+    stat_product = products(:stat_product)
+    StockMovement.create!(product: stat_product, user: @user, movement_type: :manual_entry,
+                          quantity: 100, date: 1.day.ago.to_date)
+    initial_stock = stat_product.reload.current_stock
+
+    quote = Quote.create!(
+      client: @client, user: @user, date: Date.current, status: :draft,
+      quote_items_attributes: [
+        { product_id: stat_product.id, quantity: 30, unit_price: 100, include_in_stats: true }
+      ]
+    )
+
+    assert_equal initial_stock - 30, stat_product.reload.current_stock
+    movement = StockMovement.where(movement_type: "quote_deduction").last
+    assert_not_nil movement
+    assert_equal(-30, movement.quantity)
+    assert_equal quote, movement.quote
+  end
+
+  test "non-stat products are not deducted from stock" do
+    assert_no_difference("StockMovement.count") do
+      Quote.create!(
+        client: @client, user: @user, date: Date.current, status: :draft,
+        quote_items_attributes: [
+          { product_id: @product.id, quantity: 10, unit_price: 50, include_in_stats: true }
+        ]
+      )
+    end
+  end
+
+  test "items with include_in_stats false are not deducted from stock" do
+    stat_product = products(:stat_product)
+    assert_no_difference("StockMovement.count") do
+      Quote.create!(
+        client: @client, user: @user, date: Date.current, status: :draft,
+        quote_items_attributes: [
+          { product_id: stat_product.id, quantity: 10, unit_price: 200, include_in_stats: false }
+        ]
+      )
+    end
+  end
+
+  test "cancelling a quote restores stock" do
+    stat_product = products(:stat_product)
+    StockMovement.create!(product: stat_product, user: @user, movement_type: :manual_entry,
+                          quantity: 100, date: 1.day.ago.to_date)
+
+    quote = Quote.create!(
+      client: @client, user: @user, date: Date.current, status: :draft,
+      quote_items_attributes: [
+        { product_id: stat_product.id, quantity: 30, unit_price: 100, include_in_stats: true }
+      ]
+    )
+    stock_after_deduction = stat_product.reload.current_stock
+
+    quote.update!(status: :cancelled)
+
+    assert_equal stock_after_deduction + 30, stat_product.reload.current_stock
+    assert StockMovement.where(movement_type: "quote_cancellation").exists?
+  end
+
+  test "deleting a draft quote restores stock" do
+    stat_product = products(:stat_product)
+    StockMovement.create!(product: stat_product, user: @user, movement_type: :manual_entry,
+                          quantity: 100, date: 1.day.ago.to_date)
+
+    quote = Quote.create!(
+      client: @client, user: @user, date: Date.current, status: :draft,
+      quote_items_attributes: [
+        { product_id: stat_product.id, quantity: 30, unit_price: 100, include_in_stats: true }
+      ]
+    )
+    stock_after_deduction = stat_product.reload.current_stock
+
+    quote.destroy!
+
+    assert_equal stock_after_deduction + 30, stat_product.reload.current_stock
+    assert StockMovement.where(movement_type: "quote_deletion").exists?
+  end
+
+  test "deleting a non-draft quote does not restore stock" do
+    stat_product = products(:stat_product)
+    quote = Quote.create!(
+      client: @client, user: @user, date: Date.current, status: :sent,
+      quote_items_attributes: [
+        { product_id: stat_product.id, quantity: 30, unit_price: 100, include_in_stats: true }
+      ]
+    )
+
+    assert_no_difference("StockMovement.count") do
+      quote.destroy! rescue nil
+    end
+  end
+
   test "update_custom_prices! updates existing custom prices" do
     quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :draft)
 
