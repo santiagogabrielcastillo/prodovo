@@ -326,6 +326,26 @@ es-AR:
       payments_by_method_heading: "Dinero disponible por forma de cobro"
       payments_by_method_total: "Total cobrado en la semana"
       unclassified_method: "Sin clasificar"
+  authorization:
+    access_denied: "No tenés permiso para acceder a esa sección."
+    restricted_access: "Tu rol no tiene acceso a esa sección."
+    stock_loader_welcome: "Panel de Stock"
+    stock_loader_hint: "Tu acceso está limitado al Panel de Stock. Pronto estará disponible."
+  users:
+    role_updated: "Rol actualizado exitosamente."
+    roles:
+      general: "General"
+      admin: "Administrador"
+      stock_loader: "Carga de Stock"
+    index:
+      title: "Gestión de Usuarios"
+      subtitle: "Administrá los roles de acceso de cada usuario."
+      headers:
+        email: "Email"
+        role: "Rol"
+        actions: "Acciones"
+      change_role: "Cambiar rol"
+      current_user_hint: "Sos vos"
   expenses:
     index:
       title: "Gastos"

@@ -1,5 +1,6 @@
 class PaymentsController < ApplicationController
   before_action :authenticate_user!
+  before_action :authorize_general_access!
   before_action :set_parent
   before_action :set_payment, only: [ :edit, :update ]
 

@@ -5,4 +5,6 @@ class User < ApplicationRecord
          :recoverable, :rememberable, :validatable
 
   has_many :quotes, dependent: :destroy
+
+  enum :role, { general: "general", admin: "admin", stock_loader: "stock_loader" }, validate: true
 end

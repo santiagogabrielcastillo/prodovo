@@ -4,6 +4,7 @@ class WeeklyBalancesController < ApplicationController
   include WeekNavigable
 
   before_action :authenticate_user!
+  before_action :authorize_general_access!
 
   def index
     @week_start = week_start_param

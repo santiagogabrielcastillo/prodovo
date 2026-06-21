@@ -2,6 +2,7 @@
 
 class StatisticsController < ApplicationController
   before_action :authenticate_user!
+  before_action :authorize_general_access!
 
   PRESETS = {
     "this_month" => -> {

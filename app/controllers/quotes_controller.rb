@@ -1,5 +1,6 @@
 class QuotesController < ApplicationController
   before_action :authenticate_user!
+  before_action :authorize_general_access!
   before_action :set_quote, only: %i[show edit update destroy mark_as_sent cancel]
   before_action :ensure_draft, only: %i[edit update destroy]
 

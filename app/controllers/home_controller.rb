@@ -2,6 +2,8 @@ class HomeController < ApplicationController
   before_action :authenticate_user!
 
   def index
+    return render :restricted if current_user.stock_loader?
+
     # KPIs
     @total_receivables = Client.where("balance > 0").sum(:balance) || 0
     # Same logic as Statistics: by quote.date, sent/paid only

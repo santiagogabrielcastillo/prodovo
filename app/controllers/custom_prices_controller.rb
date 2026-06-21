@@ -1,5 +1,6 @@
 class CustomPricesController < ApplicationController
   before_action :authenticate_user!
+  before_action :authorize_general_access!
   before_action :set_client
   before_action :set_custom_price, only: %i[edit update destroy]
   before_action :load_products, only: %i[new edit]
