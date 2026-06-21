@@ -12,6 +12,7 @@ class WeeklyBalancesController < ApplicationController
 
     @payments_total = Payment.where(date: range).sum(:amount) || 0
     @payments_by_method = Payment.where(date: range).group(:payment_method).sum(:amount)
+    @units_sold = QuoteItem.for_stats.joins(:quote).merge(Quote.in_stats_period(@week_start, @week_end)).sum(:quantity)
     @expenses_total = Expense.where(date: range).sum(:amount) || 0
     @net_total = @payments_total - @expenses_total
 
