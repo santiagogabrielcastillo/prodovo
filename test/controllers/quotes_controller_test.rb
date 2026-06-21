@@ -89,15 +89,14 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should generate PDF for quote" do
-    skip "Puppeteer not installed. Run: npm install puppeteer" unless system("which puppeteer > /dev/null 2>&1") || File.exist?("node_modules/puppeteer")
-    
-    get quote_path(@quote, format: :pdf)
-    
+    fake_grover = ->(*) { OpenStruct.new(to_pdf: "%PDF-1.4 fake") }
+    Grover.stub(:new, fake_grover) do
+      get quote_path(@quote, format: :pdf)
+    end
+
     assert_response :success
     assert_equal "application/pdf", response.content_type
     assert response.body.start_with?("%PDF")
-  rescue Grover::DependencyError
-    skip "Puppeteer dependency not available"
   end
 end
 

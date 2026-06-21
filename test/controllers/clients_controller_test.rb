@@ -124,16 +124,23 @@ class ClientsControllerTest < ActionDispatch::IntegrationTest
   # ============================================
 
   test "should export PDF" do
-    get client_path(@client, format: :pdf)
+    fake_grover = ->(*) { OpenStruct.new(to_pdf: "%PDF-1.4 fake") }
+    Grover.stub(:new, fake_grover) do
+      get client_path(@client, format: :pdf)
+    end
+
     assert_response :success
     assert_equal "application/pdf", response.content_type.split(";").first
   end
 
   test "should export PDF with date filters" do
-    get client_path(@client, format: :pdf, start_date: "01/01/2024", end_date: "31/12/2024")
+    fake_grover = ->(*) { OpenStruct.new(to_pdf: "%PDF-1.4 fake") }
+    Grover.stub(:new, fake_grover) do
+      get client_path(@client, format: :pdf, start_date: "01/01/2024", end_date: "31/12/2024")
+    end
+
     assert_response :success
     assert_equal "application/pdf", response.content_type.split(";").first
-    # Check filename includes date range
     assert_match(/estado_cuenta_.*_20240101_a_20241231\.pdf/, response.headers["Content-Disposition"])
   end
 
