@@ -84,5 +84,7 @@ class StatisticsController < ApplicationController
     end
 
     @has_sales = quotes_scope.exists?
+
+    @qty_by_product = items_scope.group(:product_id).sum(:quantity)
   end
 end

@@ -57,6 +57,33 @@
     </div>
   </div>
 
+  <!-- Product participation breakdown -->
+  <div class="bg-white shadow rounded-lg p-6 w-full">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4"><%= t('statistics.index.product_breakdown_heading') %></h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold text-gray-500 uppercase tracking-wider"><%= t('statistics.index.product_breakdown_product') %></th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-500 uppercase tracking-wider"><%= t('statistics.index.product_breakdown_units') %></th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-500 uppercase tracking-wider"><%= t('statistics.index.product_breakdown_share') %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @products.each do |product| %>
+            <% qty = @qty_by_product[product.id] || 0 %>
+            <% share = @total_pure_quantity.positive? ? number_with_precision(qty / @total_pure_quantity * 100, precision: 1) : "—" %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 text-gray-900"><%= product.name %></td>
+              <td class="px-4 py-3 text-right text-gray-700"><%= number_with_precision(qty, precision: 0) %></td>
+              <td class="px-4 py-3 text-right font-semibold text-indigo-700"><%= share == "—" ? share : "#{share}%" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Full-width: Product statistics (Turbo Frame so selecting a product doesn't scroll the page) -->
   <%= turbo_frame_tag "product_stats" do %>
     <div class="bg-white shadow rounded-lg p-6 w-full">

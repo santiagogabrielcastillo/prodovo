@@ -301,6 +301,10 @@ es-AR:
       quantity_product: "Unidades vendidas"
       stats_in_period: "En el período"
       no_sales: "No hay ventas en el período."
+      product_breakdown_heading: "Participación por producto"
+      product_breakdown_product: "Producto"
+      product_breakdown_units: "Unidades"
+      product_breakdown_share: "Participación"
   weekly_balances:
     index:
       title: "Resumen semanal"
