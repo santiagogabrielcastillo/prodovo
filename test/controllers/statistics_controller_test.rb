@@ -70,4 +70,22 @@ class StatisticsControllerTest < ActionDispatch::IntegrationTest
     # stat_product = 2 units = 100% (fee item excluded from total)
     assert_match "100,0%", response.body
   end
+
+  # US-02 gap: verify percentage split when multiple stat products compete
+  test "product breakdown shows correct split for multiple stat products" do
+    product_a = Product.create!(name: "Alpha", sku: "ALP-1", base_price: 100, include_in_stats: true)
+    product_b = Product.create!(name: "Beta",  sku: "BET-1", base_price: 100, include_in_stats: true)
+    client    = clients(:one)
+    user      = users(:one)
+    quote     = Quote.create!(client: client, user: user, date: Date.new(2027, 4, 1), status: :sent)
+    quote.quote_items.create!(product: product_a, quantity: 3, unit_price: 100, include_in_stats: true)
+    quote.quote_items.create!(product: product_b, quantity: 1, unit_price: 100, include_in_stats: true)
+
+    get statistics_path(start_date: "2027-04-01", end_date: "2027-04-30")
+
+    assert_response :success
+    # product_a: 3/4 = 75%, product_b: 1/4 = 25%
+    assert_match "75,0%", response.body
+    assert_match "25,0%", response.body
+  end
 end

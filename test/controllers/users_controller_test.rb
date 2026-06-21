@@ -84,6 +84,19 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
+  # US-05 gaps: payments and products were not covered
+  test "stock_loader is blocked from payments" do
+    sign_in @stock_loader
+    get new_client_payment_path(clients(:one))
+    assert_redirected_to root_path
+  end
+
+  test "stock_loader is blocked from products" do
+    sign_in @stock_loader
+    get products_path
+    assert_redirected_to root_path
+  end
+
   test "stock_loader sees restricted view at root" do
     sign_in @stock_loader
     get root_path
@@ -122,5 +135,20 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     sign_in @admin
     get new_user_registration_path
     assert_response :success
+  end
+
+  # US-06 gap: verify admin can actually POST and create a new user
+  test "admin can create a new user via registration form" do
+    sign_in @admin
+    assert_difference("User.count") do
+      post user_registration_path, params: {
+        user: {
+          email: "newuser_gap@example.com",
+          password: "password123",
+          password_confirmation: "password123"
+        }
+      }
+    end
+    assert_response :redirect
   end
 end

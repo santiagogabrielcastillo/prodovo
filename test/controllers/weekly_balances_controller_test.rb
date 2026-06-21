@@ -87,6 +87,20 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
     assert_match I18n.t("weekly_balances.index.unclassified_method"), response.body
   end
 
+  # US-10 gap: verify the unclassified row also shows the correct amount
+  test "payments breakdown shows correct amount for unclassified row" do
+    monday = Date.new(2026, 6, 1)
+    payment = Payment.create!(client: clients(:one), quote: quotes(:one), amount: 750,
+                              date: Date.new(2026, 6, 4), payment_method: :cash,
+                              notes: "unclassified amount test")
+    payment.update_column(:payment_method, nil)
+
+    get weekly_balances_path(week_start: monday.to_s)
+
+    assert_response :success
+    assert_match "750,00", response.body
+  end
+
   test "daily net shows zero for an empty week" do
     monday = Date.new(2031, 7, 7)
     assert_predicate monday, :monday?
@@ -148,5 +162,19 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     # The "10" from the fee item must NOT inflate the units sold count
     assert_match I18n.t("weekly_balances.index.units_sold"), response.body
+  end
+
+  # US-11 gap: paid quotes must also be counted (scope includes both sent and paid)
+  test "units sold includes items from paid quotes" do
+    monday = Date.new(2026, 6, 8)
+
+    product = Product.create!(name: "Paid Product", sku: "PAID-1", base_price: 100, include_in_stats: true)
+    quote = Quote.create!(client: clients(:one), user: users(:one), date: Date.new(2026, 6, 9), status: :paid)
+    quote.quote_items.create!(product: product, quantity: 7, unit_price: 100, include_in_stats: true)
+
+    get weekly_balances_path(week_start: monday.to_s)
+
+    assert_response :success
+    assert_match "7", response.body
   end
 end

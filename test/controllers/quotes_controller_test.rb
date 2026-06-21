@@ -124,5 +124,31 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match I18n.t("quotes.index.headers.units"), response.body
   end
+
+  # US-07 gap: flash[:warning] when creating a quote drives a stat product below zero
+  test "creating quote that drives stat product stock negative sets warning flash" do
+    stat_product = products(:stat_product)
+    stat_product.update_column(:current_stock, 0)
+
+    post quotes_path, params: {
+      quote: {
+        client_id: @client.id,
+        date: Date.current,
+        status: :draft,
+        quote_items_attributes: {
+          "0" => {
+            product_id: stat_product.id,
+            quantity: 5,
+            unit_price: 200,
+            include_in_stats: true
+          }
+        }
+      }
+    }
+
+    assert_redirected_to quote_path(Quote.last)
+    assert_not_nil flash[:warning]
+    assert_match stat_product.name, flash[:warning]
+  end
 end
 
