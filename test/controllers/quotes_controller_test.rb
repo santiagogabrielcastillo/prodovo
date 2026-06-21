@@ -98,5 +98,31 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "application/pdf", response.content_type
     assert response.body.start_with?("%PDF")
   end
+
+  # ============================================
+  # US-01: units column in quotes index
+  # ============================================
+
+  test "index shows units column header" do
+    get quotes_path
+    assert_response :success
+    assert_match I18n.t("quotes.index.headers.units"), response.body
+  end
+
+  test "index shows statistical quantity for a quote with include_in_stats items" do
+    @quote.quote_items.first.update!(include_in_stats: true)
+
+    get quotes_path
+    assert_response :success
+    assert_match "1", response.body
+  end
+
+  test "index shows zero units for a quote with no statistical items" do
+    @quote.quote_items.first.update!(include_in_stats: false)
+
+    get quotes_path
+    assert_response :success
+    assert_match I18n.t("quotes.index.headers.units"), response.body
+  end
 end
 

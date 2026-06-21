@@ -4,7 +4,7 @@ class QuotesController < ApplicationController
   before_action :ensure_draft, only: %i[edit update destroy]
 
   def index
-    @q = Quote.includes(:client, :user).ransack(params[:q])
+    @q = Quote.includes(:client, :user, quote_items: :product).ransack(params[:q])
     @pagy, @quotes = pagy(@q.result(distinct: true).order(created_at: :desc))
   end
 

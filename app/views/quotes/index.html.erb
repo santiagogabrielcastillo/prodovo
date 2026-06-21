@@ -27,6 +27,7 @@
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.client') %></th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.date') %></th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.status') %></th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.units') %></th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.total') %></th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.created_by') %></th>
               <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= t('.headers.actions') %></th>
@@ -43,6 +44,7 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   <%= render "status_badge", quote: quote %>
                 </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><%= number_with_precision(quote.total_statistical_quantity, precision: 0) %></td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">$<%= number_with_precision(quote.total_amount, precision: 0) %></td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= quote.user.email %></td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

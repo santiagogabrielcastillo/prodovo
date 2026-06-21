@@ -180,6 +180,7 @@ es-AR:
         date: "Fecha"
         status: "Estado"
         total: "Total"
+        units: "Unidades"
         created_by: "Creado Por"
         actions: "Acciones"
       new_quote: "Nuevo Presupuesto"
