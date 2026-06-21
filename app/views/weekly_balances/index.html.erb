@@ -55,6 +55,29 @@
     </div>
   </div>
 
+  <%# Breakdown by payment method %>
+  <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4"><%= t(".payments_by_method_heading") %></h2>
+    <dl class="space-y-2">
+      <% Payment.payment_methods.each_key do |method_key| %>
+        <div class="flex justify-between items-baseline text-sm">
+          <dt class="text-slate-600"><%= t("payments.methods.#{method_key}") %></dt>
+          <dd class="wb-num font-semibold text-slate-800">$<%= number_with_precision(@payments_by_method[method_key] || 0, precision: 2) %></dd>
+        </div>
+      <% end %>
+      <% if @payments_by_method.key?(nil) %>
+        <div class="flex justify-between items-baseline text-sm">
+          <dt class="text-slate-400 italic"><%= t(".unclassified_method") %></dt>
+          <dd class="wb-num font-semibold text-slate-400">$<%= number_with_precision(@payments_by_method[nil], precision: 2) %></dd>
+        </div>
+      <% end %>
+      <div class="flex justify-between items-baseline text-sm border-t border-slate-100 pt-2 mt-1">
+        <dt class="font-semibold text-slate-700"><%= t(".payments_by_method_total") %></dt>
+        <dd class="wb-num font-bold text-emerald-800">$<%= number_with_precision(@payments_total, precision: 2) %></dd>
+      </div>
+    </dl>
+  </div>
+
   <%# Weekly totals (total_amount strip) %>
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
     <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

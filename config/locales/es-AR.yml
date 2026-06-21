@@ -317,6 +317,9 @@ es-AR:
       expand_hint: "Tocá para ver el detalle del día"
       no_payments: "Sin cobros este día"
       no_expenses: "Sin gastos este día"
+      payments_by_method_heading: "Dinero disponible por forma de cobro"
+      payments_by_method_total: "Total cobrado en la semana"
+      unclassified_method: "Sin clasificar"
   expenses:
     index:
       title: "Gastos"

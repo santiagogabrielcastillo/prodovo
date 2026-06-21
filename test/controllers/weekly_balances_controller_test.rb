@@ -48,6 +48,45 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-weekly-day-balance-target='details'].hidden", count: 7
   end
 
+  test "payments breakdown section always shows all six methods" do
+    monday = Date.new(2031, 7, 7)
+    get weekly_balances_path(week_start: monday.to_s)
+
+    assert_response :success
+    assert_match I18n.t("weekly_balances.index.payments_by_method_heading"), response.body
+    %w[echeq check transfer cash deposit other].each do |method|
+      assert_match I18n.t("payments.methods.#{method}"), response.body
+    end
+    assert_match I18n.t("weekly_balances.index.payments_by_method_total"), response.body
+  end
+
+  test "payments breakdown shows correct amount per method" do
+    monday = Date.new(2026, 6, 1)
+    Payment.create!(client: clients(:one), quote: quotes(:one), amount: 1000, date: Date.new(2026, 6, 2),
+                    payment_method: :transfer, notes: "breakdown transfer test")
+    Payment.create!(client: clients(:one), quote: quotes(:one), amount: 500, date: Date.new(2026, 6, 3),
+                    payment_method: :cash, notes: "breakdown cash test")
+
+    get weekly_balances_path(week_start: monday.to_s)
+
+    assert_response :success
+    assert_match "1.000,00", response.body
+    assert_match "500,00", response.body
+  end
+
+  test "payments breakdown shows unclassified row for nil payment_method" do
+    monday = Date.new(2026, 6, 1)
+    payment = Payment.create!(client: clients(:one), quote: quotes(:one), amount: 750,
+                              date: Date.new(2026, 6, 4), payment_method: :cash,
+                              notes: "unclassified test")
+    payment.update_column(:payment_method, nil)
+
+    get weekly_balances_path(week_start: monday.to_s)
+
+    assert_response :success
+    assert_match I18n.t("weekly_balances.index.unclassified_method"), response.body
+  end
+
   test "daily net shows zero for an empty week" do
     monday = Date.new(2031, 7, 7)
     assert_predicate monday, :monday?
