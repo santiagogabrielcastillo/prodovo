@@ -28,4 +28,36 @@ class ExpenseTest < ActiveSupport::TestCase
     expense = Expense.new(amount: "10,25", date: Date.current, description: "Test")
     assert_equal 10.25, expense.amount
   end
+
+  # ============================================
+  # US-09: payment_method enum
+  # ============================================
+
+  test "payment_method is optional on create" do
+    expense = Expense.new(amount: 50, date: Date.current, description: "Sin método")
+    assert expense.valid?
+  end
+
+  test "all payment_method enum values are accepted" do
+    %w[echeq check transfer cash deposit other].each do |method|
+      expense = Expense.new(amount: 10, date: Date.current, description: "Test", payment_method: method)
+      assert expense.valid?, "#{method} should be a valid payment_method for Expense"
+    end
+  end
+
+  test "payment_method_label returns translated string when set" do
+    expense = Expense.new(payment_method: :transfer)
+    assert_equal I18n.t("payments.methods.transfer"), expense.payment_method_label
+  end
+
+  test "payment_method_label returns dash when payment_method is nil" do
+    expense = Expense.new
+    assert_equal "—", expense.payment_method_label
+  end
+
+  test "expense with nil payment_method stays valid on update" do
+    expense = Expense.create!(amount: 20, date: Date.current, description: "Test", payment_method: :cash)
+    expense.update_column(:payment_method, nil)
+    assert expense.update(description: "Updated"), "Update should succeed even when payment_method is nil"
+  end
 end

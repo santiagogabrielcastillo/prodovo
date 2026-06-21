@@ -67,4 +67,46 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to expenses_path(week_start: @expense.date.beginning_of_week(:monday).to_s)
   end
+
+  # ============================================
+  # US-09: payment_method param
+  # ============================================
+
+  test "create without payment_method succeeds (optional)" do
+    assert_difference("Expense.count", 1) do
+      post expenses_path, params: {
+        expense: { amount: 50, date: Date.current, description: "Sin método" }
+      }
+    end
+    assert_nil Expense.last.payment_method
+  end
+
+  test "payment_method is persisted on create" do
+    assert_difference("Expense.count", 1) do
+      post expenses_path, params: {
+        expense: { amount: 100, date: Date.current, description: "Con método", payment_method: "transfer" }
+      }
+    end
+    assert_equal "transfer", Expense.last.payment_method
+  end
+
+  test "update can change payment_method" do
+    expense = Expense.create!(amount: 75, date: Date.current, description: "Test", payment_method: :cash)
+    patch expense_path(expense), params: {
+      expense: { amount: expense.amount, date: expense.date, description: expense.description, payment_method: "deposit" }
+    }
+    assert_equal "deposit", expense.reload.payment_method
+  end
+
+  test "new form renders payment_method select" do
+    get new_expense_path
+    assert_response :success
+    assert_select "select[name='expense[payment_method]']"
+  end
+
+  test "edit form renders payment_method select" do
+    get edit_expense_path(@expense)
+    assert_response :success
+    assert_select "select[name='expense[payment_method]']"
+  end
 end

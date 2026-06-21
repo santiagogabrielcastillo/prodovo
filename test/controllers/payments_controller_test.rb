@@ -135,8 +135,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     get edit_payment_path(payment)
     assert_response :success
     assert_select "h1", text: I18n.t("payments.edit.title")
-    # Verify client context subtitle is shown
     assert_includes response.body, @client.name
+    assert_select "option[value='cash'][selected]"
   end
 
   test "should get edit for quote-linked payment" do
