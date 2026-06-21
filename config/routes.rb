@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, controllers: { registrations: "users/registrations" }
   resources :products
   resources :clients do
     resources :custom_prices, only: %i[new create edit update destroy]

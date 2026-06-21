@@ -93,9 +93,34 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "general user can access all main sections" do
     sign_in @general_user
-    [ clients_path, quotes_path, weekly_balances_path, statistics_path, expenses_path ].each do |path|
+    [ clients_path, quotes_path, weekly_balances_path, statistics_path, expenses_path, products_path ].each do |path|
       get path
       assert_response :success, "#{path} should be accessible to general users"
     end
+  end
+
+  # ── registration restriction (US-06) ────────────────────────────────────────
+
+  test "unauthenticated user cannot access sign_up" do
+    get new_user_registration_path
+    assert_redirected_to new_user_session_path
+  end
+
+  test "general user cannot access sign_up" do
+    sign_in @general_user
+    get new_user_registration_path
+    assert_redirected_to root_path
+  end
+
+  test "stock_loader cannot access sign_up" do
+    sign_in @stock_loader
+    get new_user_registration_path
+    assert_redirected_to root_path
+  end
+
+  test "admin can access sign_up to create users" do
+    sign_in @admin
+    get new_user_registration_path
+    assert_response :success
   end
 end

@@ -10,7 +10,11 @@ module Authorizable
   private
 
   def require_admin!
-    return if current_user&.admin?
+    unless current_user
+      redirect_to new_user_session_path, alert: t("authorization.access_denied")
+      return
+    end
+    return if current_user.admin?
 
     redirect_to root_path, alert: t("authorization.access_denied")
   end
