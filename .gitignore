@@ -8,3 +8,14 @@
 /.bundle/
 /.env
 
+# AI tooling — runtime/cache/personal data
+.atl/
+.bun/
+.cache/
+.claude.json
+.claude/
+.config/
+.gentle-ai/
+.local/
+.npm/
+
