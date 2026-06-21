@@ -1,0 +1,47 @@
+#!/usr/bin/env zsh
+
+SESSION="prodovo_agent"
+
+# 1. Asegurar que la infraestructura esté arriba y saludable antes de continuar
+docker-compose -f docker-compose.test.yml up -d --wait
+
+# 2. Destruir sesión previa si existe (limpieza)
+tmux kill-session -t $SESSION 2>/dev/null
+
+# 3. Crear nueva sesión desatachada
+tmux new-session -d -s $SESSION
+
+# Mouse support: enable mouse mode and pass scroll events through to the
+# foreground application (Claude Code) instead of converting them to arrow keys.
+tmux set-option -g mouse on
+
+# Clipboard integration (macOS): pipe tmux selections to the system clipboard.
+tmux set-option -g set-clipboard on
+tmux bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "pbcopy"
+tmux bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "pbcopy"
+tmux bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"
+
+# Toggle mouse mode (Ctrl+b m): disable to select with Terminal.app, re-enable after copying.
+tmux bind-key m if-shell "tmux show-options -g mouse | grep -q 'on'" \
+  "set-option -g mouse off; display-message 'Mouse OFF — select freely'" \
+  "set-option -g mouse on;  display-message 'Mouse ON'"
+# When the pane app has mouse reporting active (mouse_any_flag), forward the
+# raw event; otherwise enter copy mode so the log panes remain scrollable.
+tmux bind-key -T root WheelUpPane \
+  if-shell -F -t= "#{mouse_any_flag}" \
+    "send-keys -M" \
+    "if -Ft= '#{pane_in_mode}' 'send-keys -M' 'select-pane -t=; copy-mode -e; send-keys -M'"
+tmux bind-key -T root WheelDownPane \
+  if-shell -F -t= "#{mouse_any_flag}" \
+    "send-keys -M" \
+    "select-pane -t=; send-keys -M"
+
+# 4. Panel 0 (izquierda): entorno del agente
+tmux send-keys -t $SESSION:0.0 "docker-compose -f docker-compose.test.yml exec test bash" C-m
+
+# 5. Panel 1 (derecha): libre
+tmux split-window -h -p 35 -t $SESSION:0.0
+
+# 6. Foco al panel del agente y attach
+tmux select-pane -t $SESSION:0.0
+tmux attach-session -t $SESSION

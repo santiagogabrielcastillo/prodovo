@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: prodovo_test
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /rails
+    volumes:
+      - .:/rails
+      - ~/.agents/skills:/root/.agents/skills:ro
+      - ~/.claude/skills:/root/.claude/skills:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@db:5432/prodovo_test
+      QUEUE_DATABASE_URL: postgres://postgres:postgres@db:5432/prodovo_test
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /rails/tmp/.setup_done"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 60s

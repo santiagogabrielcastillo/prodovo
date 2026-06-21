@@ -1,0 +1,71 @@
+# syntax = docker/dockerfile:1
+ARG RUBY_VERSION=3.4.4
+FROM docker.io/library/ruby:$RUBY_VERSION-slim
+
+WORKDIR /rails
+
+# 1. OS dependencies (without nodejs — version from apt is too old for AI tooling)
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      build-essential \
+      git \
+      libpq-dev \
+      libyaml-dev \
+      pkg-config \
+      postgresql-client \
+      libjemalloc2 \
+      libvips \
+      curl \
+      ca-certificates \
+      gnupg \
+      golang-go && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# 2. Node.js 22 via NodeSource (claude-code and opencode-ai require >=22)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install --no-install-recommends -y nodejs && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# 3. uv (Python package manager used by agent tooling)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.local/bin/uv /usr/local/bin/ && \
+    mv /root/.local/bin/uvx /usr/local/bin/
+
+# 3b. pi (plugin installer required by gentle-ai workspace init)
+# Installs via npm global — binary lands in /usr/local/bin/pi automatically.
+RUN curl -fsSL https://pi.dev/install.sh | bash
+
+# 4. AI agents — installed BEFORE security hardening so postinstall scripts
+#    can download the native binary for the current architecture.
+RUN npm install -g @anthropic-ai/claude-code opencode-ai
+
+# 5. Supply-chain hardening — blocks install scripts for all future npm calls.
+RUN npm config set ignore-scripts true
+
+# 6. Gentle AI (TDD orchestrator)
+RUN curl -fsSL https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/scripts/install.sh | bash
+
+# 7. Ruby gems
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+# 8. Entrypoint — baked into the image so it doesn't depend on the volume mount.
+COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+RUN chmod +x /usr/local/bin/docker-entrypoint
+
+# 9. Non-root user — Claude Code hard-blocks --dangerously-skip-permissions under root.
+#    All system-level installs are done above; agent only needs to own /rails.
+RUN useradd --create-home --shell /bin/bash agent && \
+    chown -R agent:agent /rails
+USER agent
+
+# HOME=/rails: gentle-ai requires paths like /rails/.claude/* to be inside $HOME.
+# Setting it globally means Claude Code auth, gentle-ai workspace data, and Engram
+# all write under /rails/ — which is already persisted via the .:/rails volume mount.
+# No separate volume mounts needed for ~/.config or ~/.local/share.
+ENV HOME="/rails"
+ENV PATH="/rails/.local/bin:${PATH}"
+ENV ENGRAM_DATA_DIR="/rails/tmp/engram_data"
+
+ENTRYPOINT ["docker-entrypoint"]
+CMD ["sleep", "infinity"]
