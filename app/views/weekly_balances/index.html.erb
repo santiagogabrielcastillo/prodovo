@@ -58,24 +58,44 @@
   <%# Breakdown by payment method %>
   <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
     <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4"><%= t(".payments_by_method_heading") %></h2>
-    <dl class="space-y-2">
-      <% Payment.payment_methods.each_key do |method_key| %>
-        <div class="flex justify-between items-baseline text-sm">
-          <dt class="text-slate-600"><%= t("payments.methods.#{method_key}") %></dt>
-          <dd class="wb-num font-semibold text-slate-800">$<%= number_with_precision(@payments_by_method[method_key] || 0, precision: 2) %></dd>
-        </div>
-      <% end %>
-      <% if @payments_by_method.key?(nil) %>
-        <div class="flex justify-between items-baseline text-sm">
-          <dt class="text-slate-400 italic"><%= t(".unclassified_method") %></dt>
-          <dd class="wb-num font-semibold text-slate-400">$<%= number_with_precision(@payments_by_method[nil], precision: 2) %></dd>
-        </div>
-      <% end %>
-      <div class="flex justify-between items-baseline text-sm border-t border-slate-100 pt-2 mt-1">
-        <dt class="font-semibold text-slate-700"><%= t(".payments_by_method_total") %></dt>
-        <dd class="wb-num font-bold text-emerald-800">$<%= number_with_precision(@payments_total, precision: 2) %></dd>
-      </div>
-    </dl>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-100">
+            <th class="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider pb-2"><%= t(".method_name") %></th>
+            <th class="text-right text-xs font-semibold text-slate-400 uppercase tracking-wider pb-2"><%= t(".method_payments") %></th>
+            <th class="text-right text-xs font-semibold text-slate-400 uppercase tracking-wider pb-2"><%= t(".method_balance") %></th>
+          </tr>
+        </thead>
+        <tbody class="space-y-0">
+          <% Payment.payment_methods.each_key do |method_key| %>
+            <% payments = @payments_by_method[method_key] || 0 %>
+            <% expenses = @expenses_by_method[method_key] || 0 %>
+            <% balance = payments - expenses %>
+            <tr class="border-b border-slate-50 last:border-0">
+              <td class="py-1.5 text-slate-600"><%= t("payments.methods.#{method_key}") %></td>
+              <td class="py-1.5 text-right wb-num font-semibold text-slate-800">$<%= number_with_precision(payments, precision: 2) %></td>
+              <td class="py-1.5 text-right wb-num font-semibold <%= balance.negative? ? 'text-rose-700' : 'text-emerald-700' %>">$<%= number_with_precision(balance, precision: 2) %></td>
+            </tr>
+          <% end %>
+          <% if @payments_by_method.key?(nil) || @expenses_by_method.key?(nil) %>
+            <% payments_nil = @payments_by_method[nil] || 0 %>
+            <% expenses_nil = @expenses_by_method[nil] || 0 %>
+            <% balance_nil = payments_nil - expenses_nil %>
+            <tr class="border-b border-slate-50 last:border-0">
+              <td class="py-1.5 text-slate-400 italic"><%= t(".unclassified_method") %></td>
+              <td class="py-1.5 text-right wb-num font-semibold text-slate-400">$<%= number_with_precision(payments_nil, precision: 2) %></td>
+              <td class="py-1.5 text-right wb-num font-semibold <%= balance_nil.negative? ? 'text-rose-700' : 'text-emerald-700' %>">$<%= number_with_precision(balance_nil, precision: 2) %></td>
+            </tr>
+          <% end %>
+          <tr class="border-t border-slate-100 font-semibold">
+            <td class="py-2 text-slate-700"><%= t(".payments_by_method_total") %></td>
+            <td class="py-2 text-right wb-num font-bold text-emerald-800">$<%= number_with_precision(@payments_total, precision: 2) %></td>
+            <td class="py-2 text-right wb-num font-bold text-emerald-800">$<%= number_with_precision(@net_total, precision: 2) %></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <%# Weekly totals (total_amount strip) %>

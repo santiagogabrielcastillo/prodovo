@@ -74,6 +74,24 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
     assert_match "500,00", response.body
   end
 
+  test "payments breakdown shows balance per method (payments minus expenses)" do
+    monday = Date.new(2026, 6, 1)
+    Payment.create!(client: clients(:one), quote: quotes(:one), amount: 1000, date: Date.new(2026, 6, 2),
+                    payment_method: :transfer)
+    Expense.create!(amount: 300, date: Date.new(2026, 6, 3), description: "transfer expense", payment_method: :transfer)
+
+    Payment.create!(client: clients(:one), quote: quotes(:one), amount: 500, date: Date.new(2026, 6, 2),
+                    payment_method: :cash)
+    Expense.create!(amount: 800, date: Date.new(2026, 6, 3), description: "cash expense", payment_method: :cash)
+
+    get weekly_balances_path(week_start: monday.to_s)
+
+    assert_response :success
+    assert_match I18n.t("weekly_balances.index.method_balance"), response.body
+    assert_match "700,00", response.body
+    assert_match "300,00", response.body
+  end
+
   test "payments breakdown shows unclassified row for nil payment_method" do
     monday = Date.new(2026, 6, 1)
     payment = Payment.create!(client: clients(:one), quote: quotes(:one), amount: 750,
