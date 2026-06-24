@@ -19,3 +19,11 @@
 .local/
 .npm/
 
+# Editor and tool configs
+.bash_history
+.cursor/
+.impeccable/
+
+# Build artifacts
+app/assets/builds/
+
