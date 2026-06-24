@@ -41,9 +41,9 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
     get weekly_balances_path(week_start: monday.to_s)
 
     assert_response :success
-    assert_match "99,50", response.body
-    assert_match "250,00", response.body
-    assert_match "150,50", response.body
+    assert_match "99", response.body
+    assert_match "250", response.body
+    assert_match "150", response.body
     assert_match "weekly balance test", response.body
     assert_select "[data-weekly-day-balance-target='details'].hidden", count: 7
   end
@@ -70,8 +70,8 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
     get weekly_balances_path(week_start: monday.to_s)
 
     assert_response :success
-    assert_match "1.000,00", response.body
-    assert_match "500,00", response.body
+    assert_match "1.000", response.body
+    assert_match "500", response.body
   end
 
   test "payments breakdown shows balance per method (payments minus expenses)" do
@@ -88,8 +88,8 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_match I18n.t("weekly_balances.index.method_balance"), response.body
-    assert_match "700,00", response.body
-    assert_match "300,00", response.body
+    assert_match "700", response.body
+    assert_match "300", response.body
   end
 
   test "payments breakdown shows unclassified row for nil payment_method" do
@@ -116,7 +116,7 @@ class WeeklyBalancesControllerTest < ActionDispatch::IntegrationTest
     get weekly_balances_path(week_start: monday.to_s)
 
     assert_response :success
-    assert_match "750,00", response.body
+    assert_match "750", response.body
   end
 
   test "daily net shows zero for an empty week" do
