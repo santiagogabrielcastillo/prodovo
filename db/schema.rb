@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_21_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_25_192651) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -44,6 +44,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_21_000002) do
     t.datetime "updated_at", null: false
     t.string "payment_method"
     t.index ["date"], name: "index_expenses_on_date"
+  end
+
+  create_table "method_balances", force: :cascade do |t|
+    t.string "payment_method", null: false
+    t.decimal "cumulative_balance", precision: 15, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["payment_method"], name: "index_method_balances_on_payment_method", unique: true
   end
 
   create_table "payments", force: :cascade do |t|

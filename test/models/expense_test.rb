@@ -60,4 +60,98 @@ class ExpenseTest < ActiveSupport::TestCase
     expense.update_column(:payment_method, nil)
     assert expense.update(description: "Updated"), "Update should succeed even when payment_method is nil"
   end
+
+  # ============================================
+  # MethodBalance Callbacks
+  # ============================================
+
+  test "creating expense decrements method balance" do
+    MethodBalance.create!(payment_method: "cash", cumulative_balance: 500)
+
+    Expense.create!(amount: 100, date: Date.current, description: "Test", payment_method: :cash)
+
+    assert_equal 400, MethodBalance.balance_for("cash")
+  end
+
+  test "creating expense with new method creates balance record" do
+    assert_nil MethodBalance.find_by(payment_method: "transfer")
+
+    Expense.create!(amount: 75, date: Date.current, description: "Test", payment_method: :transfer)
+
+    assert_equal(-75, MethodBalance.balance_for("transfer"))
+  end
+
+  test "destroying expense increments method balance" do
+    expense = Expense.create!(amount: 80, date: Date.current, description: "Test", payment_method: :cash)
+    assert_equal(-80, MethodBalance.balance_for("cash"))
+
+    expense.destroy
+
+    assert_equal 0, MethodBalance.balance_for("cash")
+  end
+
+  test "updating expense amount adjusts balance by difference" do
+    expense = Expense.create!(amount: 50, date: Date.current, description: "Test", payment_method: :transfer)
+    assert_equal(-50, MethodBalance.balance_for("transfer"))
+
+    expense.update!(amount: 120)
+
+    assert_equal(-120, MethodBalance.balance_for("transfer"))
+  end
+
+  test "updating expense payment_method moves balance from old to new method" do
+    expense = Expense.create!(amount: 60, date: Date.current, description: "Test", payment_method: :cash)
+    assert_equal(-60, MethodBalance.balance_for("cash"))
+    assert_equal 0, MethodBalance.balance_for("transfer")
+
+    expense.update!(payment_method: :transfer)
+
+    assert_equal 0, MethodBalance.balance_for("cash")
+    assert_equal(-60, MethodBalance.balance_for("transfer"))
+  end
+
+  test "expense with nil payment_method does not affect balance" do
+    MethodBalance.create!(payment_method: "cash", cumulative_balance: 300)
+    expense = Expense.create!(amount: 50, date: Date.current, description: "Test", payment_method: :cash)
+    expense.update_column(:payment_method, nil)
+
+    expense.update!(description: "updated")
+
+    assert_equal 250, MethodBalance.balance_for("cash")
+  end
+
+  test "destroying expense with nil payment_method does not fail" do
+    expense = Expense.create!(amount: 40, date: Date.current, description: "Test", payment_method: :cash)
+    expense.update_column(:payment_method, nil)
+
+    assert_nothing_raised { expense.destroy }
+  end
+
+  test "multiple expenses to same method accumulate correctly" do
+    Expense.create!(amount: 50, date: Date.current, description: "Test 1", payment_method: :cash)
+    Expense.create!(amount: 75, date: Date.current, description: "Test 2", payment_method: :cash)
+    Expense.create!(amount: 25, date: Date.current, description: "Test 3", payment_method: :cash)
+
+    assert_equal(-150, MethodBalance.balance_for("cash"))
+  end
+
+  test "expenses to different methods tracked separately" do
+    Expense.create!(amount: 100, date: Date.current, description: "Test 1", payment_method: :cash)
+    Expense.create!(amount: 200, date: Date.current, description: "Test 2", payment_method: :transfer)
+    Expense.create!(amount: 300, date: Date.current, description: "Test 3", payment_method: :echeq)
+
+    assert_equal(-100, MethodBalance.balance_for("cash"))
+    assert_equal(-200, MethodBalance.balance_for("transfer"))
+    assert_equal(-300, MethodBalance.balance_for("echeq"))
+  end
+
+  test "payments and expenses to same method net correctly" do
+    client = clients(:one)
+    quote = Quote.create!(client: client, user: users(:one), date: Date.current, status: :sent)
+
+    Payment.create!(client: client, quote: quote, amount: 500, date: Date.current, payment_method: :cash)
+    Expense.create!(amount: 200, date: Date.current, description: "Test", payment_method: :cash)
+
+    assert_equal 300, MethodBalance.balance_for("cash")
+  end
 end

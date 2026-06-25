@@ -105,18 +105,16 @@
         <tbody>
           <% Payment.payment_methods.each_key do |method_key| %>
             <% payments = @payments_by_method[method_key] || 0 %>
-            <% expenses = @expenses_by_method[method_key] || 0 %>
-            <% balance = payments - expenses %>
+            <% balance = @balance_by_method[method_key] || 0 %>
             <tr class="border-b border-slate-50 last:border-0">
               <td class="py-1.5 text-slate-600"><%= t("payments.methods.#{method_key}") %></td>
               <td class="py-1.5 text-right wb-num font-semibold text-slate-800 whitespace-nowrap">$<%= number_with_precision(payments, precision: 2) %></td>
               <td class="py-1.5 text-right wb-num font-semibold whitespace-nowrap <%= balance.negative? ? 'text-rose-700' : 'text-emerald-700' %>">$<%= number_with_precision(balance, precision: 2) %></td>
             </tr>
           <% end %>
-          <% if @payments_by_method.key?(nil) || @expenses_by_method.key?(nil) %>
+          <% if @payments_by_method.key?(nil) || @expenses_by_method.key?(nil) || @balance_by_method.key?(nil) %>
             <% payments_nil = @payments_by_method[nil] || 0 %>
-            <% expenses_nil = @expenses_by_method[nil] || 0 %>
-            <% balance_nil = payments_nil - expenses_nil %>
+            <% balance_nil = @balance_by_method[nil] || 0 %>
             <tr class="border-b border-slate-50 last:border-0">
               <td class="py-1.5 text-slate-400 italic"><%= t(".unclassified_method") %></td>
               <td class="py-1.5 text-right wb-num font-semibold text-slate-400 whitespace-nowrap">$<%= number_with_precision(payments_nil, precision: 2) %></td>
@@ -126,7 +124,7 @@
           <tr class="border-t border-slate-100 font-semibold">
             <td class="py-2 text-slate-700"><%= t(".payments_by_method_total") %></td>
             <td class="py-2 text-right wb-num font-bold text-emerald-800 whitespace-nowrap">$<%= number_with_precision(@payments_total, precision: 2) %></td>
-            <td class="py-2 text-right wb-num font-bold text-emerald-800 whitespace-nowrap">$<%= number_with_precision(@net_total, precision: 2) %></td>
+            <td class="py-2 text-right wb-num font-bold text-emerald-800 whitespace-nowrap">$<%= number_with_precision(@balance_by_method.values.sum, precision: 2) %></td>
           </tr>
         </tbody>
       </table>

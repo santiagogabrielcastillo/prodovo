@@ -377,4 +377,95 @@ class PaymentTest < ActiveSupport::TestCase
     payment = Payment.new(client: @client, quote: nil, amount: "-100,25", date: Date.current)
     assert_equal(-100.25, payment.amount, "Negative comma amount should be parsed correctly")
   end
+
+  # ============================================
+  # MethodBalance Callbacks
+  # ============================================
+
+  test "creating payment increments method balance" do
+    assert_equal 0, MethodBalance.balance_for("cash")
+
+    Payment.create!(client: @client, quote: @quote, amount: 500, date: Date.current, payment_method: :cash)
+
+    assert_equal 500, MethodBalance.balance_for("cash")
+  end
+
+  test "creating payment with new method creates balance record" do
+    assert_nil MethodBalance.find_by(payment_method: "transfer")
+
+    Payment.create!(client: @client, quote: @quote, amount: 300, date: Date.current, payment_method: :transfer)
+
+    assert_equal 300, MethodBalance.balance_for("transfer")
+  end
+
+  test "destroying payment decrements method balance" do
+    payment = Payment.create!(client: @client, quote: @quote, amount: 400, date: Date.current, payment_method: :cash)
+    assert_equal 400, MethodBalance.balance_for("cash")
+
+    payment.destroy
+
+    assert_equal 0, MethodBalance.balance_for("cash")
+  end
+
+  test "updating payment amount adjusts balance by difference" do
+    payment = Payment.create!(client: @client, quote: @quote, amount: 100, date: Date.current, payment_method: :transfer)
+    assert_equal 100, MethodBalance.balance_for("transfer")
+
+    payment.update!(amount: 250)
+
+    assert_equal 250, MethodBalance.balance_for("transfer")
+  end
+
+  test "updating payment method moves balance from old to new method" do
+    payment = Payment.create!(client: @client, quote: @quote, amount: 200, date: Date.current, payment_method: :cash)
+    assert_equal 200, MethodBalance.balance_for("cash")
+    assert_equal 0, MethodBalance.balance_for("transfer")
+
+    payment.update!(payment_method: :transfer)
+
+    assert_equal 0, MethodBalance.balance_for("cash")
+    assert_equal 200, MethodBalance.balance_for("transfer")
+  end
+
+  test "payment with nil payment_method does not affect balance" do
+    payment = Payment.create!(client: @client, quote: @quote, amount: 150, date: Date.current, payment_method: :cash)
+    payment.update_column(:payment_method, nil)
+
+    payment.update!(notes: "updated")
+
+    assert_equal 150, MethodBalance.balance_for("cash")
+  end
+
+  test "creating negative payment decrements method balance" do
+    assert_equal 0, MethodBalance.balance_for("other")
+
+    Payment.create!(client: @client, quote: nil, amount: -100, date: Date.current, payment_method: :other, notes: "Adjustment")
+
+    assert_equal(-100, MethodBalance.balance_for("other"))
+  end
+
+  test "destroying payment with nil payment_method does not fail" do
+    payment = Payment.create!(client: @client, quote: @quote, amount: 100, date: Date.current, payment_method: :cash)
+    payment.update_column(:payment_method, nil)
+
+    assert_nothing_raised { payment.destroy }
+  end
+
+  test "multiple payments to same method accumulate correctly" do
+    Payment.create!(client: @client, quote: @quote, amount: 100, date: Date.current, payment_method: :cash)
+    Payment.create!(client: @client, quote: @quote, amount: 200, date: Date.current, payment_method: :cash)
+    Payment.create!(client: @client, quote: @quote, amount: 50, date: Date.current, payment_method: :cash)
+
+    assert_equal 350, MethodBalance.balance_for("cash")
+  end
+
+  test "payments to different methods tracked separately" do
+    Payment.create!(client: @client, quote: @quote, amount: 100, date: Date.current, payment_method: :cash)
+    Payment.create!(client: @client, quote: @quote, amount: 200, date: Date.current, payment_method: :transfer)
+    Payment.create!(client: @client, quote: @quote, amount: 300, date: Date.current, payment_method: :echeq)
+
+    assert_equal 100, MethodBalance.balance_for("cash")
+    assert_equal 200, MethodBalance.balance_for("transfer")
+    assert_equal 300, MethodBalance.balance_for("echeq")
+  end
 end
