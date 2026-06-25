@@ -19,15 +19,15 @@
 <div class="w-full space-y-4 wb-ui">
 
   <%# Compact header %>
-  <div class="flex items-center justify-between gap-4">
-    <div class="flex items-baseline gap-3">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
       <h1 class="text-xl font-semibold text-slate-800 wb-serif tracking-tight"><%= t(".title") %></h1>
       <span class="text-sm text-slate-500">
         <%= t(".week_range", from: l(@week_start, format: :long), to: l(@week_end, format: :long)) %>
       </span>
     </div>
 
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <% unless is_current_week %>
         <%= link_to t(".current_week"), weekly_balances_path,
             class: "text-xs font-semibold px-3 py-1.5 rounded-full border border-indigo-300 text-indigo-600 hover:bg-indigo-50 transition" %>
@@ -38,12 +38,12 @@
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
-        <%= t(".prev_week") %>
+        <span class="hidden sm:inline"><%= t(".prev_week") %></span>
       <% end %>
 
       <%= link_to weekly_balances_path(week_start: (@week_start + 7.days).to_s),
           class: "week-nav-btn inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 text-slate-600 text-xs font-medium" do %>
-        <%= t(".next_week") %>
+        <span class="hidden sm:inline"><%= t(".next_week") %></span>
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
@@ -52,7 +52,7 @@
   </div>
 
   <%# Compact metrics strip %>
-  <div class="grid grid-cols-5 gap-2">
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
     <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
       <p class="text-xs text-slate-500 font-medium"><%= t(".payments_total") %></p>
       <p class="wb-num text-sm font-bold text-emerald-800 whitespace-nowrap">
@@ -134,7 +134,7 @@
   <%# Daily net — the hero %>
   <div>
     <h2 class="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2"><%= t(".daily_net_heading") %></h2>
-    <div class="grid grid-cols-7 gap-2">
+    <div class="grid grid-cols-2 md:grid-cols-7 gap-2">
       <% @daily_nets.each do |row| %>
         <% day = row[:day] %>
         <% is_today = (day == today) %>
