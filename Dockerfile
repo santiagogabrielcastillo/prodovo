@@ -55,8 +55,14 @@ COPY . .
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# Precompiling assets for production without requiring secret RAILS_MASTER_KEY.
+# Run twice: tailwindcss-rails's assets:precompile hook has been observed to
+# intermittently omit tailwind.css from the Sprockets manifest on the first
+# pass in this build environment. The second pass reliably picks up whatever
+# the first one missed (Sprockets only recompiles what's not already in the
+# manifest, so this is cheap).
+RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile && \
+    SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 
 # Final stage for app image
