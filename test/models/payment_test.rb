@@ -345,13 +345,15 @@ class PaymentTest < ActiveSupport::TestCase
     end
   end
 
-  test "existing payment with nil payment_method stays valid on update" do
+  test "existing payment with nil payment_method requires method on update" do
     payment = Payment.create!(client: @client, quote: @quote, amount: 100.00, date: Date.current, payment_method: :cash)
     # Simulate historical row with nil payment_method by bypassing validation
     payment.update_column(:payment_method, nil)
     payment.reload
-    # Update another field — should not fail due to nil payment_method
-    assert payment.update(notes: "updated note"), "Update should succeed even if payment_method is nil"
+    # Update without payment_method should fail
+    assert_not payment.update(notes: "updated note"), "Update should fail when payment_method is nil"
+    # But updating with a payment_method should succeed
+    assert payment.update(notes: "updated note", payment_method: :transfer), "Update should succeed with payment_method"
   end
 
   test "payment_method_label returns translated string when set" do
@@ -427,13 +429,10 @@ class PaymentTest < ActiveSupport::TestCase
     assert_equal 200, MethodBalance.balance_for("transfer")
   end
 
-  test "payment with nil payment_method does not affect balance" do
-    payment = Payment.create!(client: @client, quote: @quote, amount: 150, date: Date.current, payment_method: :cash)
-    payment.update_column(:payment_method, nil)
-
-    payment.update!(notes: "updated")
-
-    assert_equal 150, MethodBalance.balance_for("cash")
+  test "nil payment_method on create is now rejected" do
+    payment = Payment.new(client: @client, quote: @quote, amount: 150, date: Date.current)
+    assert_not payment.valid?
+    assert_includes payment.errors[:payment_method], "no puede estar en blanco"
   end
 
   test "creating negative payment decrements method balance" do

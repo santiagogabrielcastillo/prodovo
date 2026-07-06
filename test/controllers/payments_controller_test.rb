@@ -266,7 +266,7 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "transfer", payment.reload.payment_method
   end
 
-  test "update with nil payment_method does not fail for historical records" do
+  test "update with nil payment_method requires method for historical records" do
     payment = Payment.create!(
       client: @client,
       quote: nil,
@@ -277,7 +277,7 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     payment.update_column(:payment_method, nil)
 
     patch payment_path(payment), params: {
-      payment: { notes: "just updating notes" }
+      payment: { notes: "just updating notes", payment_method: :cash }
     }
 
     assert_redirected_to client_path(@client)

@@ -2,30 +2,30 @@ require "test_helper"
 
 class ExpenseTest < ActiveSupport::TestCase
   test "requires description" do
-    expense = Expense.new(amount: 10, date: Date.current, description: "")
+    expense = Expense.new(amount: 10, date: Date.current, description: "", payment_method: :cash)
     assert_not expense.valid?
     assert expense.errors[:description].any?
   end
 
   test "allows zero amount" do
-    expense = Expense.new(amount: 0, date: Date.current, description: "Sin costo")
+    expense = Expense.new(amount: 0, date: Date.current, description: "Sin costo", payment_method: :cash)
     assert expense.valid?
   end
 
   test "rejects negative amount" do
-    expense = Expense.new(amount: -1, date: Date.current, description: "Test")
+    expense = Expense.new(amount: -1, date: Date.current, description: "Test", payment_method: :cash)
     assert_not expense.valid?
     assert expense.errors[:amount].any?
   end
 
   test "requires date" do
-    expense = Expense.new(amount: 0, description: "Test")
+    expense = Expense.new(amount: 0, description: "Test", payment_method: :cash)
     assert_not expense.valid?
     assert expense.errors[:date].any?
   end
 
   test "converts comma decimal in amount" do
-    expense = Expense.new(amount: "10,25", date: Date.current, description: "Test")
+    expense = Expense.new(amount: "10,25", date: Date.current, description: "Test", payment_method: :cash)
     assert_equal 10.25, expense.amount
   end
 
@@ -33,9 +33,10 @@ class ExpenseTest < ActiveSupport::TestCase
   # US-09: payment_method enum
   # ============================================
 
-  test "payment_method is optional on create" do
+  test "payment_method is required on create" do
     expense = Expense.new(amount: 50, date: Date.current, description: "Sin método")
-    assert expense.valid?
+    assert_not expense.valid?
+    assert expense.errors[:payment_method].any?
   end
 
   test "all payment_method enum values are accepted" do
@@ -55,10 +56,11 @@ class ExpenseTest < ActiveSupport::TestCase
     assert_equal "—", expense.payment_method_label
   end
 
-  test "expense with nil payment_method stays valid on update" do
+  test "expense with nil payment_method requires method on update" do
     expense = Expense.create!(amount: 20, date: Date.current, description: "Test", payment_method: :cash)
     expense.update_column(:payment_method, nil)
-    assert expense.update(description: "Updated"), "Update should succeed even when payment_method is nil"
+    assert_not expense.update(description: "Updated"), "Update should fail when payment_method is nil"
+    assert expense.update(description: "Updated", payment_method: :transfer), "Update should succeed with payment_method"
   end
 
   # ============================================
@@ -110,14 +112,16 @@ class ExpenseTest < ActiveSupport::TestCase
     assert_equal(-60, MethodBalance.balance_for("transfer"))
   end
 
-  test "expense with nil payment_method does not affect balance" do
+  test "expense with nil payment_method does not affect balance when method provided on update" do
     MethodBalance.create!(payment_method: "cash", cumulative_balance: 300)
     expense = Expense.create!(amount: 50, date: Date.current, description: "Test", payment_method: :cash)
     expense.update_column(:payment_method, nil)
 
-    expense.update!(description: "updated")
+    expense.update!(description: "updated", payment_method: :transfer)
 
+    # cash still holds the original -50 deduction (update_column bypassed reversal)
     assert_equal 250, MethodBalance.balance_for("cash")
+    assert_equal(-50, MethodBalance.balance_for("transfer"))
   end
 
   test "destroying expense with nil payment_method does not fail" do

@@ -42,7 +42,8 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
         expense: {
           amount: 99.99,
           date: Date.new(2026, 5, 6),
-          description: "Nuevo gasto"
+          description: "Nuevo gasto",
+          payment_method: :cash
         }
       }
     end
@@ -54,7 +55,8 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
       expense: {
         amount: 200,
         date: @expense.date,
-        description: "Actualizado"
+        description: "Actualizado",
+        payment_method: :cash
       }
     }
     assert_redirected_to expenses_path(week_start: @expense.date.beginning_of_week(:monday).to_s)
@@ -72,13 +74,13 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
   # US-09: payment_method param
   # ============================================
 
-  test "create without payment_method succeeds (optional)" do
-    assert_difference("Expense.count", 1) do
+  test "create without payment_method is rejected" do
+    assert_no_difference("Expense.count") do
       post expenses_path, params: {
         expense: { amount: 50, date: Date.current, description: "Sin método" }
       }
     end
-    assert_nil Expense.last.payment_method
+    assert_response :unprocessable_entity
   end
 
   test "payment_method is persisted on create" do

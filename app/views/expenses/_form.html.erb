@@ -20,8 +20,10 @@
     <%= form.label :amount, class: "block text-xs font-bold text-slate-400 uppercase tracking-widest" %>
     <div class="relative mt-1">
       <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-lg select-none">$</span>
-      <%= form.number_field :amount,
-          step: 0.01,
+      <%= form.text_field :amount,
+          value: @expense.amount ? number_with_precision(@expense.amount, precision: 2) : nil,
+          data: { controller: "amount-input", action: "focus->amount-input#focus blur->amount-input#blur submit->amount-input#sanitize" },
+          inputmode: "decimal",
           class: "no-spinner block w-full rounded-lg border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500 py-3 pl-8 pr-4 text-xl font-semibold text-slate-800" %>
     </div>
   </div>
@@ -37,6 +39,7 @@
     <%= form.select :payment_method,
         Expense.payment_methods.keys.map { |m| [ I18n.t("payments.methods.#{m}"), m ] },
         { include_blank: t("expenses.form.select_method") },
+        required: true,
         class: "mt-1 block w-full rounded-lg border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 text-base text-slate-800" %>
   </div>
 

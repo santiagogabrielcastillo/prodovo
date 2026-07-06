@@ -4,8 +4,10 @@ one:
   amount: 150.50
   date: 2026-05-04
   description: "Compra de insumos"
+  payment_method: cash
 
 two:
   amount: 0
   date: 2026-05-05
   description: "Gasto sin monto (ajuste)"
+  payment_method: transfer

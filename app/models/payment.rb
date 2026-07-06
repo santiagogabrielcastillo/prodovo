@@ -7,7 +7,7 @@ class Payment < ApplicationRecord
   # Allow negative values for adjustments/discounts
   validates :amount, presence: true, numericality: true
   validates :date, presence: true
-  validates :payment_method, presence: true, on: :create
+  validates :payment_method, presence: true
 
   after_save :update_quote_status!
   after_save :update_client_balance!

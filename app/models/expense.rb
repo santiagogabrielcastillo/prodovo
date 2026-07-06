@@ -4,6 +4,7 @@ class Expense < ApplicationRecord
   validates :description, presence: true
   validates :amount, numericality: { greater_than_or_equal_to: 0 }
   validates :date, presence: true
+  validates :payment_method, presence: true
 
   after_save :update_method_balance!
   after_destroy :update_method_balance_on_destroy!
