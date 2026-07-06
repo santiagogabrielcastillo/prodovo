@@ -2,16 +2,19 @@ import { Controller } from "@hotwired/stimulus"
 
 // Formats a text input as Argentine currency on blur,
 // strips formatting on focus for raw number editing.
+// Controller goes on the FORM, target on the text input.
 // Use with a $ prefix span outside the input.
 export default class extends Controller {
+  static targets = ["field"]
+
   connect() {
+    if (!this.hasFieldTarget) return
     this.format()
   }
 
   focus() {
-    const raw = this.#parseLocal(this.element.value)
-    // Show raw number with dot decimal (Rails-compatible)
-    this.element.value = raw !== 0 ? raw : ""
+    const raw = this.#parseLocal(this.fieldTarget.value)
+    this.fieldTarget.value = raw !== 0 ? raw : ""
   }
 
   blur() {
@@ -19,9 +22,9 @@ export default class extends Controller {
   }
 
   format() {
-    const raw = this.#parseLocal(this.element.value)
-    if (raw === 0 && this.element.value.trim() === "") {
-      this.element.value = ""
+    const raw = this.#parseLocal(this.fieldTarget.value)
+    if (raw === 0 && this.fieldTarget.value.trim() === "") {
+      this.fieldTarget.value = ""
       return
     }
 
@@ -29,13 +32,14 @@ export default class extends Controller {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })
-    this.element.value = formatter.format(raw)
+    this.fieldTarget.value = formatter.format(raw)
   }
 
-  // Called by form submit action to send clean value to server
+  // Called on form submit to send clean value to server
   sanitize() {
-    const raw = this.#parseLocal(this.element.value)
-    this.element.value = raw
+    if (!this.hasFieldTarget) return
+    const raw = this.#parseLocal(this.fieldTarget.value)
+    this.fieldTarget.value = raw
   }
 
   #parseLocal(value) {
