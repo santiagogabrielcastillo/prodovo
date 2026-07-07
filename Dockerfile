@@ -11,23 +11,29 @@ FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 # Rails app lives here
 WORKDIR /rails
 
-# Install base packages + CHROMIUM + NODE.JS para Grover/PDFs
+# Install base packages + Google Chrome (for Grover/PDFs) + Node.js
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl gnupg libjemalloc2 libvips chromium fonts-liberation fonts-roboto \
+    apt-get install --no-install-recommends -y curl gnupg libjemalloc2 libvips fonts-liberation fonts-roboto wget \
+    # Add Google Chrome repo for latest stable Chrome (compatible with Puppeteer v24+)
+    && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    # Add PostgreSQL client repo
     && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && apt-get update -qq \
-    && apt-get install --no-install-recommends -y postgresql-client-17 \
+    && apt-get install --no-install-recommends -y google-chrome-stable postgresql-client-17 \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install --no-install-recommends -y nodejs \
     && rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Set production environment
+# PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: we use system Google Chrome instead,
+# saves ~300MB in image and avoids multi-stage cache issues.
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    PUPPETEER_CACHE_DIR="/rails/.cache/puppeteer"
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
@@ -45,7 +51,7 @@ RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
 
-# Install Node.js dependencies (puppeteer for Grover)
+# Install Node.js dependencies (puppeteer for Grover — skips Chromium download)
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev && \
     rm -rf ~/.npm /tmp/*
