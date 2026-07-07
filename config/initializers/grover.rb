@@ -1,14 +1,16 @@
 Grover.configure do |config|
-  # Use Chromium/Puppeteer for PDF generation
-  # In production, use system Chromium if available, otherwise use Puppeteer's bundled Chromium
+  # In production (Docker), Puppeteer downloads its own compatible Chromium
+  # into PUPPETEER_CACHE_DIR. Don't override executable_path — let Puppeteer
+  # find its bundled browser automatically. system chromium from apt is
+  # incompatible with Puppeteer v24+.
+  #
+  # For local dev, GOOGLE_CHROME_BIN can point to a custom Chrome/Chromium path.
   chrome_path = if Rails.env.production?
-                  # Check if system Chromium exists, otherwise let Puppeteer use its bundled version
-                  system_chrome = ENV.fetch("GOOGLE_CHROME_BIN", "/usr/bin/chromium")
-                  File.exist?(system_chrome) ? system_chrome : nil
+                  nil # trust Puppeteer's cached browser (PUPPETEER_CACHE_DIR)
                 else
                   ENV.fetch("GOOGLE_CHROME_BIN", nil)
                 end
-  
+
   config.options = {
     format: "A4",
     margin: {
@@ -23,6 +25,8 @@ Grover.configure do |config|
     prefer_css_page_size: true,
     user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36",
     # Required for Chromium in containers/restricted environments (Docker, PaaS, etc.)
+    # NOTE: --single-process removed — incompatible with Puppeteer v24+ and causes
+    # "Cannot use V8 Proxy resolver in single process mode" crashes.
     launch_args: %w[
       --no-sandbox
       --disable-setuid-sandbox
@@ -31,10 +35,9 @@ Grover.configure do |config|
       --disable-software-rasterizer
       --no-first-run
       --no-zygote
-      --single-process
     ]
   }
-  
+
   # Only set executable_path if we have a valid path
   config.options[:executable_path] = chrome_path if chrome_path
 end
