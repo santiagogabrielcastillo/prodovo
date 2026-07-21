@@ -15,11 +15,11 @@ class HomeController < ApplicationController
     # Activity Feed
     @last_quotes = Quote.where.not(status: :draft)
                         .order(created_at: :desc)
-                        .limit(10)
+                        .limit(30)
                         .includes(:client)
 
     @last_payments = Payment.order(created_at: :desc)
-                            .limit(10)
+                            .limit(30)
                             .includes(:client, :quote)
   end
 end
