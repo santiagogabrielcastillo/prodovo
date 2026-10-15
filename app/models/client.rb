@@ -31,7 +31,7 @@ class Client < ApplicationRecord
 
   def cannot_delete_if_has_financial_records
     if has_financial_records?
-      errors.add(:base, I18n.t('activerecord.errors.models.client.attributes.base.cannot_delete_with_records'))
+      errors.add(:base, I18n.t("activerecord.errors.models.client.attributes.base.cannot_delete_with_records"))
       throw :abort
     end
   end

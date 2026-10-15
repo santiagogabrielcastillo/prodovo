@@ -140,7 +140,7 @@ class Quote < ApplicationRecord
 
   def cannot_delete_if_has_payments
     if payments.exists?
-      errors.add(:base, I18n.t('activerecord.errors.models.quote.attributes.base.cannot_delete_with_payments'))
+      errors.add(:base, I18n.t("activerecord.errors.models.quote.attributes.base.cannot_delete_with_payments"))
       throw :abort
     end
   end

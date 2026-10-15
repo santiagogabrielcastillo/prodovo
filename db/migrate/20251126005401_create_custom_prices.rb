@@ -8,6 +8,6 @@ class CreateCustomPrices < ActiveRecord::Migration[7.2]
       t.timestamps
     end
 
-    add_index :custom_prices, [:client_id, :product_id], unique: true
+    add_index :custom_prices, [ :client_id, :product_id ], unique: true
   end
 end

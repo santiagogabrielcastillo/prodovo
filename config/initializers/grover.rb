@@ -8,9 +8,9 @@ Grover.configure do |config|
   # Local dev: GOOGLE_CHROME_BIN env var can point to a custom path.
   chrome_path = if Rails.env.production?
                   "/usr/bin/google-chrome-stable"
-                else
+  else
                   ENV.fetch("GOOGLE_CHROME_BIN", nil)
-                end
+  end
 
   config.options = {
     format: "A4",

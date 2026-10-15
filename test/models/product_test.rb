@@ -4,10 +4,10 @@ class ProductTest < ActiveSupport::TestCase
   test "should return custom price when exists for client" do
     client = clients(:one)
     product = products(:one)
-    
+
     # Delete any existing custom price first
     CustomPrice.where(client: client, product: product).destroy_all
-    
+
     # Create a custom price
     custom_price = CustomPrice.create!(
       client: client,
@@ -22,11 +22,11 @@ class ProductTest < ActiveSupport::TestCase
     client = clients(:one)
     other_client = clients(:two)
     product = products(:one)
-    
+
     # Delete any existing custom prices first
     CustomPrice.where(client: client, product: product).destroy_all
     CustomPrice.where(client: other_client, product: product).destroy_all
-    
+
     # Create a custom price for one client
     CustomPrice.create!(
       client: client,
@@ -41,7 +41,7 @@ class ProductTest < ActiveSupport::TestCase
   test "should return base_price when no custom price exists for any client" do
     client = clients(:one)
     product = products(:one)
-    
+
     # Delete any existing custom price first
     CustomPrice.where(client: client, product: product).destroy_all
 

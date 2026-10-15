@@ -322,4 +322,3 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to client_path(@client)
   end
 end
-

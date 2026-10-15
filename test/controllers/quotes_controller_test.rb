@@ -151,4 +151,3 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
     assert_match stat_product.name, flash[:warning]
   end
 end
-

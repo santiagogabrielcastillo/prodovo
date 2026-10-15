@@ -14,7 +14,6 @@ es-AR:
       close: "Cerrar"
       download_pdf: "Descargar PDF"
       print: "Imprimir/Enviar"
-      record_payment: "Registrar Cobro"
       finalize_send: "Finalizar y Enviar"
       back_to_quotes: "Volver a Presupuestos"
       view_client: "Ver Cliente"

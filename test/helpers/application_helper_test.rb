@@ -64,4 +64,3 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_equal "-$1.500", format_currency_integer(-1500)
   end
 end
-

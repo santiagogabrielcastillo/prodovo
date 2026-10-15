@@ -15,6 +15,7 @@ export default class extends Controller {
   focus() {
     const raw = this.#parseLocal(this.fieldTarget.value)
     this.fieldTarget.value = raw !== 0 ? raw : ""
+    this.fieldTarget.select()
   }
 
   blur() {

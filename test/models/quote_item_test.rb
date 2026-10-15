@@ -147,5 +147,4 @@ class QuoteItemTest < ActiveSupport::TestCase
     assert_equal 100.50, item.unit_price
     assert_equal 251.25, item.total_price, "2.5 × 100.50 should equal 251.25"
   end
-
 end

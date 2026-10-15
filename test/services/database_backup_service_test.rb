@@ -1,9 +1,25 @@
 require "test_helper"
-require "minitest/mock"
 
 class DatabaseBackupServiceTest < ActiveSupport::TestCase
+  class FakeS3Client
+    attr_reader :put_object_calls
+
+    def initialize(raise_error: nil)
+      @put_object_calls = []
+      @raise_error = raise_error
+    end
+
+    def put_object(bucket:, key:, body:)
+      raise @raise_error if @raise_error
+
+      @put_object_calls << { bucket: bucket, key: key, body: body }
+      true
+    end
+  end
+
   setup do
-    @service = DatabaseBackupService.new
+    @s3_client = FakeS3Client.new
+    @service = DatabaseBackupService.new(s3_client: @s3_client)
 
     ENV["AWS_REGION"] = "us-east-1"
     ENV["AWS_ACCESS_KEY_ID"] = "test-key"
@@ -19,30 +35,19 @@ class DatabaseBackupServiceTest < ActiveSupport::TestCase
   end
 
   test "returns true on successful backup and upload" do
-    mock_s3_object = Minitest::Mock.new
-    mock_bucket = Minitest::Mock.new
-    mock_s3 = Minitest::Mock.new
-
     freeze_time do
       timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
       expected_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
 
-      mock_s3_object.expect(:upload_file, true, [expected_file])
-      mock_bucket.expect(:object, mock_s3_object, ["backups/db_backup_#{timestamp}.dump"])
-      mock_s3.expect(:bucket, mock_bucket, ["test-bucket"])
-
       stub_system_call(success: true, touch_file: expected_file) do
-        Aws::S3::Resource.stub(:new, mock_s3) do
-          result = @service.call
+        result = @service.call
 
-          assert result
-          assert_not File.exist?(expected_file), "Temp file should be cleaned up"
-        end
+        assert result
+        assert_equal 1, @s3_client.put_object_calls.size
+        assert_equal "test-bucket", @s3_client.put_object_calls.first[:bucket]
+        assert_equal "backups/db_backup_#{timestamp}.dump", @s3_client.put_object_calls.first[:key]
+        assert_not File.exist?(expected_file), "Temp file should be cleaned up"
       end
-
-      mock_s3.verify
-      mock_bucket.verify
-      mock_s3_object.verify
     end
   end
 
@@ -54,32 +59,20 @@ class DatabaseBackupServiceTest < ActiveSupport::TestCase
   end
 
   test "does not call S3 when pg_dump fails" do
-    s3_called = false
-
     stub_system_call(success: false) do
-      Aws::S3::Resource.stub(:new, ->(*) { s3_called = true; raise "Should not reach here" }) do
-        @service.call
-      end
+      @service.call
     end
 
-    assert_not s3_called, "S3 should not be called when pg_dump fails"
+    assert_empty @s3_client.put_object_calls, "S3 should not be called when pg_dump fails"
   end
 
   test "builds correct pg_dump command from database config" do
     captured_env = nil
     captured_cmd = nil
 
-    mock_s3_object = Minitest::Mock.new
-    mock_bucket = Minitest::Mock.new
-    mock_s3 = Minitest::Mock.new
-
     freeze_time do
       timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
       expected_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
-
-      mock_s3_object.expect(:upload_file, true, [expected_file])
-      mock_bucket.expect(:object, mock_s3_object, ["backups/db_backup_#{timestamp}.dump"])
-      mock_s3.expect(:bucket, mock_bucket, ["test-bucket"])
 
       @service.define_singleton_method(:system) do |env, *cmd|
         captured_env = env
@@ -88,9 +81,7 @@ class DatabaseBackupServiceTest < ActiveSupport::TestCase
         true
       end
 
-      Aws::S3::Resource.stub(:new, mock_s3) do
-        @service.call
-      end
+      @service.call
 
       db_config = ActiveRecord::Base.connection_db_config.configuration_hash
       assert_equal db_config[:password].to_s, captured_env["PGPASSWORD"]
@@ -104,55 +95,35 @@ class DatabaseBackupServiceTest < ActiveSupport::TestCase
   end
 
   test "cleans up temp file after successful upload" do
-    mock_s3_object = Minitest::Mock.new
-    mock_bucket = Minitest::Mock.new
-    mock_s3 = Minitest::Mock.new
-
     freeze_time do
       timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
       expected_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
-
-      mock_s3_object.expect(:upload_file, true, [expected_file])
-      mock_bucket.expect(:object, mock_s3_object, ["backups/db_backup_#{timestamp}.dump"])
-      mock_s3.expect(:bucket, mock_bucket, ["test-bucket"])
 
       FileUtils.touch(expected_file)
       assert File.exist?(expected_file), "File should exist before service processes it"
 
       stub_system_call(success: true) do
-        Aws::S3::Resource.stub(:new, mock_s3) do
-          @service.call
+        @service.call
 
-          assert_not File.exist?(expected_file), "File should be deleted after service call"
-        end
+        assert_not File.exist?(expected_file), "File should be deleted after service call"
       end
     end
   end
 
   test "uploads to correct S3 path with timestamp" do
-    mock_s3_object = Minitest::Mock.new
-    mock_bucket = Minitest::Mock.new
-    mock_s3 = Minitest::Mock.new
-
     freeze_time do
       timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
       expected_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
       expected_s3_key = "backups/db_backup_#{timestamp}.dump"
 
-      mock_s3_object.expect(:upload_file, true, [expected_file])
-      mock_bucket.expect(:object, mock_s3_object, [expected_s3_key])
-      mock_s3.expect(:bucket, mock_bucket, ["test-bucket"])
-
       stub_system_call(success: true, touch_file: expected_file) do
-        Aws::S3::Resource.stub(:new, mock_s3) do
-          result = @service.call
-          assert result
-        end
+        result = @service.call
+        assert result
       end
 
-      mock_s3.verify
-      mock_bucket.verify
-      mock_s3_object.verify
+      call = @s3_client.put_object_calls.last
+      assert_equal expected_s3_key, call[:key]
+      assert_equal ENV["AWS_BUCKET_NAME"], call[:bucket]
     end
   end
 
@@ -184,15 +155,14 @@ class DatabaseBackupServiceTest < ActiveSupport::TestCase
       timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
       expected_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
 
-      failing_s3 = ->(*) { raise Aws::S3::Errors::ServiceError.new(nil, "Network error") }
+      failing_client = FakeS3Client.new(raise_error: Aws::S3::Errors::ServiceError.new(nil, "Network error"))
+      @service = DatabaseBackupService.new(s3_client: failing_client)
 
       stub_system_call(success: true, touch_file: expected_file) do
-        Aws::S3::Resource.stub(:new, failing_s3) do
-          result = @service.call
+        result = @service.call
 
-          assert_not result
-          assert_not File.exist?(expected_file), "Temp file should be cleaned up even after upload failure"
-        end
+        assert_not result
+        assert_not File.exist?(expected_file), "Temp file should be cleaned up even after upload failure"
       end
     end
   end
@@ -202,13 +172,12 @@ class DatabaseBackupServiceTest < ActiveSupport::TestCase
       timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
       expected_file = Rails.root.join("tmp", "db_backup_#{timestamp}.dump").to_s
 
-      failing_s3 = ->(*) { raise StandardError, "Connection refused" }
+      failing_client = FakeS3Client.new(raise_error: StandardError.new("Connection refused"))
+      @service = DatabaseBackupService.new(s3_client: failing_client)
 
       stub_system_call(success: true, touch_file: expected_file) do
-        Aws::S3::Resource.stub(:new, failing_s3) do
-          result = @service.call
-          assert_not result
-        end
+        result = @service.call
+        assert_not result
       end
     end
   end

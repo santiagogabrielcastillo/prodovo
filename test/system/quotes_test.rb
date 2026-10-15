@@ -28,7 +28,7 @@ class QuotesTest < ApplicationSystemTestCase
 
     # Select client
     select @client.name, from: "quote_client_id"
-    
+
     # Fill in date
     fill_in "quote_date", with: Date.current
 
@@ -98,7 +98,7 @@ class QuotesTest < ApplicationSystemTestCase
     within first(".quote-item-card") do
       unit_price_field = find_field("Precio Unitario")
       # Should be 90.0 or 90.00
-      assert [90.0, 90.00].include?(unit_price_field.value.to_f)
+      assert [ 90.0, 90.00 ].include?(unit_price_field.value.to_f)
     end
   end
 
