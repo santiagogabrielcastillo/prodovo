@@ -74,7 +74,7 @@ class I18nTest < ApplicationSystemTestCase
     # Assert Spanish strings are present
     assert_text "Nuevo Producto"
     assert_text "Nombre"
-    assert_text "SKU"
+    assert_text "Código"
     assert_text "Precio Base"
 
     # Assert English strings are NOT present

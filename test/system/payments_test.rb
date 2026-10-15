@@ -50,7 +50,7 @@ class PaymentsTest < ApplicationSystemTestCase
 
     # Verify default amount is the amount due
     amount_field = find_field("Monto")
-    assert_equal "1000", amount_field.value
+    assert_equal "1.000,00", amount_field.value
 
     # Enter payment amount
     fill_in "Monto", with: "500"
@@ -115,7 +115,7 @@ class PaymentsTest < ApplicationSystemTestCase
     # Verify modal appears and default amount is the remaining amount due (700)
     assert_text "Registrar Cobro", wait: 5
     amount_field = find_field("Monto")
-    assert_equal "700", amount_field.value
+    assert_equal "700,00", amount_field.value
     assert_text "Monto adeudado: $700"
   end
 
