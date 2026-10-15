@@ -66,7 +66,7 @@ class StatisticsController < ApplicationController
     # Only quote_items with include_in_stats: true, belonging to those quotes.
     items_scope = QuoteItem.for_stats.joins(:quote).where(quote_id: quotes_scope.select(:id))
 
-    @total_financial_sales = quotes_scope.sum(:total_amount) || 0
+    @total_financial_sales = items_scope.sum(:total_price) || 0
 
     @total_pure_quantity = items_scope.sum(:quantity) || 0
 
