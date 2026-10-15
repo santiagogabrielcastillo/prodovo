@@ -93,7 +93,7 @@
 
   <%# Update Ledger Table %>
   <%= turbo_stream.update "client_ledger" do %>
-    <%= render "clients/ledger_content",
+    <%= render "clients/ledger_panel",
         client: @client,
         ledger_items: @ledger_data[:ledger_items],
         previous_balance: @ledger_data[:previous_balance],
