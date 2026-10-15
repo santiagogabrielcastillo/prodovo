@@ -85,7 +85,7 @@ class CustomPricesController < ApplicationController
     return {} unless submitted.respond_to?(:each_pair)
 
     submitted.each_pair.with_object({}) do |(id, attributes), prices|
-      next unless attributes.respond_to?(:[])
+      next unless attributes.is_a?(ActionController::Parameters)
 
       prices[id.to_s] = attributes[:price]
     end

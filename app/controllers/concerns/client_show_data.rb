@@ -8,11 +8,9 @@ module ClientShowData
   def load_client_show_data
     @custom_prices = @client.custom_prices.includes(:product).references(:product).order("products.name")
 
-    # Parse date filter params
     @start_date = parse_date(params[:start_date])
     @end_date = parse_date(params[:end_date])
 
-    # Determine if we're filtering
     @filtering = @start_date.present? || @end_date.present?
 
     # Get all quotes and payments for the client (eager load quote for payments to avoid N+1)
@@ -31,7 +29,6 @@ module ClientShowData
       @previous_balance = previous_quotes_total - previous_payments_total
     end
 
-    # Apply date filters to the ledger items
     filtered_quotes = quotes_scope
     filtered_payments = payments_scope
 

@@ -45,13 +45,14 @@ class CustomPricesControllerTest < ActionDispatch::IntegrationTest
 
     patch bulk_update_client_custom_prices_path(@client), params: {
       custom_prices: {
-        @custom_price.id.to_s => { price: "9,99" },
+        @custom_price.id.to_s => { price: "11,11" },
         second.id.to_s => { price: "20.00" }
       }
     }
 
     assert_redirected_to @client
-    assert_equal original_one, @custom_price.reload.updated_at
+    assert_equal BigDecimal("11.11"), @custom_price.reload.price
+    assert_operator @custom_price.updated_at, :>, original_one
     assert_equal original_two, second.reload.updated_at
   end
 
@@ -87,6 +88,17 @@ class CustomPricesControllerTest < ActionDispatch::IntegrationTest
     original = @custom_price.price
 
     patch bulk_update_client_custom_prices_path(@client), params: {}
+
+    assert_redirected_to @client
+    assert_equal original, @custom_price.reload.price
+  end
+
+  test "bulk_update ignores a malformed price value without raising" do
+    original = @custom_price.price
+
+    patch bulk_update_client_custom_prices_path(@client), params: {
+      custom_prices: { @custom_price.id.to_s => "abc" }
+    }
 
     assert_redirected_to @client
     assert_equal original, @custom_price.reload.price
