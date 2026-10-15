@@ -31,6 +31,8 @@
       <div class="p-6">
         <% form_url = @quote ? quote_payments_path(@quote) : client_payments_path(@client) %>
         <%= form_with(model: @payment, url: form_url, class: "space-y-6", data: { turbo_frame: "modal", controller: "amount-input", action: "submit->amount-input#sanitize" }) do |form| %>
+          <%= hidden_field_tag :start_date, @start_date&.strftime("%Y-%m-%d") %>
+          <%= hidden_field_tag :end_date, @end_date&.strftime("%Y-%m-%d") %>
           <% if @payment.errors.any? %>
             <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded">
               <p class="font-semibold mb-2"><%= t('.errors_header') %></p>

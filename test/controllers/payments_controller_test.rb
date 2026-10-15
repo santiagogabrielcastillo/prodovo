@@ -64,6 +64,45 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to client_path(@client)
   end
 
+  test "creating standalone payment keeps ledger filter and export controls in the stream" do
+    post client_payments_path(@client), params: {
+      payment: {
+        amount: 500.00,
+        date: Date.current,
+        payment_method: "transfer"
+      }
+    }, as: :turbo_stream
+
+    assert_response :success
+    assert_select "turbo-stream[target='client_ledger']" do
+      assert_select "input[name='start_date']"
+      assert_select "input[name='end_date']"
+      assert_select "a[href*='.pdf']"
+      assert_select "a[href*='.csv']"
+    end
+    assert_no_match(/translation missing/, response.body)
+  end
+
+  test "creating standalone payment keeps the active date filter window in the stream" do
+    post client_payments_path(@client), params: {
+      payment: {
+        amount: 500.00,
+        date: Date.current,
+        payment_method: "transfer"
+      },
+      start_date: "01/02/2023",
+      end_date: "28/02/2023"
+    }, as: :turbo_stream
+
+    assert_response :success
+    assert_select "turbo-stream[target='client_ledger']" do
+      assert_select "input[name='start_date'][value='2023-02-01']"
+      assert_select "input[name='end_date'][value='2023-02-28']"
+      assert_select "a[href*='start_date=01%2F02%2F2023']"
+      assert_select "a[href*='end_date=28%2F02%2F2023']"
+    end
+  end
+
   test "should create negative standalone payment" do
     @client.recalculate_balance!
     initial_balance = @client.balance

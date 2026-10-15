@@ -7,7 +7,7 @@
     </div>
     <div class="flex flex-wrap gap-3">
       <%= link_to t('.new_quote'), new_quote_path(client_id: @client.id), class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 font-medium" %>
-      <%= link_to t('.register_payment'), new_client_payment_path(@client), class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 font-medium", data: { turbo_frame: "modal" } %>
+      <%= link_to t('.register_payment'), new_client_payment_path(@client, start_date: @start_date&.strftime("%d/%m/%Y"), end_date: @end_date&.strftime("%d/%m/%Y")), class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 font-medium", data: { turbo_frame: "modal" } %>
       <%= link_to t('global.actions.edit'), edit_client_path(@client), class: "px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" %>
       <%= link_to t('global.actions.back'), clients_path, class: "px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-900" %>
     </div>
@@ -65,58 +65,7 @@
     <h2 class="text-xl font-semibold text-gray-900 mb-4"><%= t('.cuenta_corriente') %></h2>
 
     <%= turbo_frame_tag "client_ledger" do %>
-      <!-- Header with Export Buttons -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <!-- Date Filter Form -->
-        <%= form_with url: client_path(@client), method: :get, class: "flex flex-col sm:flex-row gap-4 items-center flex-1", data: { turbo_frame: "client_ledger" } do |f| %>
-          <div class="flex-1 w-full">
-            <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1"><%= t('.filter.start_date') %></label>
-            <input type="date"
-                   name="start_date"
-                   id="start_date"
-                   value="<%= @start_date&.strftime("%Y-%m-%d") %>"
-                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 text-sm">
-          </div>
-          <div class="flex-1 w-full">
-            <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1"><%= t('.filter.end_date') %></label>
-            <input type="date"
-                   name="end_date"
-                   id="end_date"
-                   value="<%= @end_date&.strftime("%Y-%m-%d") %>"
-                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 text-sm">
-          </div>
-          <div class="flex gap-2">
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium text-sm">
-              <%= t('.filter.apply') %>
-            </button>
-            <% if @filtering %>
-              <%= link_to t('.filter.clear'), client_path(@client), class: "px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-medium text-sm", data: { turbo_frame: "client_ledger" } %>
-            <% end %>
-          </div>
-        <% end %>
-
-        <!-- Export Buttons -->
-        <div class="flex gap-2">
-          <%= link_to client_path(@client, format: :pdf, start_date: @start_date&.strftime("%d/%m/%Y"), end_date: @end_date&.strftime("%d/%m/%Y")),
-              class: "inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-medium text-sm",
-              target: "_blank" do %>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            <%= t('.export_pdf') %>
-          <% end %>
-
-          <%= link_to client_path(@client, format: :csv, start_date: @start_date&.strftime("%d/%m/%Y"), end_date: @end_date&.strftime("%d/%m/%Y")),
-              class: "inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium text-sm" do %>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            <%= t('.export_csv') %>
-          <% end %>
-        </div>
-      </div>
-
-      <%= render "clients/ledger_content",
+      <%= render "clients/ledger_panel",
           client: @client,
           ledger_items: @ledger_items,
           previous_balance: @previous_balance,
