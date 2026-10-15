@@ -2,7 +2,11 @@ Rails.application.routes.draw do
   devise_for :users, controllers: { registrations: "users/registrations" }
   resources :products
   resources :clients do
-    resources :custom_prices, only: %i[new create edit update destroy]
+    resources :custom_prices, only: %i[new create edit update destroy] do
+      collection do
+        patch :bulk_update
+      end
+    end
     resources :payments, only: [ :new, :create ]
   end
   resources :quotes do
