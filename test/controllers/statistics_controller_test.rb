@@ -89,7 +89,6 @@ class StatisticsControllerTest < ActionDispatch::IntegrationTest
     assert_match "25,0%", response.body
   end
 
-  # US-13: Ventas Totales must exclude non-statistical items
   test "total financial sales excludes non-statistical items" do
     stat_product = Product.create!(name: "Physical", sku: "SAL-1", base_price: 50, include_in_stats: true)
     fee_product  = Product.create!(name: "Fee",      sku: "SAL-2", base_price: 200, include_in_stats: false)

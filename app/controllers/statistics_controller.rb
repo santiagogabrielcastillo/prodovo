@@ -66,13 +66,13 @@ class StatisticsController < ApplicationController
     # Only quote_items with include_in_stats: true, belonging to those quotes.
     items_scope = QuoteItem.for_stats.joins(:quote).where(quote_id: quotes_scope.select(:id))
 
-    @total_financial_sales = items_scope.sum(:total_price) || 0
+    line_items_total = items_scope.sum(Arel.sql("quote_items.unit_price * quote_items.quantity")) || 0
+    @total_financial_sales = line_items_total
 
     @total_pure_quantity = items_scope.sum(:quantity) || 0
 
-    sum_value = items_scope.sum(Arel.sql("quote_items.unit_price * quote_items.quantity")) || 0
-    sum_qty = items_scope.sum(:quantity) || 0
-    @avg_price_all_pure = sum_qty.positive? ? (sum_value / sum_qty) : 0
+    sum_qty = @total_pure_quantity
+    @avg_price_all_pure = sum_qty.positive? ? (line_items_total / sum_qty) : 0
 
     if @selected_product
       product_items = items_scope.where(product_id: @selected_product.id)
