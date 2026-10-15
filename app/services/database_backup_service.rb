@@ -1,6 +1,10 @@
 class DatabaseBackupService
   REQUIRED_ENV_VARS = %w[AWS_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_BUCKET_NAME].freeze
 
+  def initialize(s3_client: nil)
+    @s3_client = s3_client
+  end
+
   def call
     missing = REQUIRED_ENV_VARS.select { |var| ENV[var].blank? }
     if missing.any?
@@ -42,14 +46,17 @@ class DatabaseBackupService
 
   private
 
-  def upload_to_s3(file_path, file_name)
-    client = Aws::S3::Client.new(
+  def s3_client
+    @s3_client ||= Aws::S3::Client.new(
       region: ENV["AWS_REGION"],
       access_key_id: ENV["AWS_ACCESS_KEY_ID"],
       secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"]
     )
+  end
+
+  def upload_to_s3(file_path, file_name)
     File.open(file_path, "rb") do |file|
-      client.put_object(
+      s3_client.put_object(
         bucket: ENV["AWS_BUCKET_NAME"],
         key: "backups/#{file_name}",
         body: file
