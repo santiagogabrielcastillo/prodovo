@@ -53,12 +53,17 @@ class PaymentsTest < ApplicationSystemTestCase
 
     click_button I18n.t("payments.new.record_payment")
 
-    # Wait for the turbo stream response, then confirm we stay on the client ledger
+    # Wait for the turbo stream response, then confirm the modal closed: the stream
+    # only renders after the payment is saved, so this proves the submit landed
     assert_text I18n.t("global.messages.payment_recorded"), wait: 5
-    assert_current_path client_path(@client), wait: 5
+    assert_no_selector "#modal form", wait: 5
 
-    # The payment is persisted and belongs to the client (standalone, from the ledger)
-    payment = Payment.last
+    # The payment is persisted and belongs to the client (standalone, from the ledger).
+    # Scope through the client created in setup: Payment.last would fall back to a
+    # fixture row (amount 9.99) if the payment had not been created, so a silent
+    # failure would compare the test against the wrong record.
+    payment = @client.payments.order(id: :desc).first
+    assert_not_nil payment, "the payment was not created through the ledger modal"
     assert_equal 500.00, payment.amount
     assert_equal @client, payment.client
     assert_nil payment.quote
@@ -277,10 +282,22 @@ class PaymentsTest < ApplicationSystemTestCase
 
     click_button I18n.t("payments.new.record_payment")
 
-    assert_current_path client_path(@client), wait: 5
+    # The turbo stream only renders after the payment is saved, so the flash, the
+    # closed modal and the recalculated balance prove the submit actually landed.
+    # (The previous assert_current_path was a no-op: the test was already on the
+    # client page, so a silently failed submission still passed.)
+    assert_text I18n.t("global.messages.payment_recorded"), wait: 5
+    assert_no_selector "#modal form", wait: 5
+    # A negative payment is a discount: it increases what the client owes, so the
+    # balance moves from 0 to 100 and the new row shows up in the ledger.
+    assert_selector "#client_balance_value", text: "$100", wait: 5
+    assert_text "Discount applied"
 
-    # Verify the negative payment was created
-    payment = Payment.last
+    # Verify the negative payment was created, scoped to the client from setup.
+    # Payment.last would fall back to a fixture row (amount 9.99) if the payment had
+    # not been created, comparing -100 against the wrong record.
+    payment = @client.payments.find_by(notes: "Discount applied")
+    assert_not_nil payment, "the payment was not created through the ledger modal"
     assert_equal(-100.00, payment.amount)
     assert_equal "Discount applied", payment.notes
   end

@@ -89,7 +89,9 @@ class ExpensesControllerTest < ActionDispatch::IntegrationTest
         expense: { amount: 100, date: Date.current, description: "Con método", payment_method: "transfer" }
       }
     end
-    assert_equal "transfer", Expense.last.payment_method
+    expense = Expense.find_by(description: "Con método")
+    assert_not_nil expense, "the expense was not created through the request"
+    assert_equal "transfer", expense.payment_method
   end
 
   test "update can change payment_method" do

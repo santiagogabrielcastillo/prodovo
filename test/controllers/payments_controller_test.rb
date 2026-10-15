@@ -52,7 +52,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    payment = Payment.last
+    payment = @client.payments.find_by(notes: "Pago a Cuenta")
+    assert_not_nil payment, "the payment was not created through the request"
     assert_nil payment.quote_id, "Standalone payment should not have a quote"
     assert_equal @client.id, payment.client_id
     assert_equal 500.00, payment.amount
@@ -118,7 +119,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    payment = Payment.last
+    payment = @client.payments.find_by(notes: "Descuento especial")
+    assert_not_nil payment, "the payment was not created through the request"
     assert_equal(-200.00, payment.amount)
 
     @client.reload
@@ -150,7 +152,8 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    payment = Payment.last
+    payment = @quote.payments.order(id: :desc).first
+    assert_not_nil payment, "the payment was not created through the request"
     assert_equal @quote.id, payment.quote_id
     assert_equal @client.id, payment.client_id
 
@@ -272,7 +275,9 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_equal "deposit", Payment.last.payment_method
+    payment = @client.payments.order(id: :desc).first
+    assert_not_nil payment, "the payment was not created through the request"
+    assert_equal "deposit", payment.payment_method
   end
 
   test "create fails without payment_method" do
