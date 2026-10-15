@@ -1,0 +1,36 @@
+<% if @new_movement.persisted? %>
+  <%= turbo_stream.replace "stock_products" do %>
+    <%= render "stock/products_body", products: @products %>
+  <% end %>
+
+  <%= turbo_stream.prepend "stock_movements" do %>
+    <%= render "stock/movement_row", movement: @movement %>
+  <% end %>
+
+  <%= turbo_stream.remove "stock_movements_empty" %>
+
+  <%= turbo_stream.replace "stock_entry_modal" do %>
+    <%= render "stock/modal", movement: StockMovement.new(date: Date.current) %>
+  <% end %>
+
+  <%= turbo_stream.append "flash_messages" do %>
+    <div class="mb-4 rounded-lg border px-4 py-3 text-sm bg-green-50 border-green-200 text-green-800 flex items-center justify-between"
+         role="alert"
+         data-controller="flash"
+         data-flash-target="message">
+      <span><%= t("stock.movement_created") %></span>
+      <button type="button"
+              class="ml-4 text-current opacity-70 hover:opacity-100 focus:outline-none"
+              data-action="click->flash#dismiss"
+              aria-label="<%= t('global.actions.close') %>">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  <% end %>
+<% else %>
+  <%= turbo_stream.replace "stock_entry_modal" do %>
+    <%= render "stock/modal", movement: @new_movement %>
+  <% end %>
+<% end %>

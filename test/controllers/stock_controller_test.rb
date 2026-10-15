@@ -63,6 +63,7 @@ class StockControllerTest < ActionDispatch::IntegrationTest
         stock_movement: {
           product_id: @product.id,
           quantity: "50",
+          direction: "in",
           date: Date.current.to_s,
           notes: "Test entry"
         }
@@ -81,6 +82,7 @@ class StockControllerTest < ActionDispatch::IntegrationTest
         stock_movement: {
           product_id: @product.id,
           quantity: "20",
+          direction: "in",
           date: Date.current.to_s
         }
       }
@@ -95,11 +97,111 @@ class StockControllerTest < ActionDispatch::IntegrationTest
         stock_movement: {
           product_id: @product.id,
           quantity: "0",
+          direction: "in",
           date: Date.current.to_s
         }
       }
     end
     assert_response :unprocessable_entity
+  end
+
+  # ── inline entry / exit ──────────────────────────────────────────────────────
+
+  test "entry increases current_stock" do
+    sign_in @user
+    post stock_path, params: {
+      stock_movement: { product_id: @product.id, quantity: "25", direction: "in", date: Date.current.to_s }
+    }
+    assert_equal 25, @product.reload.current_stock
+  end
+
+  test "exit decreases current_stock" do
+    sign_in @user
+    post stock_path, params: {
+      stock_movement: { product_id: @product.id, quantity: "4", direction: "out", date: Date.current.to_s }
+    }
+    assert_equal(-4, @product.reload.current_stock)
+  end
+
+  # ── server owns the direction (regression) ───────────────────────────────────
+
+  test "same positive magnitude with direction out decreases current_stock" do
+    sign_in @user
+    assert_difference -> { @product.reload.current_stock }, -4 do
+      post stock_path, params: {
+        stock_movement: { product_id: @product.id, quantity: "4", direction: "out", date: Date.current.to_s }
+      }
+    end
+  end
+
+  test "same positive magnitude with direction in increases current_stock" do
+    sign_in @user
+    assert_difference -> { @product.reload.current_stock }, 4 do
+      post stock_path, params: {
+        stock_movement: { product_id: @product.id, quantity: "4", direction: "in", date: Date.current.to_s }
+      }
+    end
+  end
+
+  test "unknown direction is rejected without persisting" do
+    sign_in @user
+    assert_no_difference("StockMovement.count") do
+      post stock_path, params: {
+        stock_movement: { product_id: @product.id, quantity: "6", direction: "banana", date: Date.current.to_s }
+      }
+    end
+    assert_response :unprocessable_entity
+  end
+
+  test "movements cannot target products excluded from statistics" do
+    sign_in @user
+    fee_product = products(:one)
+    assert_not fee_product.include_in_stats
+    assert_no_difference("StockMovement.count") do
+      post stock_path, params: {
+        stock_movement: { product_id: fee_product.id, quantity: "6", direction: "in", date: Date.current.to_s }
+      }
+    end
+    assert_response :unprocessable_entity
+  end
+
+  test "a stray negative typed by the user cannot invert the direction" do
+    sign_in @user
+    post stock_path, params: {
+      stock_movement: { product_id: @product.id, quantity: "-4", direction: "in", date: Date.current.to_s }
+    }
+    assert_equal 4, @product.reload.current_stock
+  end
+
+  test "exit larger than available stock is accepted and leaves stock negative" do
+    sign_in @user
+    StockMovement.create!(product: @product, user: @user, quantity: 3, date: Date.current, movement_type: :manual_entry)
+    post stock_path, params: {
+      stock_movement: { product_id: @product.id, quantity: "10", direction: "out", date: Date.current.to_s }
+    }
+    assert_equal(-7, @product.reload.current_stock)
+    assert StockMovement.last.manual_entry?
+  end
+
+  test "comma-formatted quantity is parsed as Argentine decimal" do
+    sign_in @user
+    post stock_path, params: {
+      stock_movement: { product_id: @product.id, quantity: "1,5", direction: "in", date: Date.current.to_s }
+    }
+    assert_equal BigDecimal("1.5"), @product.reload.current_stock
+  end
+
+  test "turbo_stream create replaces the products body in sorted order with the recalculated value" do
+    sign_in @user
+    post stock_path, params: {
+      stock_movement: { product_id: @product.id, quantity: "7", direction: "in", date: Date.current.to_s }
+    }, as: :turbo_stream
+
+    assert_response :success
+    assert_select "turbo-stream[action='replace'][target='stock_products']" do
+      assert_match "7,00", response.body
+    end
+    assert_select "turbo-stream[action='prepend'][target='stock_movements']"
   end
 
   # ── stock_loader cannot access financial sections ────────────────────────────

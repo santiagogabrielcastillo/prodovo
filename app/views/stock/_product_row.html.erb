@@ -1,0 +1,26 @@
+<% stock = product.current_stock %>
+<% stock_class = stock < 0 ? "text-red-600" : stock == 0 ? "text-orange-500" : "text-slate-800" %>
+<tr id="product_stock_<%= product.id %>" class="hover:bg-gray-50">
+  <td class="px-6 py-3 font-medium text-slate-800"><%= product.name %></td>
+  <td class="px-6 py-3 text-right font-semibold <%= stock_class %>">
+    <%= number_with_precision(stock, precision: 2) %>
+  </td>
+  <td class="px-6 py-3 text-right whitespace-nowrap space-x-2">
+    <button type="button"
+            data-action="click->stock-entry#open"
+            data-product-id="<%= product.id %>"
+            data-product-name="<%= product.name %>"
+            data-direction="in"
+            class="inline-flex items-center rounded-lg border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 hover:bg-green-100 transition cursor-pointer">
+      <%= t("stock.entry_button") %>
+    </button>
+    <button type="button"
+            data-action="click->stock-entry#open"
+            data-product-id="<%= product.id %>"
+            data-product-name="<%= product.name %>"
+            data-direction="out"
+            class="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition cursor-pointer">
+      <%= t("stock.exit_button") %>
+    </button>
+  </td>
+</tr>
