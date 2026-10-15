@@ -26,6 +26,6 @@ module Prodovo
 
     # Set default locale to Spanish (Argentina)
     config.i18n.default_locale = :'es-AR'
-    config.i18n.available_locales = [:'es-AR', :en]
+    config.i18n.available_locales = [ :'es-AR', :en ]
   end
 end

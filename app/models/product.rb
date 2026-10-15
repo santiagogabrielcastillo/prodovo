@@ -40,7 +40,7 @@ class Product < ApplicationRecord
 
   def cannot_delete_if_has_quotes
     if has_quotes?
-      errors.add(:base, I18n.t('activerecord.errors.models.product.attributes.base.cannot_delete_with_quotes'))
+      errors.add(:base, I18n.t("activerecord.errors.models.product.attributes.base.cannot_delete_with_quotes"))
       throw :abort
     end
   end
