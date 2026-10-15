@@ -1,0 +1,66 @@
+<div id="stock_entry_modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm"
+     data-stock-entry-target="modal"
+     data-action="click->stock-entry#closeBackdrop">
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto"
+       onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900" data-stock-entry-target="title"><%= t("stock.modal.entry_title") %></h2>
+        <p class="text-sm text-gray-500 mt-1" data-stock-entry-target="productName"></p>
+      </div>
+      <button type="button"
+              class="text-gray-400 hover:text-gray-600 focus:outline-none"
+              data-action="click->stock-entry#close"
+              aria-label="<%= t('global.actions.close') %>">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="p-6">
+      <%= form_with model: movement, url: stock_path, class: "space-y-4",
+          data: { stock_entry_target: "form" } do |f| %>
+        <% if movement.errors.any? %>
+          <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded">
+            <ul class="list-disc list-inside text-sm">
+              <% movement.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <%= f.hidden_field :product_id, data: { stock_entry_target: "productInput" } %>
+        <%= f.hidden_field :direction, value: "in", data: { stock_entry_target: "directionInput" } %>
+        <%= f.hidden_field :date, value: Date.current %>
+
+        <div>
+          <%= f.label :quantity, t("stock.show.quantity"), class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :quantity,
+              required: true,
+              inputmode: "decimal",
+              autocomplete: "off",
+              data: { stock_entry_target: "quantityInput" },
+              class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+        </div>
+
+        <div>
+          <%= f.label :notes, t("stock.show.notes"), class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_area :notes, rows: 2,
+              class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <button type="button"
+                  class="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  data-action="click->stock-entry#close">
+            <%= t("global.actions.cancel") %>
+          </button>
+          <%= f.submit t("stock.modal.submit"), class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

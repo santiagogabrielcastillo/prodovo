@@ -1,0 +1,15 @@
+<tr id="stock_movement_<%= movement.id %>">
+  <td class="px-4 py-3 text-slate-600"><%= l(movement.date, format: :short) %></td>
+  <td class="px-4 py-3 font-medium text-slate-800"><%= movement.product.name %></td>
+  <td class="px-4 py-3 text-slate-600"><%= t("stock.show.movement_types.#{movement.movement_type}") %></td>
+  <td class="px-4 py-3 text-right font-semibold <%= movement.quantity < 0 ? 'text-red-600' : 'text-green-700' %>">
+    <%= movement.quantity > 0 ? "+" : "" %><%= number_with_precision(movement.quantity, precision: 2) %>
+  </td>
+  <% unless current_user.stock_loader? %>
+    <td class="px-4 py-3 text-slate-500">
+      <% if movement.quote %>
+        <%= link_to "##{movement.quote_id}", quote_path(movement.quote), class: "text-blue-600 hover:underline" %>
+      <% end %>
+    </td>
+  <% end %>
+</tr>

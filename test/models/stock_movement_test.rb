@@ -62,4 +62,38 @@ class StockMovementTest < ActiveSupport::TestCase
                           quantity: -50, date: Date.current)
     assert @product.reload.current_stock < 0
   end
+
+  test "converts comma decimal to dot in quantity" do
+    m = StockMovement.new(product: @product, user: @user, movement_type: :manual_entry,
+                          quantity: "1,5", date: Date.current)
+    assert_equal BigDecimal("1.5"), m.quantity
+  end
+
+  test "manual_entry applies a positive sign for direction in" do
+    m = StockMovement.manual_entry(product: @product, user: @user, quantity: "5",
+                                   direction: "in", date: Date.current)
+    assert m.persisted?
+    assert m.manual_entry?
+    assert_equal BigDecimal("5"), m.quantity
+  end
+
+  test "manual_entry applies a negative sign for direction out using the magnitude" do
+    m = StockMovement.manual_entry(product: @product, user: @user, quantity: "-5",
+                                   direction: "out", date: Date.current)
+    assert_equal BigDecimal("-5"), m.quantity
+  end
+
+  test "manual_entry treats a missing or unknown direction as entry" do
+    [ nil, "banana" ].each do |direction|
+      m = StockMovement.manual_entry(product: @product, user: @user, quantity: "5",
+                                     direction: direction, date: Date.current)
+      assert_equal BigDecimal("5"), m.quantity
+    end
+  end
+
+  test "manual_entry keeps comma-decimal input" do
+    m = StockMovement.manual_entry(product: @product, user: @user, quantity: "1,5",
+                                   direction: "out", date: Date.current)
+    assert_equal BigDecimal("-1.5"), m.quantity
+  end
 end
