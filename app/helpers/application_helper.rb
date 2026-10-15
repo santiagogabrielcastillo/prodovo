@@ -45,8 +45,7 @@ module ApplicationHelper
 
     formatted = number_with_precision(
       number.abs,
-      precision: 2,
-      strip_insignificant_zeros: true,
+      precision: 0,
       separator: ",",
       delimiter: "."
     )
