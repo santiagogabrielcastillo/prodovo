@@ -20,8 +20,8 @@ class PaymentsTest < ApplicationSystemTestCase
     sign_in_user(@user)
   end
 
-  test "recording a payment updates quote status and shows in history" do
-    # Create a sent quote
+  test "recording a payment from the client ledger persists it and updates the balance" do
+    # A sent quote makes the client owe money
     quote = Quote.create!(
       client: @client,
       user: @user,
@@ -35,91 +35,70 @@ class PaymentsTest < ApplicationSystemTestCase
     )
     quote.calculate_total!
     quote.save!
+    @client.recalculate_balance!
+    assert_equal 1000.00, @client.balance
 
-    visit quote_path(quote)
+    # Payments are registered from the client ledger, not from the quote view
+    visit client_path(@client)
 
-    # Verify quote is sent (Spanish)
-    assert_text "Enviado"
+    click_link I18n.t("clients.show.register_payment")
 
-    # Click Record Payment button - modal should appear (Spanish)
-    click_link "Registrar Cobro"
+    # Modal opens with the client context
+    assert_text I18n.t("payments.new.title"), wait: 5
+    assert_text I18n.t("payments.new.subtitle_client", client_name: @client.name)
 
-    # Verify modal appears with payment form (Spanish)
-    assert_text "Registrar Cobro", wait: 5
-    assert_text "Presupuesto ##{quote.id}"
-
-    # Verify default amount is the amount due
-    amount_field = find_field("Monto")
-    assert_equal "1.000,00", amount_field.value
-
-    # Enter payment amount
-    fill_in "Monto", with: "500"
-    fill_in "Fecha", with: Date.current
+    fill_in I18n.t("activerecord.attributes.payment.amount"), with: "500"
+    fill_in I18n.t("activerecord.attributes.payment.date"), with: Date.current
     select I18n.t("payments.methods.cash"), from: I18n.t("payments.form.payment_method")
 
-    # Submit payment (Spanish)
-    click_button "Registrar Cobro"
+    click_button I18n.t("payments.new.record_payment")
 
-    # Modal should close and status should update (wait for Turbo Stream)
-    assert_current_path quote_path(quote), wait: 5
+    # Wait for the turbo stream response, then confirm we stay on the client ledger
+    assert_text I18n.t("global.messages.payment_recorded"), wait: 5
+    assert_current_path client_path(@client), wait: 5
 
-    # Verify quote status remains sent (Spanish) after partial payment
-    assert_text "Enviado", wait: 5
+    # The payment is persisted and belongs to the client (standalone, from the ledger)
+    payment = Payment.last
+    assert_equal 500.00, payment.amount
+    assert_equal @client, payment.client
+    assert_nil payment.quote
 
-    # Verify payment appears in payment history
-    assert_text "$500"
+    # It shows up in the ledger, where the user expects to see it
+    assert_text I18n.t("clients.show.ledger_concepts.standalone_payment")
+    assert_selector "#client_ledger td", text: "$500,00"
 
-    # Record another payment to complete it
-    click_link "Registrar Cobro"
-    assert_text "Registrar Cobro", wait: 5
-    fill_in "Monto", with: "500"
-    fill_in "Fecha", with: Date.current
-    select I18n.t("payments.methods.transfer"), from: I18n.t("payments.form.payment_method")
-    click_button "Registrar Cobro"
+    # The ledger keeps its date filter and export controls after the update
+    within "#client_ledger" do
+      assert_selector "input#start_date"
+      assert_selector "input#end_date"
+      assert_link I18n.t("clients.show.export_pdf")
+      assert_link I18n.t("clients.show.export_csv")
+    end
 
-    # Verify quote status changed to paid (Spanish)
-    assert_text "Cobrado", wait: 5
-
-    # Verify both payments are shown
-    assert_selector "td", text: "$500", count: 2
+    # Derived state (the client balance) updates
+    @client.reload
+    assert_equal 500.00, @client.balance
+    assert_selector "#client_balance_value", text: "$500"
   end
 
-  test "payment form shows amount due as default" do
-    # Create a sent quote with partial payment already
-    quote = Quote.create!(
-      client: @client,
-      user: @user,
-      date: Date.current,
-      status: :sent
-    )
-    quote.quote_items.create!(
-      product: @product,
-      quantity: 1,
-      unit_price: 1000.00
-    )
-    quote.calculate_total!
-    quote.save!
+  test "payment form from the client ledger defaults the date and shows the client context" do
+    @client.recalculate_balance!
 
-    # Add a partial payment
-    Payment.create!(
-      client: @client,
-      quote: quote,
-      amount: 300.00,
-      date: Date.current,
-      payment_method: :cash
-    )
+    visit client_path(@client)
+    click_link I18n.t("clients.show.register_payment")
 
-    visit quote_path(quote)
-    click_link "Registrar Cobro"
+    assert_text I18n.t("payments.new.title"), wait: 5
+    assert_text I18n.t("payments.new.subtitle_client", client_name: @client.name)
 
-    # Verify modal appears and default amount is the remaining amount due (700)
-    assert_text "Registrar Cobro", wait: 5
-    amount_field = find_field("Monto")
-    assert_equal "700,00", amount_field.value
-    assert_text "Monto adeudado: $700"
+    # The client modal does not prefill an amount due, it shows the generic hint instead
+    assert_equal "", find_field(I18n.t("activerecord.attributes.payment.amount")).value
+    assert_text I18n.t("payments.new.amount_hint")
+
+    # ... and it defaults the payment date to today
+    assert_equal Date.current.to_s, find_field(I18n.t("activerecord.attributes.payment.date")).value
   end
 
-  test "overpayment is allowed and marks quote as paid" do
+  test "overpayment from the client ledger is allowed and leaves a credit balance" do
     # Create a sent quote for $1000
     quote = Quote.create!(
       client: @client,
@@ -135,37 +114,41 @@ class PaymentsTest < ApplicationSystemTestCase
     quote.calculate_total!
     quote.save!
 
-    # Create a payment for $500
+    # An existing standalone payment of $500 from the ledger
     Payment.create!(
       client: @client,
-      quote: quote,
+      quote: nil,
       amount: 500.00,
       date: Date.current,
       payment_method: :transfer
     )
+    @client.recalculate_balance!
+    assert_equal 500.00, @client.balance
 
-    visit quote_path(quote)
+    visit client_path(@client)
 
     # Open modal (Spanish)
-    click_link "Registrar Cobro"
-    assert_text "Registrar Cobro", wait: 5
+    click_link I18n.t("clients.show.register_payment")
+    assert_text I18n.t("payments.new.title"), wait: 5
 
-    # Enter amount greater than due amount ($500 remaining, pay $600 - overpayment)
-    fill_in "Monto", with: "600"
-    fill_in "Fecha", with: Date.current
+    # Pay more than the outstanding $500 - overpayment
+    fill_in I18n.t("activerecord.attributes.payment.amount"), with: "600"
+    fill_in I18n.t("activerecord.attributes.payment.date"), with: Date.current
     select I18n.t("payments.methods.cash"), from: I18n.t("payments.form.payment_method")
 
-    # Submit payment
-    click_button "Registrar Cobro"
+    click_button I18n.t("payments.new.record_payment")
 
-    # Overpayment is allowed - quote should be paid
-    assert_text "Cobrado", wait: 5
+    # Wait for the turbo stream response before asserting the persisted state
+    assert_text I18n.t("global.messages.payment_recorded"), wait: 5
+    assert_current_path client_path(@client), wait: 5
 
-    # Verify payment was created
-    quote.reload
-    assert_equal 2, quote.payments.count
-    assert_equal 1100.00, quote.amount_paid # 500 + 600
-    assert quote.paid?
+    # Overpayment is allowed and both payments are persisted
+    assert_equal 2, @client.payments.count
+    assert_equal 1100.00, @client.payments.sum(:amount)
+
+    # ... leaving the client with a credit (negative) balance
+    @client.reload
+    assert_equal(-100.00, @client.balance)
   end
 
   # ============================================
