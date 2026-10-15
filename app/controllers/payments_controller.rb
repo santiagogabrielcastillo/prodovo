@@ -7,6 +7,8 @@ class PaymentsController < ApplicationController
   def new
     @payment = Payment.new
     @payment.date = Date.current
+    @start_date = parse_date(params[:start_date])
+    @end_date = parse_date(params[:end_date])
 
     if @quote
       @payment.quote = @quote
@@ -19,6 +21,8 @@ class PaymentsController < ApplicationController
 
   def create
     @payment = Payment.new(payment_params)
+    @start_date = parse_date(params[:start_date])
+    @end_date = parse_date(params[:end_date])
 
     if @quote
       @payment.quote = @quote
@@ -38,7 +42,12 @@ class PaymentsController < ApplicationController
         # Reload client to get updated balance
         @client.reload
         # Fetch fresh ledger data for turbo_stream update (jump to last page to show new payment)
-        @ledger_data = @client.compute_ledger(page: :last, per_page: 10)
+        @ledger_data = @client.compute_ledger(
+          start_date: @start_date,
+          end_date: @end_date,
+          page: :last,
+          per_page: 10
+        )
         respond_to do |format|
           format.turbo_stream
           format.html { redirect_to @client, notice: t("global.messages.payment_recorded") }

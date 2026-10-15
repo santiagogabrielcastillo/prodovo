@@ -7,7 +7,7 @@
     </div>
     <div class="flex flex-wrap gap-3">
       <%= link_to t('.new_quote'), new_quote_path(client_id: @client.id), class: "px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 font-medium" %>
-      <%= link_to t('.register_payment'), new_client_payment_path(@client), class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 font-medium", data: { turbo_frame: "modal" } %>
+      <%= link_to t('.register_payment'), new_client_payment_path(@client, start_date: @start_date&.strftime("%d/%m/%Y"), end_date: @end_date&.strftime("%d/%m/%Y")), class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 font-medium", data: { turbo_frame: "modal" } %>
       <%= link_to t('global.actions.edit'), edit_client_path(@client), class: "px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50" %>
       <%= link_to t('global.actions.back'), clients_path, class: "px-4 py-2 rounded bg-gray-800 text-white hover:bg-gray-900" %>
     </div>
