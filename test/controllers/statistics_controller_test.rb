@@ -88,4 +88,28 @@ class StatisticsControllerTest < ActionDispatch::IntegrationTest
     assert_match "75,0%", response.body
     assert_match "25,0%", response.body
   end
+
+  test "total financial sales excludes non-statistical items" do
+    stat_product = Product.create!(name: "Physical", sku: "SAL-1", base_price: 50, include_in_stats: true)
+    fee_product  = Product.create!(name: "Fee",      sku: "SAL-2", base_price: 200, include_in_stats: false)
+    client       = clients(:one)
+    user         = users(:one)
+    Quote.create!(
+      client: client,
+      user: user,
+      date: Date.new(2027, 5, 1),
+      status: :sent,
+      quote_items_attributes: [
+        { product: stat_product, quantity: 5, unit_price: 50, include_in_stats: true },
+        { product: fee_product,  quantity: 8, unit_price: 200, include_in_stats: false }
+      ]
+    )
+
+    get statistics_path(start_date: "2027-05-01", end_date: "2027-05-31")
+
+    assert_response :success
+    # Only 5 * 50 = 250 counts; fee line 8 * 200 = 1600 is excluded
+    assert_includes response.body, "$250<"
+    refute_includes response.body, "$1.850<"
+  end
 end

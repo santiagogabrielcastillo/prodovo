@@ -290,7 +290,7 @@ es-AR:
       end_date: "Hasta"
       apply: "Aplicar"
       total_financial_sales: "Ventas totales (financieras)"
-      total_financial_sales_hint: "Suma de totales de presupuestos enviados/cobrados"
+      total_financial_sales_hint: "Suma de ítems incluidos en estadísticas (precio × cantidad)"
       total_pure_quantity: "Unidades (productos puros)"
       total_pure_quantity_hint: "Solo ítems incluidos en estadísticas"
       avg_price_all_pure: "Precio promedio (todos los puros)"
