@@ -143,12 +143,26 @@ class StockControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "unknown direction defaults to entry" do
+  test "unknown direction is rejected without persisting" do
     sign_in @user
-    post stock_path, params: {
-      stock_movement: { product_id: @product.id, quantity: "6", direction: "banana", date: Date.current.to_s }
-    }
-    assert_equal 6, @product.reload.current_stock
+    assert_no_difference("StockMovement.count") do
+      post stock_path, params: {
+        stock_movement: { product_id: @product.id, quantity: "6", direction: "banana", date: Date.current.to_s }
+      }
+    end
+    assert_response :unprocessable_entity
+  end
+
+  test "movements cannot target products excluded from statistics" do
+    sign_in @user
+    fee_product = products(:one)
+    assert_not fee_product.include_in_stats
+    assert_no_difference("StockMovement.count") do
+      post stock_path, params: {
+        stock_movement: { product_id: fee_product.id, quantity: "6", direction: "in", date: Date.current.to_s }
+      }
+    end
+    assert_response :unprocessable_entity
   end
 
   test "a stray negative typed by the user cannot invert the direction" do
@@ -177,14 +191,14 @@ class StockControllerTest < ActionDispatch::IntegrationTest
     assert_equal BigDecimal("1.5"), @product.reload.current_stock
   end
 
-  test "turbo_stream create updates the product row with the recalculated value" do
+  test "turbo_stream create replaces the products body in sorted order with the recalculated value" do
     sign_in @user
     post stock_path, params: {
       stock_movement: { product_id: @product.id, quantity: "7", direction: "in", date: Date.current.to_s }
     }, as: :turbo_stream
 
     assert_response :success
-    assert_select "turbo-stream[action='replace'][target='product_stock_#{@product.id}']" do
+    assert_select "turbo-stream[action='replace'][target='stock_products']" do
       assert_match "7,00", response.body
     end
     assert_select "turbo-stream[action='prepend'][target='stock_movements']"

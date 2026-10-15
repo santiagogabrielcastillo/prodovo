@@ -1,6 +1,6 @@
 <% if @new_movement.persisted? %>
-  <%= turbo_stream.replace "product_stock_#{@product.id}" do %>
-    <%= render "stock/product_row", product: @product %>
+  <%= turbo_stream.replace "stock_products" do %>
+    <%= render "stock/products_body", products: @products %>
   <% end %>
 
   <%= turbo_stream.prepend "stock_movements" do %>

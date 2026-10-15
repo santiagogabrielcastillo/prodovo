@@ -372,9 +372,12 @@ es-AR:
       payment_method: "Forma de pago"
       select_method: "Seleccioná una forma de pago"
   stock:
-    movement_created: "Entrada de stock registrada exitosamente."
+    movement_created: "Movimiento de stock registrado exitosamente."
     entry_button: "+ Entrada"
     exit_button: "− Salida"
+    errors:
+      invalid_direction: "Dirección inválida."
+      product_not_found: "Producto no encontrado."
     modal:
       entry_title: "Registrar entrada"
       exit_title: "Registrar salida"
@@ -398,6 +401,7 @@ es-AR:
       no_movements: "Sin movimientos registrados."
       movement_types:
         manual_entry: "Entrada manual"
+        manual_exit: "Salida manual"
         quote_deduction: "Descuento por presupuesto"
         quote_cancellation: "Reposición por cancelación"
         quote_deletion: "Reposición por eliminación"

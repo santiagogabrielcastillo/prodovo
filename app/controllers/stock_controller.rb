@@ -8,7 +8,7 @@ class StockController < ApplicationController
   def create
     entry = stock_movement_params
     @new_movement = StockMovement.manual_entry(
-      product: Product.find_by(id: entry[:product_id]),
+      product: Product.for_stats.find_by(id: entry[:product_id]),
       user: current_user,
       quantity: entry[:quantity],
       direction: entry[:direction],
@@ -17,18 +17,21 @@ class StockController < ApplicationController
     )
 
     if @new_movement.persisted?
-      # Reload so the stream renders the recalculated value, not the stale in-memory one.
-      @product = @new_movement.product.reload
       @movement = @new_movement
+      # The row is re-ordered, so the stream needs the whole list, reloaded after
+      # the after_create_commit recalculation, not the stale in-memory product.
+      @products = Product.for_stats.order(:current_stock, :name)
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to stock_path, notice: t("stock.movement_created") }
       end
     else
-      load_panel_data
       respond_to do |format|
         format.turbo_stream { render :create, status: :unprocessable_entity }
-        format.html { render :show, status: :unprocessable_entity }
+        format.html do
+          load_panel_data
+          render :show, status: :unprocessable_entity
+        end
       end
     end
   end

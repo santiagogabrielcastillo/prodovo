@@ -16,20 +16,30 @@ class StockMovement < ApplicationRecord
 
   after_create_commit :recalculate_product_stock!
 
-  # The client sends the intent (direction); the server owns the sign so a stray
-  # minus typed by the user cannot invert it. Unknown/missing direction means entry.
-  def self.manual_entry(product:, user:, quantity:, direction:, date:, notes: nil)
-    magnitude = sanitize_decimal(quantity).to_d.abs
-    signed = direction.to_s == "out" ? -magnitude : magnitude
+  DIRECTIONS = %w[in out].freeze
 
-    create(
+  # The client sends the intent (direction); the server owns the sign so a stray
+  # minus typed by the user cannot invert it. Only "in"/"out" are accepted.
+  def self.manual_entry(product:, user:, quantity:, direction:, date:, notes: nil)
+    direction = direction.to_s
+    magnitude = sanitize_decimal(quantity).to_d.abs
+
+    movement = new(
       product: product,
       user: user,
-      quantity: signed,
+      quantity: direction == "out" ? -magnitude : magnitude,
       date: date,
       notes: notes,
       movement_type: :manual_entry
     )
+
+    unless DIRECTIONS.include?(direction)
+      movement.errors.add(:base, I18n.t("stock.errors.invalid_direction"))
+    end
+    movement.errors.add(:base, I18n.t("stock.errors.product_not_found")) if product.nil?
+
+    movement.save if movement.errors.empty?
+    movement
   end
 
   # Sanitize comma-separated decimals (e.g., "1,5" -> "1.5")

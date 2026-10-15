@@ -26,10 +26,8 @@
             <th class="px-6 py-3 text-right font-medium text-slate-500 uppercase tracking-wider text-xs"><%= t(".actions") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
-          <% @products.each do |product| %>
-            <%= render "stock/product_row", product: product %>
-          <% end %>
+        <tbody class="divide-y divide-gray-100" id="stock_products">
+          <%= render "stock/products_body", products: @products %>
         </tbody>
       </table>
     <% end %>

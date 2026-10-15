@@ -1,7 +1,10 @@
 <tr id="stock_movement_<%= movement.id %>">
   <td class="px-4 py-3 text-slate-600"><%= l(movement.date, format: :short) %></td>
   <td class="px-4 py-3 font-medium text-slate-800"><%= movement.product.name %></td>
-  <td class="px-4 py-3 text-slate-600"><%= t("stock.show.movement_types.#{movement.movement_type}") %></td>
+  <td class="px-4 py-3 text-slate-600">
+    <% type_key = movement.manual_entry? && movement.quantity.negative? ? :manual_exit : movement.movement_type %>
+    <%= t("stock.show.movement_types.#{type_key}") %>
+  </td>
   <td class="px-4 py-3 text-right font-semibold <%= movement.quantity < 0 ? 'text-red-600' : 'text-green-700' %>">
     <%= movement.quantity > 0 ? "+" : "" %><%= number_with_precision(movement.quantity, precision: 2) %>
   </td>
