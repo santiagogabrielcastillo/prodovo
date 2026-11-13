@@ -32,7 +32,7 @@ bin/importmap audit
 
 ## Architecture
 
-**Prodovo** is a Quote & Budget Management System for Argentine businesses. Rails 7.2, Ruby 3.4.12, PostgreSQL, Tailwind CSS, Hotwire (Turbo + Stimulus), Devise auth. PDF generation via Grover (headless Chrome using the `puppeteer` npm package).
+**Prodovo** is a Quote & Budget Management System for Argentine businesses. Rails 8.1, Ruby 3.4.12, PostgreSQL, Tailwind CSS, Hotwire (Turbo + Stimulus), Devise auth. PDF generation via Grover (headless Chrome using the `puppeteer` npm package).
 
 ### Quote Lifecycle
 
