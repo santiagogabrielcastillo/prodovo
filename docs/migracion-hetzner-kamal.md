@@ -6,7 +6,7 @@ Guía preparada el 12/11/2026 para Kamal **2.12.0**. Los comandos son pasos para
 
 Un VPS x86_64 con Ubuntu 24.04 LTS, Docker, kamal-proxy (HTTPS), Rails y Postgres. Empezar con 4 GB de RAM y medir generación concurrente de PDFs; no es una garantía de capacidad. Construir imágenes desde la computadora local, no consumir RAM del VPS compilando. El Dockerfile instala Google Chrome amd64: **no elegir ARM**.
 
-La aplicación usa Rails 7.2, Ruby 3.4.4, Puma en 3000, Grover/Chrome y Active Storage local (`/rails/storage`). El backup actual sube únicamente Postgres a AWS S3. No se encontró un scheduler de backups en el repositorio. Action Cable tiene configurado Redis, pero no hay uso de broadcasts ni jobs diferidos detectado: no se incluye Redis. Si se usan WebSockets realmente, agregar Redis privado y su gema antes del corte.
+La aplicación usa Rails 8.1.4.1, Ruby 3.4.12, Puma en 3000, Grover/Chrome y Active Storage local (`/rails/storage`). El backup actual sube únicamente Postgres a AWS S3. No se encontró un scheduler de backups en el repositorio. Action Cable tiene configurado Redis, pero no hay uso de broadcasts ni jobs diferidos detectado: no se incluye Redis. Si se usan WebSockets realmente, agregar Redis privado y su gema antes del corte.
 
 Este diseño tiene un único punto de fallo: si el VPS cae, la web y DB caen. Los backups permiten recuperar; no brindan alta disponibilidad. Un dump diario implica perder potencialmente hasta 24 horas de datos. Acordar RPO (pérdida máxima aceptable) y RTO (tiempo de recuperación medido) antes de migrar.
 
