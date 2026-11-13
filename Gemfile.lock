@@ -134,7 +134,7 @@ GEM
     erubi (1.13.1)
     globalid (1.4.0)
       activesupport (>= 6.1)
-    grover (1.2.10)
+    grover (2.0.1)
       nokogiri (~> 1)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
