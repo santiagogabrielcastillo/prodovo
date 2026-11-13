@@ -1,0 +1,58 @@
+# Kamal 2.12.0. Completar placeholders siguiendo docs/migracion-hetzner-kamal.md.
+service: prodovo
+image: TU_USUARIO_GHCR/prodovo
+servers:
+  web:
+    - 192.0.2.10
+proxy:
+  ssl: true
+  host: prodovo.example.com
+  app_port: 3000
+  healthcheck:
+    path: /up
+    interval: 3
+    timeout: 5
+registry:
+  server: ghcr.io
+  username: TU_USUARIO_GHCR
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+builder:
+  arch: amd64
+ssh:
+  user: deploy
+asset_path: /rails/public/assets
+volumes:
+  - /srv/prodovo/storage:/rails/storage
+logging:
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: 3
+env:
+  clear:
+    PORT: 3000
+    RAILS_MAX_THREADS: 3
+    RAILS_SERVE_STATIC_FILES: true
+    RAILS_LOG_LEVEL: info
+    AWS_REGION: us-east-1
+    AWS_BUCKET_NAME: TU_BUCKET_BACKUPS
+  secret:
+    - RAILS_MASTER_KEY
+    - SECRET_KEY_BASE
+    - DATABASE_URL
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+accessories:
+  db:
+    image: postgres:17
+    host: 192.0.2.10
+    # Sin port: Postgres sólo es accesible en la red Docker kamal.
+    env:
+      clear:
+        POSTGRES_DB: prodovo_production
+        POSTGRES_USER: postgres
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - /srv/prodovo/postgres:/var/lib/postgresql/data

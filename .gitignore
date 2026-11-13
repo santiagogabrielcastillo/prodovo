@@ -27,3 +27,10 @@
 # Build artifacts
 app/assets/builds/
 
+
+# Kamal secrets and migration artifacts
+/.kamal/secrets
+/.kamal/secrets-*
+/.kamal/secrets.*
+!/.kamal/secrets.example
+/migration-private/

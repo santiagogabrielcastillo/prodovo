@@ -47,3 +47,7 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# Never bake deployment credentials or database exports into the image.
+/.kamal/
+/migration-private/
