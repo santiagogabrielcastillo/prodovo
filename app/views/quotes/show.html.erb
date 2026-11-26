@@ -14,7 +14,8 @@
         </svg>
         <%= t('global.actions.download_pdf') %>
       <% end %>
-      <% if @quote.client.whatsapp_phone %>
+      <%# @public_token is only set for the HTML view; PDF renders skip the share UI. %>
+      <% if @public_token && @quote.client.whatsapp_phone %>
         <% whatsapp_text = t('.whatsapp_message', client: @quote.client.name, number: formatted_quote_id(@quote.id), total: format_currency_integer(@quote.total_amount), url: public_quote_url(token: @public_token)) %>
         <%= link_to "https://wa.me/#{@quote.client.whatsapp_phone}?text=#{ERB::Util.url_encode(whatsapp_text)}", class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 flex items-center gap-2", target: "_blank", rel: "noopener" do %>
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -22,7 +23,7 @@
           </svg>
           <%= t('.share_whatsapp') %>
         <% end %>
-      <% else %>
+      <% elsif @public_token %>
         <span class="px-2 py-2 text-sm text-gray-500 self-center"><%= t('.whatsapp_no_phone') %></span>
       <% end %>
     <% end %>

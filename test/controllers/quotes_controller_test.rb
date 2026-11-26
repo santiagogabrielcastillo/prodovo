@@ -99,6 +99,16 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
     assert response.body.start_with?("%PDF")
   end
 
+  test "should generate PDF for a sent quote whose client has a valid phone" do
+    @client.update!(phone: "011 15 1234-5678")
+    Grover.stub(:new, ->(*) { OpenStruct.new(to_pdf: "%PDF-1.4 fake") }) do
+      get quote_path(@quote, format: :pdf)
+    end
+
+    assert_response :success
+    assert_equal "application/pdf", response.content_type
+  end
+
   test "show renders the WhatsApp link for a sent quote with a valid phone" do
     @client.update!(phone: "011 15 1234-5678")
     get quote_path(@quote)

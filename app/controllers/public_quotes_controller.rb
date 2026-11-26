@@ -5,6 +5,9 @@
 class PublicQuotesController < ActionController::Base
   include QuotePdfRenderable
 
+  # Each request boots headless Chrome via Grover; cap abuse of leaked links.
+  rate_limit to: 10, within: 1.minute
+
   rescue_from ActiveRecord::RecordNotFound do
     head :not_found
   end

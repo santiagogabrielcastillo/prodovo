@@ -19,6 +19,14 @@ class PublicQuotesControllerTest < ActionDispatch::IntegrationTest
     assert response.body.start_with?("%PDF")
   end
 
+  test "serves the PDF when the client has a valid WhatsApp phone" do
+    @quote.client.update!(phone: "011 15 1234-5678")
+    with_fake_grover { get public_quote_path(token: @quote.ensure_public_token!) }
+
+    assert_response :success
+    assert_equal "application/pdf", response.content_type
+  end
+
   test "serves the PDF for a paid quote" do
     @quote.update_columns(status: Quote.statuses[:paid])
     with_fake_grover { get public_quote_path(token: @quote.ensure_public_token!) }
