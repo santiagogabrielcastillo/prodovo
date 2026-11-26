@@ -99,6 +99,16 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
     assert response.body.start_with?("%PDF")
   end
 
+  test "should generate PDF for a sent quote whose client has a valid phone" do
+    @client.update!(phone: "011 15 1234-5678")
+    Grover.stub(:new, ->(*) { OpenStruct.new(to_pdf: "%PDF-1.4 fake") }) do
+      get quote_path(@quote, format: :pdf)
+    end
+
+    assert_response :success
+    assert_equal "application/pdf", response.content_type
+  end
+
   test "show renders the WhatsApp link for a sent quote with a valid phone" do
     @client.update!(phone: "011 15 1234-5678")
     get quote_path(@quote)
@@ -106,6 +116,25 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a[href^='https://wa.me/5491112345678?text='][target=_blank][rel=noopener]"
     assert_match "p%2F", response.body
+  end
+
+  test "show link carries the short public token and reuses it across page views" do
+    @client.update!(phone: "011 15 1234-5678")
+    get quote_path(@quote)
+
+    token = @quote.reload.public_token
+    assert_match(/\A[A-Za-z0-9]{10}\z/, token)
+    assert_match "/p/#{token}", CGI.unescape(response.body)
+
+    get quote_path(@quote)
+    assert_equal token, @quote.reload.public_token
+  end
+
+  test "show does not issue a public token for a draft quote" do
+    @quote.update_columns(status: Quote.statuses[:draft])
+    get quote_path(@quote)
+
+    assert_nil @quote.reload.public_token
   end
 
   test "show hides the WhatsApp link and shows a hint when the phone is invalid" do
