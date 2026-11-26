@@ -6,6 +6,9 @@ class Quote < ApplicationRecord
 
   accepts_nested_attributes_for :quote_items, allow_destroy: true
 
+  PUBLIC_PDF_PURPOSE = :public_pdf
+  PUBLIC_PDF_TTL = 30.days
+
   enum :status, { draft: 0, sent: 1, paid: 3, cancelled: 4 }
 
   scope :in_stats_period, ->(start_date, end_date) {
@@ -36,6 +39,10 @@ class Quote < ApplicationRecord
 
   def total_statistical_quantity
     quote_items.reject(&:marked_for_destruction?).select(&:include_in_stats).sum(&:quantity)
+  end
+
+  def public_pdf_token
+    signed_id(purpose: PUBLIC_PDF_PURPOSE, expires_in: PUBLIC_PDF_TTL)
   end
 
   def can_edit?

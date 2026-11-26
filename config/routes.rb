@@ -20,6 +20,9 @@ Rails.application.routes.draw do
     resources :payments, only: [ :new, :create ]
   end
 
+  # Public signed PDF link (shared via WhatsApp)
+  get "p/:token" => "public_quotes#show", as: :public_quote
+
   # Standalone payment routes for edit/update (shallow)
   resources :payments, only: [ :edit, :update ]
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

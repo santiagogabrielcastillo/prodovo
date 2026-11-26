@@ -99,6 +99,32 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
     assert response.body.start_with?("%PDF")
   end
 
+  test "show renders the WhatsApp link for a sent quote with a valid phone" do
+    @client.update!(phone: "011 15 1234-5678")
+    get quote_path(@quote)
+
+    assert_response :success
+    assert_select "a[href^='https://wa.me/5491112345678?text='][target=_blank][rel=noopener]"
+    assert_match "p%2F", response.body
+  end
+
+  test "show hides the WhatsApp link and shows a hint when the phone is invalid" do
+    @client.update!(phone: "555-0100")
+    get quote_path(@quote)
+
+    assert_response :success
+    assert_select "a[href^='https://wa.me/']", count: 0
+    assert_match I18n.t("quotes.show.whatsapp_no_phone"), response.body
+  end
+
+  test "show does not render the WhatsApp link for a draft quote" do
+    @client.update!(phone: "011 15 1234-5678")
+    @quote.update_columns(status: Quote.statuses[:draft])
+    get quote_path(@quote)
+
+    assert_select "a[href^='https://wa.me/']", count: 0
+  end
+
   # ============================================
   # US-01: units column in quotes index
   # ============================================

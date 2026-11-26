@@ -18,6 +18,10 @@ class Client < ApplicationRecord
     update!(balance: total_sent_quotes_amount - total_payments_amount)
   end
 
+  def whatsapp_phone
+    WhatsappPhone.normalize(phone)
+  end
+
   def has_financial_records?
     # Check for non-draft quotes or any payments
     quotes.where.not(status: :draft).exists? || payments.exists?

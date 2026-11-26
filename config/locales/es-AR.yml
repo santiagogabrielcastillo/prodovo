@@ -216,6 +216,9 @@ es-AR:
         notes: "Notas"
       notes: "Notas"
       no_items: "No hay items en este presupuesto."
+      share_whatsapp: "Enviar por WhatsApp"
+      whatsapp_no_phone: "El cliente no tiene un teléfono válido para WhatsApp."
+      whatsapp_message: "Hola %{client}, te compartimos el presupuesto %{number} por un total de %{total}. Podés verlo y descargarlo acá: %{url}"
     new:
       title: "Nuevo Presupuesto"
       create_quote: "Crear Presupuesto"
