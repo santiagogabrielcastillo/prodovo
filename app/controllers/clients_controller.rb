@@ -3,10 +3,11 @@ class ClientsController < ApplicationController
 
   before_action :authenticate_user!
   before_action :authorize_general_access!
-  before_action :set_client, only: %i[show edit update destroy]
+  before_action :set_client, only: %i[show edit update destroy archive unarchive]
 
   def index
-    @q = Client.ransack(params[:q])
+    @show_archived = params[:archived] == "1"
+    @q = (@show_archived ? Client.archived : Client.active).ransack(params[:q])
     @pagy, @clients = pagy(@q.result(distinct: true).order(:name))
   end
 
@@ -54,6 +55,16 @@ class ClientsController < ApplicationController
     else
       redirect_to clients_path, alert: @client.errors.full_messages.join(", ")
     end
+  end
+
+  def archive
+    @client.archive!
+    redirect_to clients_path, notice: t("clients.messages.archived")
+  end
+
+  def unarchive
+    @client.unarchive!
+    redirect_to @client, notice: t("clients.messages.unarchived")
   end
 
   private

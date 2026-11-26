@@ -86,4 +86,14 @@ class ProductTest < ActiveSupport::TestCase
     assert_not_includes stats_products, excluded_product
     assert_equal 1, stats_products.count
   end
+
+  test "destroy is blocked when the product is used in quotes" do
+    product = products(:two)
+    assert product.has_quotes?
+
+    assert_no_difference([ "Product.count", "QuoteItem.count" ]) do
+      assert_not product.destroy
+    end
+    assert_includes product.errors[:base], I18n.t("activerecord.errors.models.product.attributes.base.cannot_delete_with_quotes")
+  end
 end

@@ -254,4 +254,22 @@ class QuoteTest < ActiveSupport::TestCase
     existing_custom_price.reload
     assert_equal 200.00, existing_custom_price.price, "CustomPrice should be updated to new unit_price"
   end
+
+  test "destroy is blocked when the quote has payments" do
+    quote = quotes(:one)
+    assert quote.payments.exists?
+
+    assert_no_difference([ "Quote.count", "Payment.count", "StockMovement.count" ]) do
+      assert_not quote.destroy
+    end
+    assert_includes quote.errors[:base], I18n.t("activerecord.errors.models.quote.attributes.base.cannot_delete_with_payments")
+  end
+
+  test "a draft quote cannot be moved to an archived client" do
+    quote = quotes(:one)
+    archived = clients(:archived)
+
+    assert_not quote.update(client: archived)
+    assert quote.errors[:client].any?
+  end
 end

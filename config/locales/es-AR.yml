@@ -40,9 +40,20 @@ es-AR:
       finalize: "¿Estás seguro de que deseas finalizar y enviar este presupuesto? Ya no será editable."
       cancel_quote: "¿Estás seguro de que deseas cancelar este presupuesto?"
       delete_custom_price: "¿Estás seguro?"
+      archive_client: "¿Archivar este cliente? Dejará de aparecer en el listado y no se podrán crear nuevos presupuestos ni cobros. Su historial y saldo se conservan."
+      unarchive_client: "¿Desarchivar este cliente?"
   clients:
+    messages:
+      archived: "Cliente archivado exitosamente"
+      unarchived: "Cliente desarchivado exitosamente"
+    archive: "Archivar"
+    unarchive: "Desarchivar"
+    archived_badge: "Archivado"
     index:
       title: "Clientes"
+      filter_active: "Activos"
+      filter_archived: "Archivados"
+      no_archived_clients: "No hay clientes archivados."
       headers:
         name: "Nombre"
         email: "Email"
@@ -489,6 +500,8 @@ es-AR:
       models:
         payment:
           attributes:
+            client:
+              archived: "está archivado y no admite nuevos cobros"
             amount:
               blank: "no puede estar en blanco"
               not_a_number: "no es un número"
@@ -499,6 +512,7 @@ es-AR:
           attributes:
             client:
               required: "debe existir"
+              archived: "está archivado y no admite nuevos presupuestos"
               blank: "debe existir"
             date:
               blank: "no puede estar en blanco"

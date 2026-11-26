@@ -5,10 +5,13 @@ class Client < ApplicationRecord
   has_many :quotes, dependent: :destroy
   has_many :payments, dependent: :destroy
 
+  scope :active, -> { where(archived_at: nil) }
+  scope :archived, -> { where.not(archived_at: nil) }
+
   validates :name, presence: true
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validate :phone_must_be_argentine_mobile, if: -> { phone.present? && will_save_change_to_phone? }
-  validate :cannot_delete_if_has_financial_records, on: :destroy
+  before_destroy :cannot_delete_if_has_financial_records, prepend: true
 
   def recalculate_balance!
     # Standard receivables logic: Positive balance = Money Owed to Me
@@ -17,6 +20,18 @@ class Client < ApplicationRecord
     total_sent_quotes_amount = quotes.where(status: [ :sent, :paid ]).sum(:total_amount)
     total_payments_amount = payments.sum(:amount) || 0
     update!(balance: total_sent_quotes_amount - total_payments_amount)
+  end
+
+  def archived?
+    archived_at.present?
+  end
+
+  def archive!
+    update!(archived_at: Time.current) unless archived?
+  end
+
+  def unarchive!
+    update!(archived_at: nil) if archived?
   end
 
   def whatsapp_phone
@@ -29,7 +44,7 @@ class Client < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    [ "address", "balance", "created_at", "email", "id", "name", "phone", "tax_id", "updated_at" ]
+    [ "address", "archived_at", "balance", "created_at", "email", "id", "name", "phone", "tax_id", "updated_at" ]
   end
 
   private

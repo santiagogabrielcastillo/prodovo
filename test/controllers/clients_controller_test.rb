@@ -183,4 +183,54 @@ class ClientsControllerTest < ActionDispatch::IntegrationTest
     # Check the pagination text shows "1 de 2"
     assert_match(/1 de 2/, response.body)
   end
+
+  # ============================================
+  # Archiving
+  # ============================================
+
+  test "index lists only active clients by default" do
+    get clients_path
+    assert_response :success
+    assert_includes response.body, @client.name
+    assert_not_includes response.body, clients(:archived).name
+  end
+
+  test "index with archived=1 lists only archived clients" do
+    get clients_path(archived: 1)
+    assert_response :success
+    assert_includes response.body, clients(:archived).name
+    assert_not_includes response.body, @client.name
+  end
+
+  test "archive archives the client" do
+    patch archive_client_path(@client)
+    assert_redirected_to clients_path
+    assert @client.reload.archived?
+  end
+
+  test "archive works for a client with a non-zero balance" do
+    @client.update_columns(balance: 1500)
+    patch archive_client_path(@client)
+    assert @client.reload.archived?
+    assert_equal 1500, @client.balance
+  end
+
+  test "unarchive restores the client" do
+    archived = clients(:archived)
+    patch unarchive_client_path(archived)
+    assert_redirected_to client_path(archived)
+    assert_not archived.reload.archived?
+  end
+
+  test "show of archived client displays badge and hides new quote action" do
+    get client_path(clients(:archived))
+    assert_response :success
+    assert_includes response.body, I18n.t("clients.archived_badge")
+    assert_not_includes response.body, I18n.t("clients.show.new_quote")
+  end
+
+  test "show of active client offers archive action" do
+    get client_path(@client)
+    assert_includes response.body, archive_client_path(@client)
+  end
 end

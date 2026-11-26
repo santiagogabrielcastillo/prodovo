@@ -38,8 +38,8 @@ class ClientTest < ActiveSupport::TestCase
 
   test "recalculate_balance! calculates positive balance when money is owed" do
     # Clean up existing quotes and payments for this client
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create sent quote
     quote = Quote.create!(
@@ -66,8 +66,8 @@ class ClientTest < ActiveSupport::TestCase
 
   test "recalculate_balance! calculates zero balance when fully paid" do
     # Clean up existing quotes and payments for this client
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create sent quote
     quote = Quote.create!(
@@ -101,8 +101,8 @@ class ClientTest < ActiveSupport::TestCase
 
   test "recalculate_balance! includes sent and paid quotes" do
     # Clean up existing quotes and payments for this client
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create quotes in different statuses
     sent_quote = Quote.create!(
@@ -158,8 +158,8 @@ class ClientTest < ActiveSupport::TestCase
 
   test "recalculate_balance! excludes cancelled quotes" do
     # Clean up existing quotes and payments for this client
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create cancelled quote
     cancelled_quote = Quote.create!(
@@ -182,8 +182,8 @@ class ClientTest < ActiveSupport::TestCase
   # ============================================
 
   test "recalculate_balance! includes standalone payments" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create sent quote
     quote = Quote.create!(
@@ -213,8 +213,8 @@ class ClientTest < ActiveSupport::TestCase
   end
 
   test "recalculate_balance! handles negative payments" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create sent quote
     quote = Quote.create!(
@@ -248,8 +248,8 @@ class ClientTest < ActiveSupport::TestCase
   # ============================================
 
   test "compute_ledger returns empty ledger when no transactions" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     result = @client.compute_ledger
 
@@ -261,8 +261,8 @@ class ClientTest < ActiveSupport::TestCase
   end
 
   test "compute_ledger returns quotes and payments sorted chronologically" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create quote 1 (Jan 10)
     quote1 = Quote.create!(client: @client, user: @user, date: Date.new(2025, 1, 10), status: :sent)
@@ -293,8 +293,8 @@ class ClientTest < ActiveSupport::TestCase
   end
 
   test "compute_ledger calculates running balance correctly" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create quote 1 (Jan 1) - $1000
     quote1 = Quote.create!(client: @client, user: @user, date: Date.new(2025, 1, 1), status: :sent)
@@ -324,8 +324,8 @@ class ClientTest < ActiveSupport::TestCase
   end
 
   test "compute_ledger filters by date range" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     jan_quote = Quote.create!(client: @client, user: @user, date: Date.new(2025, 1, 1), status: :sent)
     jan_quote.quote_items.create!(product: products(:one), quantity: 1, unit_price: 500.00)
@@ -349,8 +349,8 @@ class ClientTest < ActiveSupport::TestCase
   end
 
   test "compute_ledger paginates correctly" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create 5 items
     5.times do |i|
@@ -369,8 +369,8 @@ class ClientTest < ActiveSupport::TestCase
   end
 
   test "compute_ledger includes standalone payments in totals" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
     quote.quote_items.create!(product: products(:one), quantity: 1, unit_price: 1000.00)
@@ -391,8 +391,8 @@ class ClientTest < ActiveSupport::TestCase
   # ============================================
 
   test "compute_ledger supports page: :last to get last page" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create 5 quotes to span multiple pages
     5.times do |i|
@@ -412,8 +412,8 @@ class ClientTest < ActiveSupport::TestCase
   end
 
   test "compute_ledger sorts items by created_at within same date" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     same_date = Date.new(2025, 6, 15)
 
@@ -439,8 +439,8 @@ class ClientTest < ActiveSupport::TestCase
   end
 
   test "compute_ledger newly created item appears on last page" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create 10 items to fill exactly one page
     10.times do |i|
@@ -464,8 +464,8 @@ class ClientTest < ActiveSupport::TestCase
   end
 
   test "compute_ledger returns page_starting_balance for context on later pages" do
-    @client.quotes.destroy_all
     @client.payments.destroy_all
+    @client.quotes.destroy_all
 
     # Create 5 quotes with different amounts
     5.times do |i|
@@ -486,5 +486,68 @@ class ClientTest < ActiveSupport::TestCase
     # Page 2 starting balance should be the ending balance of page 1
     # Page 1 ends with: $100 + $200 = $300
     assert_equal 300.00, result_page2[:page_starting_balance], "Page 2 should start at $300 (end of page 1)"
+  end
+
+  test "active and archived scopes partition clients" do
+    archived = clients(:archived)
+    assert_includes Client.archived, archived
+    assert_not_includes Client.active, archived
+    assert_includes Client.active, @client
+    assert_not_includes Client.archived, @client
+  end
+
+  test "archive! sets archived_at and unarchive! clears it" do
+    @client.archive!
+    assert @client.reload.archived?
+    @client.unarchive!
+    assert_not @client.reload.archived?
+  end
+
+  test "archive! is allowed with a non-zero balance and leaves records untouched" do
+    quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
+    quote.quote_items.create!(product: products(:one), quantity: 1, unit_price: 500)
+    quote.save!
+    @client.recalculate_balance!
+    balance = @client.reload.balance
+    assert_not_equal 0, balance
+
+    @client.archive!
+
+    assert_equal balance, @client.reload.balance
+    assert_equal "sent", quote.reload.status
+  end
+
+  test "quote cannot be created for an archived client" do
+    quote = Quote.new(client: clients(:archived), user: @user, date: Date.current, status: :draft)
+    assert_not quote.valid?
+    assert quote.errors[:client].any?
+  end
+
+  test "existing quote of an archived client can still be updated" do
+    quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :draft)
+    @client.archive!
+    assert quote.reload.update(notes: "still editable")
+  end
+
+  test "payment cannot be created for an archived client" do
+    payment = Payment.new(client: clients(:archived), amount: 10, date: Date.current, payment_method: :cash)
+    assert_not payment.valid?
+    assert payment.errors[:client].any?
+  end
+
+  test "destroy is blocked when the client has financial records" do
+    assert @client.has_financial_records?
+
+    assert_no_difference([ "Client.count", "Quote.count", "Payment.count" ]) do
+      assert_not @client.destroy
+    end
+    assert_includes @client.errors[:base], I18n.t("activerecord.errors.models.client.attributes.base.cannot_delete_with_records")
+  end
+
+  test "destroy succeeds for a client without financial records" do
+    client = Client.create!(name: "Sin historial", email: "nuevo@example.com")
+    Quote.create!(client: client, user: @user, date: Date.current, status: :draft)
+
+    assert_difference("Client.count", -1) { assert client.destroy }
   end
 end
