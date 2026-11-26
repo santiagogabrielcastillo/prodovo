@@ -108,6 +108,25 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
     assert_match "p%2F", response.body
   end
 
+  test "show link carries the short public token and reuses it across page views" do
+    @client.update!(phone: "011 15 1234-5678")
+    get quote_path(@quote)
+
+    token = @quote.reload.public_token
+    assert_match(/\A[A-Za-z0-9]{10}\z/, token)
+    assert_match "/p/#{token}", CGI.unescape(response.body)
+
+    get quote_path(@quote)
+    assert_equal token, @quote.reload.public_token
+  end
+
+  test "show does not issue a public token for a draft quote" do
+    @quote.update_columns(status: Quote.statuses[:draft])
+    get quote_path(@quote)
+
+    assert_nil @quote.reload.public_token
+  end
+
   test "show hides the WhatsApp link and shows a hint when the phone is invalid" do
     @client.update!(phone: "555-0100")
     get quote_path(@quote)

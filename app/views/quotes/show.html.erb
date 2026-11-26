@@ -15,7 +15,7 @@
         <%= t('global.actions.download_pdf') %>
       <% end %>
       <% if @quote.client.whatsapp_phone %>
-        <% whatsapp_text = t('.whatsapp_message', client: @quote.client.name, number: formatted_quote_id(@quote.id), total: format_currency_integer(@quote.total_amount), url: public_quote_url(token: @quote.public_pdf_token)) %>
+        <% whatsapp_text = t('.whatsapp_message', client: @quote.client.name, number: formatted_quote_id(@quote.id), total: format_currency_integer(@quote.total_amount), url: public_quote_url(token: @public_token)) %>
         <%= link_to "https://wa.me/#{@quote.client.whatsapp_phone}?text=#{ERB::Util.url_encode(whatsapp_text)}", class: "px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 flex items-center gap-2", target: "_blank", rel: "noopener" do %>
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12.04 2a9.9 9.9 0 00-8.4 15.1L2 22l5.05-1.6A9.9 9.9 0 1012.04 2zm5.8 14.04c-.25.7-1.45 1.35-2 1.4-.5.05-1.12.07-1.8-.12a14.8 14.8 0 01-4.6-2.85 8.5 8.5 0 01-1.9-2.6c-.2-.5-.3-1 0-1.5.2-.35.7-.8.95-.8h.5c.15 0 .35 0 .5.45l.7 1.7c.1.2.1.35 0 .5l-.3.4-.3.35c-.1.15-.2.3-.05.55.5.85 1.15 1.55 2 2.1.4.25.8.45 1.25.6.25.1.4.05.55-.1l.7-.85c.15-.2.3-.15.5-.1l1.6.8c.2.1.35.15.4.25.05.1.05.55-.15 1.1z"></path>

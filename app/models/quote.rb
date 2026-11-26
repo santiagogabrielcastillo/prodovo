@@ -6,8 +6,9 @@ class Quote < ApplicationRecord
 
   accepts_nested_attributes_for :quote_items, allow_destroy: true
 
-  PUBLIC_PDF_PURPOSE = :public_pdf
-  PUBLIC_PDF_TTL = 30.days
+  PUBLIC_TOKEN_TTL = 30.days
+  PUBLIC_TOKEN_LENGTH = 10
+  PUBLIC_TOKEN_ATTEMPTS = 3
 
   enum :status, { draft: 0, sent: 1, paid: 3, cancelled: 4 }
 
@@ -44,8 +45,32 @@ class Quote < ApplicationRecord
     quote_items.reject(&:marked_for_destruction?).select(&:include_in_stats).sum(&:quantity)
   end
 
-  def public_pdf_token
-    signed_id(purpose: PUBLIC_PDF_PURPOSE, expires_in: PUBLIC_PDF_TTL)
+  def public_token_valid?
+    public_token.present? && public_token_expires_at.present? && public_token_expires_at.future?
+  end
+
+  # Returns the short token used in the public PDF link, reusing the current
+  # one while it is unexpired and issuing a fresh one otherwise. It writes with
+  # update_columns so quote validations and callbacks never run.
+  def ensure_public_token!
+    return public_token if public_token_valid?
+
+    attempts = 0
+    begin
+      attempts += 1
+      # The savepoint keeps the surrounding transaction usable after a collision.
+      transaction(requires_new: true) do
+        update_columns(
+          public_token: SecureRandom.alphanumeric(PUBLIC_TOKEN_LENGTH),
+          public_token_expires_at: PUBLIC_TOKEN_TTL.from_now
+        )
+      end
+    rescue ActiveRecord::RecordNotUnique
+      retry if attempts < PUBLIC_TOKEN_ATTEMPTS
+      raise
+    end
+
+    public_token
   end
 
   def can_edit?

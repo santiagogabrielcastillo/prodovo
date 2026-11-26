@@ -13,7 +13,7 @@ class QuotesController < ApplicationController
 
   def show
     respond_to do |format|
-      format.html
+      format.html { @public_token = @quote.ensure_public_token! if @quote.sent? || @quote.paid? }
       format.pdf { send_quote_pdf }
     end
   end

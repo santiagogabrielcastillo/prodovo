@@ -272,4 +272,72 @@ class QuoteTest < ActiveSupport::TestCase
     assert_not quote.update(client: archived)
     assert quote.errors[:client].any?
   end
+
+  test "ensure_public_token! generates a short alphanumeric token valid for 30 days" do
+    quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
+
+    freeze_time do
+      token = quote.ensure_public_token!
+
+      assert_match(/\A[A-Za-z0-9]{10}\z/, token)
+      assert_equal token, quote.reload.public_token
+      assert_equal 30.days.from_now, quote.public_token_expires_at
+      assert quote.public_token_valid?
+    end
+  end
+
+  test "ensure_public_token! reuses an unexpired token" do
+    quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
+    token = quote.ensure_public_token!
+
+    travel_to 29.days.from_now do
+      assert_equal token, Quote.find(quote.id).ensure_public_token!
+    end
+  end
+
+  test "ensure_public_token! regenerates an expired token" do
+    quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
+    old_token = quote.ensure_public_token!
+
+    travel_to 31.days.from_now do
+      assert_not quote.reload.public_token_valid?
+      new_token = quote.ensure_public_token!
+
+      assert_not_equal old_token, new_token
+      assert_equal new_token, quote.reload.public_token
+      assert quote.public_token_valid?
+    end
+  end
+
+  test "ensure_public_token! skips validations and callbacks" do
+    quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
+    quote.quote_items.create!(product: @product, quantity: 1, unit_price: 100)
+    quote.save!
+    @client.update_columns(archived_at: Time.current)
+
+    assert_no_changes -> { quote.reload.updated_at } do
+      assert quote.ensure_public_token!.present?
+    end
+  end
+
+  test "ensure_public_token! retries when the generated token collides" do
+    other = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
+    taken = other.ensure_public_token!
+    quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
+
+    tokens = [ taken, "FreshToken1" ]
+    SecureRandom.stub(:alphanumeric, ->(*) { tokens.shift }) do
+      assert_equal "FreshToken1", quote.ensure_public_token!
+    end
+  end
+
+  test "ensure_public_token! gives up after repeated collisions" do
+    other = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
+    taken = other.ensure_public_token!
+    quote = Quote.create!(client: @client, user: @user, date: Date.current, status: :sent)
+
+    SecureRandom.stub(:alphanumeric, ->(*) { taken }) do
+      assert_raises(ActiveRecord::RecordNotUnique) { quote.ensure_public_token! }
+    end
+  end
 end
