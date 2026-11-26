@@ -123,6 +123,8 @@ es-AR:
       tax_id: "CUIT/CUIL"
       address: "Dirección"
       balance: "Saldo (opcional)"
+      phone_placeholder: "11 1234-5678"
+      phone_help: "Ingrese un celular con código de área (sin 0 ni 15) para poder enviar presupuestos por WhatsApp."
       balance_help: "El saldo se recalcula automáticamente una vez que se configuran Presupuestos y Cobros."
       errors_header: "Por favor corrige lo siguiente:"
       save_client: "Guardar Cliente"
@@ -508,6 +510,8 @@ es-AR:
               cannot_delete_with_quotes: "No se puede eliminar un producto que está asociado a presupuestos enviados o pagados"
         client:
           attributes:
+            phone:
+              invalid_mobile: "no es un celular argentino válido (incluya el código de área, ej: 11 1234-5678)"
             base:
               cannot_delete_with_records: "No se puede eliminar un cliente que tiene presupuestos enviados o pagados, o cobros registrados"
         expense:

@@ -19,7 +19,7 @@ class WhatsappPhoneTest < ActiveSupport::TestCase
     end
   end
 
-  [ nil, "", "   ", "abc", "555-0100", "123", "+1 415 555 2671", "54 9 11 1234" ].each do |raw|
+  [ nil, "", "   ", "abc", "555-0100", "123", "+1 415 555 2671", "54 9 11 1234", "15 1234-5678", "1512345678", "15 1234 5678" ].each do |raw|
     test "returns nil for #{raw.inspect}" do
       assert_nil WhatsappPhone.normalize(raw)
     end

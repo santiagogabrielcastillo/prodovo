@@ -21,7 +21,11 @@ class WhatsappPhone
     return nil if digits.empty?
 
     result = international(digits)
-    result if result.match?(/\A549\d{10}\z/)
+    return nil unless result.match?(/\A549\d{10}\z/)
+
+    # No Argentine area code starts with 15, so this is a local mobile number
+    # typed without its area code and cannot be routed.
+    result unless result.delete_prefix(PREFIX).start_with?(MOBILE_INFIX)
   end
 
   private
