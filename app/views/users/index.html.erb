@@ -1,12 +1,13 @@
-<div class="w-full space-y-6">
+<% content_for :fixed_viewport, true %>
+<div class="w-full space-y-6 md:space-y-0 md:flex md:flex-col md:gap-6 md:flex-1 md:min-h-0">
   <div>
     <h1 class="text-2xl font-bold text-gray-900"><%= t("users.index.title") %></h1>
     <p class="text-gray-500 text-sm mt-1"><%= t("users.index.subtitle") %></p>
   </div>
 
-  <div class="bg-white shadow rounded-lg overflow-x-auto">
+  <div class="bg-white shadow rounded-lg overflow-x-auto md:flex-1 md:min-h-0 md:overflow-y-auto">
     <table class="min-w-full divide-y divide-gray-200 text-sm">
-      <thead class="bg-gray-50">
+      <thead class="bg-gray-50 md:sticky md:top-0 md:z-10 md:shadow-sm">
         <tr>
           <th class="px-6 py-3 text-left font-semibold text-gray-500 uppercase tracking-wider"><%= t("users.index.headers.email") %></th>
           <th class="px-6 py-3 text-left font-semibold text-gray-500 uppercase tracking-wider"><%= t("users.index.headers.role") %></th>
@@ -26,6 +27,7 @@
             <td class="px-6 py-4">
               <% unless user == current_user %>
                 <%= form_with url: user_path(user), method: :patch, class: "flex items-center gap-2" do |f| %>
+                  <%= hidden_field_tag :page, @pagy.page if @pagy.page > 1 %>
                   <%= f.select :role,
                       User.roles.keys.map { |r| [t("users.roles.#{r}"), r] },
                       { selected: user.role },
@@ -41,4 +43,10 @@
       </tbody>
     </table>
   </div>
+
+  <% if @pagy.pages > 1 %>
+    <div class="flex justify-center shrink-0">
+      <%== pagy_nav(@pagy) %>
+    </div>
+  <% end %>
 </div>

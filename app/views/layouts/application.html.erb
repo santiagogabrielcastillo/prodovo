@@ -19,16 +19,17 @@
   </head>
 
   <body class="bg-gray-100 min-h-screen antialiased" data-controller="turbo-frame-loading">
-    <div class="min-h-screen flex flex-col <%= 'md:flex-row' if user_signed_in? %>" data-controller="sidebar">
+    <% fixed_viewport = content_for?(:fixed_viewport) %>
+    <div class="min-h-screen flex flex-col <%= 'md:flex-row' if user_signed_in? %> <%= 'md:h-dvh md:min-h-0 md:overflow-hidden' if fixed_viewport %>" data-controller="sidebar">
       <% if user_signed_in? %>
         <%= render "shared/navbar" %>
       <% end %>
 
-      <div class="flex-1 flex flex-col bg-gray-50 min-h-screen">
-        <div class="w-full max-w-7xl mx-auto flex-1 px-4 py-6 md:px-8 md:py-8">
+      <div class="flex-1 flex flex-col bg-gray-50 min-h-screen <%= 'md:min-h-0 md:min-w-0' if fixed_viewport %>">
+        <div class="w-full max-w-7xl mx-auto flex-1 px-4 py-6 md:px-8 md:py-8 <%= 'md:min-h-0 md:flex md:flex-col' if fixed_viewport %>">
           <%= render "shared/flash" %>
 
-          <main class="mt-4">
+          <main class="mt-4 <%= 'md:flex-1 md:min-h-0 md:flex md:flex-col' if fixed_viewport %>">
             <%= yield %>
           </main>
         </div>
