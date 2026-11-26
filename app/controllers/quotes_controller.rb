@@ -22,14 +22,14 @@ class QuotesController < ApplicationController
     @quote = Quote.new
     @quote.date = Date.current
     @quote.user = current_user
-    @quote.client_id = params[:client_id] if params[:client_id].present?
+    @quote.client = Client.active.find_by(id: params[:client_id]) if params[:client_id].present?
     @quote.quote_items.build
-    @clients = Client.order(:name)
+    @clients = selectable_clients
     @products = Product.order(:name)
   end
 
   def edit
-    @clients = Client.order(:name)
+    @clients = selectable_clients
     @products = Product.order(:name)
   end
 
@@ -41,7 +41,7 @@ class QuotesController < ApplicationController
       check_negative_stock(@quote)
       redirect_to @quote, notice: "#{Quote.model_name.human} #{t('global.messages.created_successfully')}"
     else
-      @clients = Client.order(:name)
+      @clients = selectable_clients
       @products = Product.order(:name)
       render :new, status: :unprocessable_entity
     end
@@ -51,7 +51,7 @@ class QuotesController < ApplicationController
     if @quote.update(quote_params)
       redirect_to @quote, notice: "#{Quote.model_name.human} #{t('global.messages.updated_successfully')}"
     else
-      @clients = Client.order(:name)
+      @clients = selectable_clients
       @products = Product.order(:name)
       render :edit, status: :unprocessable_entity
     end
@@ -104,6 +104,12 @@ class QuotesController < ApplicationController
   end
 
   private
+
+  # Active clients, plus the quote's current client so editing an existing
+  # quote of an archived client still renders its selection.
+  def selectable_clients
+    Client.active.or(Client.where(id: @quote&.client_id_in_database)).order(:name)
+  end
 
   def check_negative_stock(quote)
     negative = Product.joins(:quote_items)

@@ -20,7 +20,7 @@ class Quote < ApplicationRecord
   validates :date, presence: true
   # Allow negative totals for quotes with discount items
   validates :total_amount, numericality: true
-  validate :cannot_delete_if_has_payments, on: :destroy
+  validate :client_must_not_be_archived, if: -> { new_record? || will_save_change_to_client_id? }
 
   has_many :stock_movements, dependent: :nullify
 
@@ -28,6 +28,9 @@ class Quote < ApplicationRecord
   after_create_commit :deduct_stock!
   after_update :restore_stock_if_cancelled!, if: :saved_change_to_status?
   before_destroy :restore_stock_if_draft!, prepend: true
+  # Declared last with prepend so it runs before restore_stock_if_draft! and
+  # before dependent: :destroy removes the payments it checks.
+  before_destroy :cannot_delete_if_has_payments, prepend: true
 
   def calculate_total!
     self.total_amount = quote_items.reject(&:marked_for_destruction?).sum do |item|
@@ -143,6 +146,10 @@ class Quote < ApplicationRecord
       .joins(:product)
       .where(include_in_stats: true, products: { include_in_stats: true })
       .includes(:product)
+  end
+
+  def client_must_not_be_archived
+    errors.add(:client, :archived) if client&.archived?
   end
 
   def cannot_delete_if_has_payments

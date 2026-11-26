@@ -7,7 +7,7 @@ class Product < ApplicationRecord
   validates :sku, presence: true
   # Allow flexible pricing (including zero or negative for discounts/credits)
   validates :base_price, presence: true, numericality: true
-  validate :cannot_delete_if_has_quotes, on: :destroy
+  before_destroy :cannot_delete_if_has_quotes, prepend: true
 
   # Scope for products included in statistics (physical products, not admin items)
   scope :for_stats, -> { where(include_in_stats: true) }

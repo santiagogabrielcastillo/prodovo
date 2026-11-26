@@ -17,7 +17,7 @@
       <div>
         <%= form.label :client_id, t('quotes.form.client'), class: "block text-sm font-medium text-gray-700 mb-1" %>
         <%= form.collection_select :client_id,
-            Client.order(:name),
+            @clients,
             :id,
             :name,
             { prompt: quote.client_id ? nil : t('quotes.form.select_client'), selected: quote.client_id },

@@ -2,6 +2,10 @@ Rails.application.routes.draw do
   devise_for :users, controllers: { registrations: "users/registrations" }
   resources :products
   resources :clients do
+    member do
+      patch :archive
+      patch :unarchive
+    end
     resources :custom_prices, only: %i[new create edit update destroy] do
       collection do
         patch :bulk_update

@@ -8,6 +8,7 @@ class Payment < ApplicationRecord
   validates :amount, presence: true, numericality: true
   validates :date, presence: true
   validates :payment_method, presence: true
+  validate :client_must_not_be_archived, on: :create
 
   after_save :update_quote_status!
   after_save :update_client_balance!
@@ -46,6 +47,10 @@ class Payment < ApplicationRecord
   end
 
   private
+
+  def client_must_not_be_archived
+    errors.add(:client, :archived) if client&.archived?
+  end
 
   def update_method_balance!
     return unless payment_method

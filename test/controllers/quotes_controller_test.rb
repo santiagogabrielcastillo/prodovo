@@ -176,4 +176,18 @@ class QuotesControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil flash[:warning]
     assert_match stat_product.name, flash[:warning]
   end
+
+  test "new quote form excludes archived clients" do
+    get new_quote_path
+    assert_response :success
+    assert_not_includes response.body, clients(:archived).name
+  end
+
+  test "edit of a draft quote keeps its archived client in the select" do
+    quote = Quote.create!(client: clients(:one), user: users(:one), date: Date.current, status: :draft)
+    clients(:one).archive!
+    get edit_quote_path(quote)
+    assert_response :success
+    assert_includes response.body, clients(:one).name
+  end
 end

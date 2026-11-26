@@ -15,3 +15,12 @@ two:
   tax_id: TAX-002
   address: 456 Oak Ave
   balance: 0.0
+
+archived:
+  name: Gamma Archived
+  email: gamma@example.com
+  phone: 555-0300
+  tax_id: TAX-003
+  address: 789 Pine Rd
+  balance: 0.0
+  archived_at: <%= 1.day.ago.to_fs(:db) %>

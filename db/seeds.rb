@@ -3,9 +3,9 @@
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
 puts "🚜 Clearing existing data..."
+Payment.destroy_all
 QuoteItem.destroy_all
 Quote.destroy_all
-Payment.destroy_all
 CustomPrice.destroy_all
 Product.destroy_all
 Client.destroy_all
