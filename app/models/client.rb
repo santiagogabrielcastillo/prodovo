@@ -7,6 +7,7 @@ class Client < ApplicationRecord
 
   validates :name, presence: true
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validate :phone_must_be_argentine_mobile, if: -> { phone.present? && will_save_change_to_phone? }
   validate :cannot_delete_if_has_financial_records, on: :destroy
 
   def recalculate_balance!
@@ -16,6 +17,10 @@ class Client < ApplicationRecord
     total_sent_quotes_amount = quotes.where(status: [ :sent, :paid ]).sum(:total_amount)
     total_payments_amount = payments.sum(:amount) || 0
     update!(balance: total_sent_quotes_amount - total_payments_amount)
+  end
+
+  def whatsapp_phone
+    WhatsappPhone.normalize(phone)
   end
 
   def has_financial_records?
@@ -28,6 +33,14 @@ class Client < ApplicationRecord
   end
 
   private
+
+  # Only checked when the phone changes so legacy invalid phones don't block
+  # unrelated updates such as recalculate_balance!.
+  def phone_must_be_argentine_mobile
+    return if whatsapp_phone
+
+    errors.add(:phone, :invalid_mobile)
+  end
 
   def cannot_delete_if_has_financial_records
     if has_financial_records?

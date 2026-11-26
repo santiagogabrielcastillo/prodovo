@@ -6,6 +6,36 @@ class ClientTest < ActiveSupport::TestCase
     @user = users(:one)
   end
 
+  test "accepts a valid Argentine mobile phone" do
+    client = Client.new(name: "Ana", email: "ana@example.com", phone: "11 1234-5678")
+    assert client.valid?
+  end
+
+  test "rejects an invalid phone on create" do
+    client = Client.new(name: "Ana", email: "ana@example.com", phone: "555-0100")
+    assert_not client.valid?
+    assert_includes client.errors[:phone], I18n.t("activerecord.errors.models.client.attributes.phone.invalid_mobile")
+  end
+
+  test "rejects a local mobile phone without area code" do
+    client = Client.new(name: "Ana", email: "ana@example.com", phone: "15 1234 5678")
+    assert_not client.valid?
+    assert client.errors[:phone].any?
+  end
+
+  test "allows a blank phone" do
+    assert Client.new(name: "Ana", email: "ana@example.com", phone: "").valid?
+    assert Client.new(name: "Ana", email: "ana@example.com", phone: nil).valid?
+  end
+
+  test "legacy invalid phone does not block recalculate_balance! or other updates" do
+    @client.update_column(:phone, "555-0100")
+
+    assert_nothing_raised { @client.recalculate_balance! }
+    assert @client.update(name: "Renamed")
+    assert_not @client.update(phone: "555-9999")
+  end
+
   test "recalculate_balance! calculates positive balance when money is owed" do
     # Clean up existing quotes and payments for this client
     @client.quotes.destroy_all
